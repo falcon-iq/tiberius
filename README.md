@@ -75,8 +75,11 @@ Every project is defined by a `project.json` file, which (among other things) de
    * **build:dev** build a development environment.
    * **build:staging** build a staging environment.
    * **build:production** build a production environment.
- * **dev** will run the local development environment of a project.
+ * **dev** will run the local development environment of a project. There could also be variants of this, like:
  * **deploy** deploys a project. There are <u>two</u> flavors of deploy:
    * **deploy:staging** deploys the staging environment.
    * **deploy::production** deploys the production environment.
  * **test** launches unit/integration tests.
+
+The above commands are constant in all projects, however there can be variants of the above, for example:
+* **dev:wrangler** or **build:wrangler** or **build:standalone**

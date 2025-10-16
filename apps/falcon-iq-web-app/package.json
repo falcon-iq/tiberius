@@ -1,7 +1,10 @@
 {
-  "name": "@tiberius/facon-iq-web-app",
+  "name": "@tiberius/falcon-iq-web-app",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "build": "nx build falcon-iq-web-app"
+  },
   "dependencies": {
     "next": "~15.2.4",
     "react": "19.0.0",
