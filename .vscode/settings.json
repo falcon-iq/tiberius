@@ -1,0 +1,21 @@
+{
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1500,
+  "files.associations": {
+    "wrangler.json": "jsonc",
+    "wrangler.local.json": "jsonc",
+    "wrangler.production.json": "jsonc",
+    "wrangler.staging.json": "jsonc"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[jsonc]": {
+    "editor.quickSuggestions": {
+      "strings": true
+    },
+    "editor.suggest.insertMode": "replace",
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "editor.formatOnSave": true
+}
