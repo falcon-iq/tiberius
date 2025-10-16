@@ -3,14 +3,12 @@
     "dbaeumer.vscode-eslint",
     "firsttris.vscode-jest-runner",
     "ms-playwright.playwright",
-    "EditorConfig.EditorConfig",
-    "HashiCorp.terraform",
+    "editorconfig.editorconfig",
+    "hashicorp.terraform",
     "esbenp.prettier-vscode",
     "ms-python.python",
     "ms-python.black-formatter",
     "ms-python.autopep8",
-    "esbenp.prettier-vscode",
-    "donjayamanne.pythonsnippets",
     "ms-python.vscode-pylance"
   ]
 }

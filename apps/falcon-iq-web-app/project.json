@@ -1,0 +1,14 @@
+{
+  "name": "falcon-iq-web-app",
+  "projectType": "application",
+  "root": "apps/falcon-iq-web-app",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "next dev"
+      }
+    }
+  },
+  "tags": []
+}

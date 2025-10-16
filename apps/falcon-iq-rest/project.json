@@ -10,7 +10,7 @@
       },
       "outputs": ["apps/falcon-iq-rest/target"]
     },
-    "run:dev": {
+    "dev": {
       "executor": "nx:run-commands",
       "dependsOn": ["build:standalone"],
       "options": {

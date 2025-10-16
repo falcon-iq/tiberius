@@ -2,7 +2,7 @@
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
-Welcome to Tiberius, the mono repo for  Nimrox management.
+Welcome to Tiberius, the mono repo for  management.
 
 # Getting Started
 ## Prerequisites
@@ -21,7 +21,7 @@ cd tiberius  # Very important - we assume are in this folder from now on
 
 Install needed VSCode extensions:
 ```bash
-cat .vscode/extensions.json | jq -r '.recommendations[]' | xargs -n 1 code --install-extension
+cd .vscode && cat extensions.json | jq -r '.recommendations[]' | xargs -n 1 code --install-extension && cd ..
 ```
 
 Set git config:
@@ -41,17 +41,42 @@ eval "$(pyenv virtualenv-init -)"
 pyenv install 3.12.3
 ```
 
-Install Maven
+Install Maven:
 ```bash
 brew install maven
 ```
 
+Install Java:
 Download and install the [Java ARM DMG](https://www.oracle.com/java/technologies/downloads/#java21:~:text=https%3A//download.oracle.com/java/21/latest/jdk%2D21_macos%2Daarch64_bin.dmg).
 
-Install node modules
+Install node modules:
 ```bash
 npm install
 npm run prepare  # Initializes husky hooks
 ```
 
 🚀 Congratulations, you are now ready to develop!
+
+# Working With This Repo
+This is a mono repo. As such, there are multiple apps and tools all sharing this code base. The following holds true for everything within this repo.
+
+### Environments
+There are three environments:
+ 1. *development*
+ 2. *staging*
+ 3. *production*
+
+The above environments will never be shortened in code (e.g. *development* will <u>never</u> be *dev*).
+
+### Project Commands
+Every project is defined by a `project.json` file, which (among other things) defines its *name*. Each project also defines targets (commands). The following targets are common across all projects:
+
+ * **build** builds a project. There are <u>three</u> flavors of build:
+   * **build:dev** build a development environment.
+   * **build:staging** build a staging environment.
+   * **build:production** build a production environment.
+ * **dev** will run the local development environment of a project.
+ * **deploy** deploys a project. There are <u>two</u> flavors of deploy:
+   * **deploy:staging** deploys the staging environment.
+   * **deploy::production** deploys the production environment.
+ * **test** launches unit/integration tests.
