@@ -17,5 +17,11 @@
     "editor.suggest.insertMode": "replace",
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+  "tailwindCSS.emmetCompletions": true,
+  "java.autobuild.enabled": true,
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

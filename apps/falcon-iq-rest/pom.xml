@@ -29,15 +29,14 @@
       <artifactId>jersey-hk2</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- Optional: JSON support (remove if you only return text) -->
+    <!-- Optional: JSON support -->
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
       <version>${jersey.version}</version>
     </dependency>
 
-    <!-- Jetty is used for the standalone JAR; mark as provided here and
-         re-declare it in the 'standalone' profile so the WAR does not bundle it. -->
+    <!-- Jetty provided in WAR packaging; brought in explicitly by standalone profile -->
     <dependency>
       <groupId>org.eclipse.jetty.ee10</groupId>
       <artifactId>jetty-ee10-servlet</artifactId>
@@ -45,7 +44,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Servlet API provided by the target container when building WAR -->
+    <!-- Servlet API provided by container for WAR -->
     <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
@@ -53,13 +52,14 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Simple logging so Jetty/Jersey logs don't complain -->
+    <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>${slf4j.version}</version>
       <scope>runtime</scope>
     </dependency>
+
     <!-- MongoDB driver -->
     <dependency>
       <groupId>org.mongodb</groupId>
@@ -70,12 +70,24 @@
 
   <build>
     <plugins>
-      <!-- Make sure we compile for Java 21 -->
+      <!-- Java 21 -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
         <configuration>
           <release>21</release>
+        </configuration>
+      </plugin>
+
+      <!-- Jetty dev runner: exploded mode (no WAR/JAR needed), auto-redeploy on class changes -->
+      <!-- Jetty 12 EE10 plugin -->
+      <plugin>
+        <groupId>org.eclipse.jetty.ee10</groupId>
+        <artifactId>jetty-ee10-maven-plugin</artifactId>
+        <version>${jetty.version}</version>
+        <configuration>
+          <scan>1</scan>
+          <contextPath>/</contextPath>
         </configuration>
       </plugin>
     </plugins>
@@ -85,13 +97,12 @@
     <profile>
       <id>standalone</id>
       <dependencies>
-        <!-- Bring Jetty into the JAR -->
+        <!-- Bring Jetty into the shaded JAR for prod-like runs -->
         <dependency>
           <groupId>org.eclipse.jetty.ee10</groupId>
           <artifactId>jetty-ee10-servlet</artifactId>
           <version>${jetty.version}</version>
         </dependency>
-        <!-- You do NOT want servlet-api as provided in a fat JAR -->
         <dependency>
           <groupId>jakarta.servlet</groupId>
           <artifactId>jakarta.servlet-api</artifactId>
@@ -102,7 +113,7 @@
       <build>
         <finalName>${project.artifactId}-${project.version}-standalone</finalName>
         <plugins>
-          <!-- Don't build a WAR in this profile -->
+          <!-- Skip WAR in standalone build -->
           <plugin>
             <artifactId>maven-war-plugin</artifactId>
             <version>3.4.0</version>
@@ -111,7 +122,7 @@
             </configuration>
           </plugin>
 
-          <!-- Create a JAR with project classes first -->
+          <!-- App classes JAR (included in shade) -->
           <plugin>
             <artifactId>maven-jar-plugin</artifactId>
             <version>3.4.0</version>
@@ -126,7 +137,7 @@
             </executions>
           </plugin>
 
-          <!-- Build an executable fat JAR -->
+          <!-- Executable fat JAR -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>

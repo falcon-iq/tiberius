@@ -6,16 +6,16 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
+        "cwd": "apps/falcon-iq-rest",
         "command": "mvn package"
       },
       "outputs": ["apps/falcon-iq-rest/target"]
     },
-    "dev": {
+    "build:dev": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build:standalone"],
       "options": {
         "cwd": "apps/falcon-iq-rest",
-        "command": "java -jar target/falcon-iq-rest-1.0.0-standalone.jar"
+        "command": "mvn -DskipTests compile"
       }
     },
     "build:standalone": {
@@ -31,6 +31,14 @@
       "options": {
         "cwd": "apps/falcon-iq-rest",
         "command": "mvn clean"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build:dev"],
+      "options": {
+        "cwd": "apps/falcon-iq-rest",
+        "command": "mvn -DskipTests jetty:run"
       }
     }
   },

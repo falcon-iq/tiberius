@@ -16,7 +16,7 @@ export default function Index() {
         <div id="welcome">
           <h1>
             <span> Hello there, </span>
-            Welcome @tiberius/facon-iq-web-app 👋
+            Welcome @tiberius/falcon-iq-web-app 👋
           </h1>
         </div>
 
@@ -389,7 +389,7 @@ export default function Index() {
               </svg>
               View project details
             </summary>
-            <pre>nx show project @tiberius/facon-iq-web-app --web</pre>
+            <pre>nx show project @tiberius/falcon-iq-web-app --web</pre>
           </details>
           <details>
             <summary>

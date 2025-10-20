@@ -6,13 +6,13 @@ const createJestConfig = nextJest({
 });
 
 const config: Config = {
-  displayName: '@tiberius/facon-iq-web-app',
+  displayName: '@tiberius/falcon-iq-web-app',
   preset: '../../jest.preset.js',
   transform: {
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '@nx/react/plugins/jest',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  coverageDirectory: '../../coverage/apps/facon-iq-web-app',
+  coverageDirectory: '../../coverage/apps/falcon-iq-web-app',
   testEnvironment: 'jsdom',
 };
 
