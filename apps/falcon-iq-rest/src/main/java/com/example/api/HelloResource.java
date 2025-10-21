@@ -11,6 +11,6 @@ public class HelloResource {
   @GET
   @Produces(MediaType.TEXT_PLAIN)
   public String hello() {
-    return "Hello from JAX-RS + Jetty (Jakarta)! Found -- document";
+    return "Hello from JAX-RS + Jetty (Jakarta)! Found -- document!";
   }
 }

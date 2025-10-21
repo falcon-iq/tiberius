@@ -1,18 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
-         https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
 
   <display-name>Falcon IQ Rest API</display-name>
 
+  <!-- Give libraries a stable temp dir (good for hot reloads) -->
+  <context-param>
+    <param-name>javax.servlet.context.tempdir</param-name>
+    <param-value>target/jetty-tmp</param-value>
+  </context-param>
+
+  <!-- Replace Jetty’s JSP servlet so JSP never initializes -->
+  <servlet>
+    <servlet-name>jsp</servlet-name>
+    <servlet-class>org.eclipse.jetty.ee10.servlet.DefaultServlet</servlet-class>
+    <init-param>
+      <param-name>dirAllowed</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    <load-on-startup>0</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>jsp</servlet-name>
+    <url-pattern>*.jsp</url-pattern>
+  </servlet-mapping>
+
+  <!-- Jersey -->
   <servlet>
     <servlet-name>Jersey Web Application</servlet-name>
     <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+
+    <!-- Use your Application subclass -->
     <init-param>
       <param-name>jakarta.ws.rs.Application</param-name>
       <param-value>com.example.AppConfig</param-value>
+    </init-param>
+
+    <!-- Disable WADL to remove the JAXB/WADL warning -->
+    <init-param>
+      <param-name>jersey.config.server.wadl.disableWadl</param-name>
+      <param-value>true</param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
   </servlet>

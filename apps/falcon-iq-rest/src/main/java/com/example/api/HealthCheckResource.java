@@ -20,36 +20,34 @@ public class HealthCheckResource {
         try {
             // Check MongoDB connectivity
             MongoClient client = MongoClientProvider.getInstance().getOrCreateMongoClient();
-            
+
             // Simple ping to verify connection
             client.getDatabase("admin").runCommand(new org.bson.Document("ping", 1));
-            
+
             // If we get here, all checks passed
             return Response.ok(Map.of(
-                "status", "UP",
-                "timestamp", System.currentTimeMillis(),
-                "service", "falcon-iq-rest",
-                "version", "1.0.0",
-                "checks", Map.of(
-                    "mongodb", "UP",
-                    "application", "UP"
-                )
-            )).build();
-            
+                    "status", "UP",
+                    "timestamp", System.currentTimeMillis(),
+                    "service", "falcon-iq-rest",
+                    "version", "1.0.0",
+                    "checks", Map.of(
+                            "mongodb", "UP",
+                            "application", "UP")))
+                    .build();
+
         } catch (Exception e) {
             // Health check failed
             return Response.status(Response.Status.SERVICE_UNAVAILABLE)
                     .entity(Map.of(
-                        "status", "DOWN",
-                        "timestamp", System.currentTimeMillis(),
-                        "service", "falcon-iq-rest",
-                        "version", "1.0.0",
-                        "error", e.getMessage(),
-                        "checks", Map.of(
-                            "mongodb", "DOWN",
-                            "application", "UP"
-                        )
-                    )).build();
+                            "status", "DOWN",
+                            "timestamp", System.currentTimeMillis(),
+                            "service", "falcon-iq-rest",
+                            "version", "1.0.0",
+                            "error", e.getMessage(),
+                            "checks", Map.of(
+                                    "mongodb", "DOWN",
+                                    "application", "UP")))
+                    .build();
         }
     }
 
@@ -68,8 +66,7 @@ public class HealthCheckResource {
     public Response livenessCheck() {
         // Liveness check - simpler check to determine if container should be restarted
         return Response.ok(Map.of(
-            "status", "UP",
-            "timestamp", System.currentTimeMillis()
-        )).build();
+                "status", "UP",
+                "timestamp", System.currentTimeMillis())).build();
     }
 }

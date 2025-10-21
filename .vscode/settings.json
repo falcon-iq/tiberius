@@ -23,5 +23,8 @@
   "less.lint.unknownAtRules": "ignore",
   "tailwindCSS.emmetCompletions": true,
   "java.autobuild.enabled": true,
-  "java.configuration.updateBuildConfiguration": "automatic"
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.server.launchMode": "Standard",
+  "java.import.maven.enabled": true,
+  "java.project.outputPath": "target/classes"
 }
