@@ -55,7 +55,16 @@ npm install
 npm run prepare  # Initializes husky hooks
 ```
 
-🚀 Congratulations, you are now ready to develop!
+## Clean Up Folders
+Java is finikity (to say the least). Do the following to ensure that VSCode can correctly work with Java:
+
+```bash
+rm -rf .project .classpath .settings
+rm -rf apps/falcon-iq-rest/.project apps/falcon-iq-rest/.classpath apps/falcon-iq-rest/.settings
+rm -rf ~/Library/Application\ Support/Code/User/workspaceStorage/*/redhat.java
+```
+
+# 🚀 Congratulations, you are now ready to develop!
 
 # Working With This Repo
 This is a mono repo. As such, there are multiple apps and tools all sharing this code base. The following holds true for everything within this repo.

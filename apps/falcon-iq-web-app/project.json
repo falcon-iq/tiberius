@@ -20,7 +20,8 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "next dev"
+        "cwd": "apps/falcon-iq-web-app",
+        "commands": ["nx run falcon-iq-rest:dev", "next dev"]
       }
     },
     "dev:cloudflare": {
