@@ -9,6 +9,9 @@
     "ms-python.python",
     "ms-python.black-formatter",
     "ms-python.autopep8",
-    "ms-python.vscode-pylance"
+    "ms-python.vscode-pylance",
+    "vscjava.vscode-java-pack",
+    "nrwl.angular-console",
+    "bradlc.vscode-tailwindcss"
   ]
 }
