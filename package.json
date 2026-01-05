@@ -24,7 +24,7 @@
     "@nx/eslint-plugin": "21.6.4",
     "@nx/jest": "21.6.4",
     "@nx/js": "21.6.4",
-    "@nx/next": "^21.6.4",
+    "@nx/next": "^22.3.3",
     "@swc-node/register": "~1.9.1",
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.5.7",
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.11.0",
-    "next": "~15.2.4",
+    "next": "^15.5.9",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   }
