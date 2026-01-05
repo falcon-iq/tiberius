@@ -13,17 +13,43 @@
     "outDir": "dist",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "vite/client"
+    ],
     "paths": {
-      "@styles/*": ["src/renderer/styles/*"],
-      "@app/*": ["src/renderer/app/*"],
-      "@components/*": ["src/renderer/components/*"],
-      "@routes/*": ["src/renderer/routes/*"],
-      "@generatedtypes/*": ["src/renderer/types/*"],
-      "@utils/*": ["src/renderer/utils/*"],
-      "@hooks/*": ["src/renderer/hooks/*"],
-      "@contexts/*": ["src/renderer/contexts/*"],
-      "@services/*": ["src/renderer/services/*"],
-      "@assets/*": ["src/renderer/assets/*"],
+      "@styles/*": [
+        "src/renderer/styles/*"
+      ],
+      "@app/*": [
+        "src/renderer/app/*"
+      ],
+      "@components/*": [
+        "src/renderer/components/*"
+      ],
+      "@routes/*": [
+        "src/renderer/routes/*"
+      ],
+      "@generatedtypes/*": [
+        "src/renderer/types/*"
+      ],
+      "@utils/*": [
+        "src/renderer/utils/*"
+      ],
+      "@hooks/*": [
+        "src/renderer/hooks/*"
+      ],
+      "@contexts/*": [
+        "src/renderer/contexts/*"
+      ],
+      "@services/*": [
+        "src/renderer/services/*"
+      ],
+      "@assets/*": [
+        "src/renderer/assets/*"
+      ],
     }
   },
   "include": [
@@ -31,7 +57,8 @@
     "vite.main.config.mts",
     "vite.preload.config.mts",
     "vite.renderer.config.mts",
-    "forge.config.ts"
+    "forge.config.ts",
+    "forge.env.d.ts"
   ],
   "exclude": [
     "node_modules",
