@@ -52,3 +52,10 @@ test-output
 # Cloudflare workers
 .open-next/
 .wrangler/
+
+# Vite
+.vite/
+
+# NX graph visualization
+/static
+project-graph.html

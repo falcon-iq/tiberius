@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "paths": {
+      "@styles/*": ["src/renderer/styles/*"],
+      "@app/*": ["src/renderer/app/*"],
+      "@components/*": ["src/renderer/components/*"],
+      "@routes/*": ["src/renderer/routes/*"],
+      "@generatedtypes/*": ["src/renderer/types/*"],
+      "@utils/*": ["src/renderer/utils/*"],
+      "@hooks/*": ["src/renderer/hooks/*"],
+      "@contexts/*": ["src/renderer/contexts/*"],
+      "@services/*": ["src/renderer/services/*"],
+      "@assets/*": ["src/renderer/assets/*"],
+    }
+  },
+  "include": [
+    "src/**/*",
+    "vite.main.config.mts",
+    "vite.preload.config.mts",
+    "vite.renderer.config.mts",
+    "forge.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".vite"
+  ]
+}
