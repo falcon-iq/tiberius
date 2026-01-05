@@ -1,0 +1,45 @@
+{
+  "name": "falcon-iq-electron-app",
+  "projectType": "application",
+  "root": "apps/falcon-iq-electron-app",
+  "sourceRoot": "apps/falcon-iq-electron-app/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-electron-app",
+        "command": "npx electron-forge start"
+      }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-electron-app",
+        "command": "npx electron-forge package"
+      },
+      "outputs": ["{projectRoot}/out"]
+    },
+    "make": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-electron-app",
+        "command": "npx electron-forge make"
+      },
+      "outputs": ["{projectRoot}/out"]
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-electron-app",
+        "command": "npx electron-forge publish"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-electron-app",
+        "command": "eslint --ext .ts,.tsx ."
+      }
+    }
+  }
+}
