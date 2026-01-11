@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/about/')({
   component: About,
@@ -20,16 +20,15 @@ function About() {
             performant desktop applications.
           </p>
           <div className="mt-8">
-            <a
-              href="/"
+            <Link
+              to="/"
               className="text-primary hover:underline"
             >
               ← Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
