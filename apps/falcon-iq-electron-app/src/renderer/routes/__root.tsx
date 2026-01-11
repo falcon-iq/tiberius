@@ -38,7 +38,7 @@ function RootLayout() {
         {/* Right Sidebar - AI Agent */}
         <AgentSidebar />
       </div>
-      <TanStackRouterDevtools />
+      {import.meta.env.DEV ? <TanStackRouterDevtools /> : null}
     </>
   );
 }
