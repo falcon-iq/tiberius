@@ -18,6 +18,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.10.2",
     "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-dmg": "^7.10.2",
     "@electron-forge/maker-rpm": "^7.10.2",
     "@electron-forge/maker-squirrel": "^7.10.2",
     "@electron-forge/maker-zip": "^7.10.2",
@@ -36,9 +37,9 @@
     "@swc/cli": "~0.6.0",
     "@swc/core": "~1.15.8",
     "@swc/helpers": "~0.5.11",
+    "@tailwindcss/vite": "^4.1.18",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.1.0",
-    "@tailwindcss/vite": "^4.1.18",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/jest": "^30.0.0",
     "@types/node": "20.19.9",
