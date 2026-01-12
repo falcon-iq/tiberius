@@ -5,7 +5,7 @@ To use the shared modal component in your Electron app, you can import it like t
 ```tsx
 // In any component file, e.g., apps/falcon-iq-electron-app/src/renderer/components/example.tsx
 import { useState } from 'react';
-import { Modal } from '@tiberius/shared-ui';
+import { Modal } from '@libs/shared/ui';
 
 export function ExampleComponent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
