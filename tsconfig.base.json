@@ -25,6 +25,9 @@
     "paths": {
       "@libs/shared/ui": [
         "libs/shared/ui/src/index.ts"
+      ],
+      "@libs/integrations/github": [
+        "libs/integrations/github/src/index.ts"
       ]
     }
   }

@@ -4,12 +4,15 @@
     // Override base config for Vite/browser environment
     "target": "ESNext",
     "module": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "moduleResolution": "bundler",
     "composite": false,
     "declarationMap": false,
     "emitDeclarationOnly": false,
-    
     // Electron app specific settings
     "jsx": "react-jsx",
     "allowJs": true,
@@ -31,6 +34,9 @@
     "paths": {
       "@libs/shared/ui": [
         "../../libs/shared/ui/src/index.ts"
+      ],
+      "@libs/integrations/github": [
+        "../../libs/integrations/github/src/index.ts"
       ],
       "@styles/*": [
         "src/renderer/styles/*"

@@ -5,6 +5,12 @@
   "references": [
     {
       "path": "./libs/shared/ui"
+    },
+    {
+      "path": "./libs/integrations/github"
+    },
+    {
+      "path": "./apps/falcon-iq-electron-app"
     }
   ]
 }
