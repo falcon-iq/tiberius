@@ -76,5 +76,10 @@
     "node_modules",
     "dist",
     ".vite"
+  ],
+  "references": [
+    {
+      "path": "../../libs/shared/ui"
+    }
   ]
 }
