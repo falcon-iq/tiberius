@@ -1,9 +1,9 @@
-import { useNavigate } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from "react";
 import { Modal } from "@libs/shared/ui";
 
 export const Settings = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [pat, setPat] = useState("");
 
   useEffect(() => {
@@ -11,7 +11,7 @@ export const Settings = () => {
   }, []);
 
   const handleClose = () => {
-    navigate({ to: '/' });
+    router.history.back();
   };
 
   const handleSave = () => {
