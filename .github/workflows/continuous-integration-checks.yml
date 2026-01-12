@@ -12,6 +12,7 @@ permissions:
 
 env:
   NX_DAEMON: "false" # disables NX daemon
+  NX_NO_CLOUD: "true" # disables NX cloud
   NX_SKIP_NX_CACHE: "false" # enables NX cache
   AWS_REGION: us-east-1
 
