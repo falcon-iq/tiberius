@@ -1,0 +1,78 @@
+name: Continuous Integration Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  NX_DAEMON: "false" # disables NX daemon
+  NX_SKIP_NX_CACHE: "false" # enables NX cache
+  AWS_REGION: us-east-1
+
+jobs:
+  main:
+    name: continuous integration checks
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # - name: Set up Terraform
+      #   uses: hashicorp/setup-terraform@v3
+      #   with:
+      #     terraform_version: "1.10.5"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "package.json" # Automatically reads the engines field
+          cache: "npm"
+
+      - name: Set up Java and Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - run: npm ci --legacy-peer-deps
+
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Show affected projects
+        id: affected
+        run: |
+          echo "NX_BASE=$NX_BASE"
+          echo "NX_HEAD=$NX_HEAD"
+          AFFECTED=$(npx nx show projects --affected --json)
+          echo "Affected projects: $AFFECTED"
+        timeout-minutes: 10
+
+      # - uses: actions/setup-python@v5
+      #   if: steps.affected.outputs.photoidcreator == 'true'
+      #   with:
+      #     python-version: "3.12.3"
+
+      # - name: Install Python deps (only if PhotoIDCreator is affected)
+      #   if: steps.affected.outputs.photoidcreator == 'true'
+      #   run: |
+      #     echo "Installing Python deps because project PhotoIDCreator is affected"
+      #     npm run install-python-deps
+
+      - name: Run lint, format, test, and build on affected projects
+        run: |
+          npx nx affected -t lint format test build --parallel --maxParallel=2
