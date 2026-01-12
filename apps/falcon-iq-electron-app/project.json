@@ -40,6 +40,13 @@
         "cwd": "apps/falcon-iq-electron-app",
         "command": "eslint --ext .ts,.tsx ."
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-electron-app",
+        "command": "tsc --noEmit"
+      }
     }
   }
 }
