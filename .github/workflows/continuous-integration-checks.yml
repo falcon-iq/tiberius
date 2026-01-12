@@ -43,36 +43,35 @@ jobs:
           node-version-file: "package.json" # Automatically reads the engines field
           cache: "npm"
 
+      - run: npm ci --legacy-peer-deps
+
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Show and calculated affected projects
+        id: affected
+        run: |
+          set -euo pipefail
+
+          echo "NX_BASE=$NX_BASE"
+          echo "NX_HEAD=$NX_HEAD"
+
+          AFFECTED="$(npx nx show projects --affected --json)"
+          echo "Affected projects: $AFFECTED"
+
+          echo "$AFFECTED" \
+            | jq -r '.[]' \
+            | while read -r proj; do
+                [ -n "$proj" ] && echo "${proj}=true" >> "$GITHUB_OUTPUT"
+              done
+        timeout-minutes: 10
+
       - name: Set up Java and Maven
+        if: steps.affected.outputs['falcon-iq-rest'] == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "21"
           cache: "maven"
-
-      - run: npm ci --legacy-peer-deps
-
-      - uses: nrwl/nx-set-shas@v4
-
-      - name: Show affected projects
-        id: affected
-        run: |
-          echo "NX_BASE=$NX_BASE"
-          echo "NX_HEAD=$NX_HEAD"
-          AFFECTED=$(npx nx show projects --affected --json)
-          echo "Affected projects: $AFFECTED"
-        timeout-minutes: 10
-
-      # - uses: actions/setup-python@v5
-      #   if: steps.affected.outputs.photoidcreator == 'true'
-      #   with:
-      #     python-version: "3.12.3"
-
-      # - name: Install Python deps (only if PhotoIDCreator is affected)
-      #   if: steps.affected.outputs.photoidcreator == 'true'
-      #   run: |
-      #     echo "Installing Python deps because project PhotoIDCreator is affected"
-      #     npm run install-python-deps
 
       - name: Run lint, format, test, and build on affected projects
         run: |
