@@ -9,7 +9,7 @@
         "cwd": "apps/falcon-iq-rest",
         "command": "mvn package"
       },
-      "outputs": ["apps/falcon-iq-rest/target"]
+      "outputs": ["{projectRoot}/target"]
     },
     "build:dev": {
       "executor": "nx:run-commands",
