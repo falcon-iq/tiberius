@@ -123,3 +123,6 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Scan shared UI library for Tailwind classes - must be AFTER @theme */
+@source "../../../../../libs/shared/ui";

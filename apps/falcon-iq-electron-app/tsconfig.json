@@ -1,7 +1,16 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    // Override base config for Vite/browser environment
     "target": "ESNext",
     "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "composite": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    
+    // Electron app specific settings
     "jsx": "react-jsx",
     "allowJs": true,
     "skipLibCheck": true,
@@ -11,7 +20,6 @@
     "sourceMap": true,
     "baseUrl": ".",
     "outDir": "dist",
-    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "types": [
       "node",
@@ -19,7 +27,11 @@
       "react-dom",
       "vite/client"
     ],
+    // Path mappings (note: paths don't merge from extends, so we must include shared paths here)
     "paths": {
+      "@libs/shared/ui": [
+        "../../libs/shared/ui/src/index.ts"
+      ],
       "@styles/*": [
         "src/renderer/styles/*"
       ],
@@ -49,7 +61,7 @@
       ],
       "@assets/*": [
         "src/renderer/assets/*"
-      ],
+      ]
     }
   },
   "include": [
