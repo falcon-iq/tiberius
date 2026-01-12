@@ -59,7 +59,7 @@ export function Modal({
       // Focus trap: Tab key handling
       if (e.key === 'Tab' && panelRef.current) {
         const focusableElements = panelRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
@@ -117,7 +117,7 @@ export function Modal({
           'w-full',
           SIZE_CLASS[size],
           'rounded-lg bg-card p-6 shadow-lg outline-none',
-        ].join(' ')}
+        ].filter(Boolean).join(' ')}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-center justify-between">
