@@ -4,7 +4,7 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/falcon-iq-web-app"
+      "path": "./libs/shared/ui"
     }
   ]
 }
