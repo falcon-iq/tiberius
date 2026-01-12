@@ -2,6 +2,7 @@ export default {
   displayName: 'shared-ui',
   preset: '../../../jest.preset.js',
   testEnvironment: 'jsdom',
+  passWithNoTests: true,
   transform: {
     '^.+\\.[tj]sx?$': [
       '@swc/jest',
