@@ -10,7 +10,7 @@
       "path": "./libs/integrations/github"
     },
     {
-      "path": "./apps/falcon-iq-electron-app"
+      "path": "./libs/shared/util"
     }
   ]
 }
