@@ -1,0 +1,12 @@
+{
+  "name": "@tiberius/shared-util",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@tiberius/source": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}

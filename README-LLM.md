@@ -65,6 +65,32 @@ For comprehensive Electron app context, see [`apps/falcon-iq-electron-app/README
 
 ## Critical Concepts
 
+### Code Organization Standards
+
+**All TypeScript projects must follow these conventions:**
+
+1. **Tests Folder:** All test files (`*.spec.ts`, `*.test.ts`) must be placed in a `tests/` folder
+   - Example: `src/lib/tests/csv.spec.ts` (NOT `src/lib/csv.spec.ts`)
+   - Tests use relative imports: `import { toCsv } from '../csv'`
+   - The build excludes `src/**/tests/**` to keep compiled output clean
+
+2. **Types Folder:** All TypeScript type definitions should be organized in a `types/` folder
+   - Example: `src/lib/types/index.ts`
+   - Export types from main index: `export type { MyType } from './lib/types'`
+   - Keeps type definitions organized and discoverable
+
+**Example Structure:**
+```
+src/
+├── lib/
+│   ├── types/
+│   │   └── index.ts          # Type definitions
+│   ├── tests/
+│   │   └── myfile.spec.ts    # Test files
+│   └── myfile.ts             # Source code
+└── index.ts                  # Main exports
+```
+
 ### TypeScript Path Mappings
 - Paths defined in `tsconfig.base.json` must be repeated in child configs if they define their own paths
 - See `llm-artifacts/TYPESCRIPT-PATHS.md` for detailed explanation
