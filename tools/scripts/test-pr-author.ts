@@ -1,14 +1,6 @@
 import { downloadAuthoredPullRequests, FsPrStorage } from '@libs/integrations/github';
 import type { GitHubPrPipelineConfig } from '@libs/integrations/github';
 
-
-// class MemoryPrStorage implements PrStorage {
-//     public files = new Map<string, string>();
-//     async writeText(key: string, contents: string): Promise<void> {
-//         this.files.set(key, contents);
-//     }
-// }
-
 async function main() {
     const token = process.env.GH_PAT ?? ''; // for the test script only
     if (!token) throw new Error('Set GH_PAT in your shell for this test.');
@@ -31,13 +23,6 @@ async function main() {
     const result = await downloadAuthoredPullRequests(token, cfg, storage);
 
     console.log('Result:', result);
-    // console.log('Files written:', storage.files.size);
-    // console.log('Sample keys:', Array.from(storage.files.keys()).slice(0, 10));
-
-    // // Optional: peek at index CSV
-    // const indexKey = `${result.runPrefix}/prs_index.csv`;
-    // console.log('Index CSV (first 500 chars):');
-    // console.log((storage.files.get(indexKey) ?? '').slice(0, 500));
 }
 
 main().catch((e) => {
