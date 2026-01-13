@@ -1,4 +1,4 @@
-// libs/shared/util/logger/src/index.ts
+// libs/shared/util/src/lib/logger.ts
 //
 // Cross-platform logger (Node, Electron main, Electron renderer, Web) using Pino.
 // - Node/Electron main: JSON logs by default; pretty in dev if you want (see createNodeLogger)
@@ -155,4 +155,15 @@ export const asLogFn = (logger: Logger, level: Exclude<LogLevel, 'silent'> = 'in
  */
 export const childLogger = (logger: Logger, bindings: Record<string, unknown>): Logger => {
     return logger.child(safeBase(bindings));
+};
+
+/**
+ * **TEST ONLY**: Resets the singleton logger instance.
+ * This should ONLY be used in test files to ensure test isolation.
+ * DO NOT use this in production code.
+ *
+ * @internal
+ */
+export const __resetLoggerForTesting = (): void => {
+    singleton = null;
 };
