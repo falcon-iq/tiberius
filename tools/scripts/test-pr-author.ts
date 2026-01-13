@@ -11,9 +11,9 @@ async function main() {
         start_date: '2025-01-01',
         end_date_authored: '2025-12-31',
         options: {
-            authorSuffix: '_LinkedIn', // set to '_LinkedIn' if that’s your actual login suffix
+            authorSuffix: '_LinkedIn', // set to '_LinkedIn' if that's your actual login suffix
             perPage: 100,
-            enableDefaultLogging: true,
+            logLevel: 'info', // 'debug' for verbose, 'error' for errors only, 'silent' to suppress all logs
             // searchResultHardCap: 950,
         },
     };
