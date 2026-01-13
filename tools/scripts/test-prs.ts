@@ -1,6 +1,5 @@
-import { downloadAuthoredPullRequests } from '../../libs/integrations/github/src/index.js';
-import type { PrStorage, GitHubPrPipelineConfig } from '../../libs/integrations/github/src/index.js';
-import { FsPrStorage } from '../../libs/integrations/github/src/lib/prs.fs-storage.js';
+import { downloadAuthoredPullRequests, FsPrStorage } from '@libs/integrations/github';
+import type { GitHubPrPipelineConfig } from '@libs/integrations/github';
 
 
 // class MemoryPrStorage implements PrStorage {
