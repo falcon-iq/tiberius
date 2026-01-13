@@ -1,4 +1,14 @@
 // libs/integrations/github/src/lib/prs.ts
+//
+// Single-file, zero-duplication implementation for both:
+//  - downloadAuthoredPullRequests (author:<login>)
+//  - downloadReviewedPullRequests (reviewed-by:<login>)
+//
+// Assumes you already have:
+//  - toCsv from @libs/shared/utils
+//  - types in ./types
+//  - PrStorage implementation that can writeText(key, content) and optional init()
+//  - This file replaces your existing prs.ts (or you can merge selectively)
 
 import { Octokit } from 'octokit';
 import { throttling } from '@octokit/plugin-throttling';
@@ -8,7 +18,7 @@ import type {
     IsoDate,
     GitHubPrPipelineConfig,
     PrStorage,
-    DownloadAuthoredResult,
+    DownloadAuthoredResult, // reuse for reviewed too; schema is compatible
     SearchIssuesItem,
     PrMetaRow,
     CommentRow,
@@ -53,7 +63,10 @@ const noOpLog = (): void => {
 
 const MyOctokit = Octokit.plugin(throttling, retry);
 
-const createOctokit = (token: string, log: (msg: string) => void): InstanceType<typeof MyOctokit> => {
+const createOctokit = (
+    token: string,
+    log: (msg: string) => void
+): InstanceType<typeof MyOctokit> => {
     return new MyOctokit({
         auth: token,
         throttle: {
@@ -61,15 +74,18 @@ const createOctokit = (token: string, log: (msg: string) => void): InstanceType<
                 retryAfter: number,
                 options: { method?: string; url?: string } & Record<string, unknown>
             ) => {
-                log(`GitHub rate limit hit for ${options.method ?? 'UNKNOWN'} ${options.url ?? 'UNKNOWN'}. retryAfter=${retryAfter}s`);
-                // Returning true tells the plugin to retry after retryAfter seconds.
+                log(
+                    `GitHub rate limit hit for ${options.method ?? 'UNKNOWN'} ${options.url ?? 'UNKNOWN'}. retryAfter=${retryAfter}s`
+                );
                 return true;
             },
             onSecondaryRateLimit: (
                 retryAfter: number,
                 options: { method?: string; url?: string } & Record<string, unknown>
             ) => {
-                log(`GitHub secondary rate limit for ${options.method ?? 'UNKNOWN'} ${options.url ?? 'UNKNOWN'}. retryAfter=${retryAfter}s`);
+                log(
+                    `GitHub secondary rate limit for ${options.method ?? 'UNKNOWN'} ${options.url ?? 'UNKNOWN'}. retryAfter=${retryAfter}s`
+                );
                 return true;
             },
         },
@@ -81,15 +97,27 @@ const createOctokit = (token: string, log: (msg: string) => void): InstanceType<
 
 /* ---------------------------- Key conventions ---------------------------- */
 
+type PrMode = 'authored' | 'reviewed';
+
 const prPrefix = (owner: string, repo: string, prNumber: number): string => {
     return `${owner}/${repo}/pr_${prNumber}`;
 };
 
-const runPrefix = (org: string, author: string, startDate: string, endDate: string): string => {
-    return `${org}/author_${author}_${startDate}_to_${endDate}`;
+const runPrefix = (
+    org: string,
+    mode: PrMode,
+    login: string,
+    startDate: string,
+    endDate: string
+): string => {
+    // Keep these stable for downstream consumers
+    const label = mode === 'authored' ? 'author' : 'reviewer';
+    return `${org}/${label}_${login}_${startDate}_to_${endDate}`;
 };
 
-const parseOwnerRepoFromSearchItem = (item: SearchIssuesItem): { owner: string; repo: string } => {
+const parseOwnerRepoFromSearchItem = (
+    item: SearchIssuesItem
+): { owner: string; repo: string } => {
     const repoUrl = item.repository_url;
     if (!repoUrl) throw new Error('Missing repository_url on search item');
 
@@ -107,19 +135,26 @@ const parseOwnerRepoFromSearchItem = (item: SearchIssuesItem): { owner: string; 
 
 /* --------------------------- GitHub operations --------------------------- */
 
-const searchAuthoredPRs = async (args: {
+type SearchQualifier =
+    | { kind: 'author'; login: string }
+    | { kind: 'reviewed-by'; login: string };
+
+const qualifierToQueryFragment = (q: SearchQualifier): string => {
+    return q.kind === 'author' ? `author:${q.login}` : `reviewed-by:${q.login}`;
+};
+
+const searchPRs = async (args: {
     octokit: InstanceType<typeof MyOctokit>;
     org: string;
-    author: string;
+    qualifier: SearchQualifier;
     startDate: IsoDate;
     endDate: IsoDate;
     perPage: number;
     log: (msg: string) => void;
     hardCap?: number;
 }): Promise<SearchIssuesItem[]> => {
-    const q = `org:${args.org} is:pr author:${args.author} created:${args.startDate}..${args.endDate}`;
+    const q = `org:${args.org} is:pr ${qualifierToQueryFragment(args.qualifier)} created:${args.startDate}..${args.endDate}`;
 
-    // Octokit supports pagination via octokit.paginate for list-like endpoints.
     const items = await args.octokit.paginate(args.octokit.rest.search.issuesAndPullRequests, {
         q,
         per_page: args.perPage,
@@ -137,9 +172,8 @@ const searchAuthoredPRs = async (args: {
     })) as SearchIssuesItem[];
 
     if (args.hardCap && mapped.length >= args.hardCap) {
-        // Practical safeguard: GitHub search has well-known result limits; shard by date windows if you hit this.
         throw new Error(
-            `Search returned ${mapped.length} results, which is at/above hard cap ${args.hardCap}. Shard the date range to avoid GitHub Search caps.`,
+            `Search returned ${mapped.length} results, at/above hard cap ${args.hardCap}. Shard the date range to avoid GitHub Search caps.`
         );
     }
 
@@ -203,7 +237,7 @@ const extractPrFull = async (args: {
             'pr_issue_comments_count',
             'pr_review_comments_count',
             'pr_html_url',
-        ]),
+        ])
     );
 
     const issueComments = await octokit.paginate(octokit.rest.issues.listComments, {
@@ -310,7 +344,7 @@ const extractPrFull = async (args: {
             'path',
             'line',
             'side',
-        ]),
+        ])
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -343,51 +377,70 @@ const extractPrFull = async (args: {
             'blob_url',
             'raw_url',
             'patch',
-        ]),
+        ])
     );
 };
 
-/* ------------------------------ Public API ------------------------------- */
+/* ------------------------- Unified pipeline runner ------------------------ */
 
-export const downloadAuthoredPullRequests = async (
-    token: string,
-    cfg: GitHubPrPipelineConfig,
-    storage: PrStorage
-): Promise<DownloadAuthoredResult> => {
-    // Validate token immediately
+const downloadPullRequests = async (args: {
+    token: string;
+    cfg: GitHubPrPipelineConfig;
+    storage: PrStorage;
+    mode: PrMode;
+}): Promise<DownloadAuthoredResult> => {
+    const { token, cfg, storage, mode } = args;
+
     if (!token || token.trim().length === 0) {
         throw new Error('GitHub token is required and cannot be empty');
     }
 
     const startDate = validateIsoDate(cfg.start_date);
+
+    // NOTE: config naming may be imperfect; mirrors your current authored field.
+    // If you add cfg.end_date_reviewed later, switch on mode here.
     const endDate = validateIsoDate(cfg.end_date_authored);
 
-    // Determine logging strategy
-    const log = cfg.options?.log
-        ?? (cfg.options?.enableDefaultLogging ? defaultLog : noOpLog);
+    const log = cfg.options?.log ?? (cfg.options?.enableDefaultLogging ? defaultLog : noOpLog);
 
     const octokit = createOctokit(token, log);
-
     if (storage.init) await storage.init();
 
-    const authorSuffix = cfg.options?.authorSuffix ?? '_LinkedIn';
-    const author = `${cfg.user}${authorSuffix}`;
     const perPage = cfg.options?.perPage ?? 100;
+    const hardCap = cfg.options?.searchResultHardCap;
 
-    const items = await searchAuthoredPRs({
+    // Suffix defaults differ between authored and reviewed:
+    // - authored: your current default is "_LinkedIn"
+    // - reviewed: default should typically be "" because reviewed-by expects an actual GitHub login
+    const authoredSuffix = cfg.options?.authorSuffix ?? '';
+    const reviewedSuffix = cfg.options?.reviewerSuffix ?? '';
+
+    const login =
+        mode === 'authored'
+            ? `${cfg.user}${authoredSuffix}`
+            : `${cfg.user}${reviewedSuffix}`;
+
+    const qualifier: SearchQualifier =
+        mode === 'authored'
+            ? { kind: 'author', login }
+            : { kind: 'reviewed-by', login };
+
+    const items = await searchPRs({
         octokit,
         org: cfg.org,
-        author,
+        qualifier,
         startDate,
         endDate,
         perPage,
         log,
-        hardCap: cfg.options?.searchResultHardCap,
+        hardCap,
     });
 
-    log(`Found ${items.length} PRs for author '${author}' in org '${cfg.org}' from ${startDate} to ${endDate}`);
+    log(
+        `Found ${items.length} PRs ${mode === 'authored' ? 'authored by' : 'reviewed by'} '${login}' in org '${cfg.org}' from ${startDate} to ${endDate}`
+    );
 
-    const runKeyPrefix = runPrefix(cfg.org, author, startDate, endDate);
+    const runKeyPrefix = runPrefix(cfg.org, mode, login, startDate, endDate);
 
     const indexRows: IndexRow[] = items.map((it) => {
         const { owner, repo } = parseOwnerRepoFromSearchItem(it);
@@ -395,7 +448,9 @@ export const downloadAuthoredPullRequests = async (
             org: cfg.org,
             owner,
             repo,
-            author,
+            // Keep the CSV schema stable: reuse "author" column even for reviewed mode.
+            // If you prefer, rename IndexRow to "actor" in types and update headers.
+            author: login,
             pr_number: it.number,
             title: it.title,
             state: it.state,
@@ -405,7 +460,6 @@ export const downloadAuthoredPullRequests = async (
         };
     });
 
-    // Sort similarly to the Python implementation
     indexRows.sort((a, b) => {
         const ca = a.created_at ?? '';
         const cb = b.created_at ?? '';
@@ -421,6 +475,7 @@ export const downloadAuthoredPullRequests = async (
     for (let i = 0; i < items.length; i += 1) {
         const item = items[i];
         if (!item) continue;
+
         const prNumber = Number(item.number);
         const { owner, repo } = parseOwnerRepoFromSearchItem(item);
 
@@ -439,20 +494,20 @@ export const downloadAuthoredPullRequests = async (
         }
     }
 
-    // Write run-level artifacts
     await storage.writeText(
         `${runKeyPrefix}/prs_index.csv`,
-        toCsv(indexRows, ['org', 'owner', 'repo', 'author', 'pr_number', 'title', 'state', 'created_at', 'updated_at', 'html_url']),
+        toCsv(indexRows, ['org', 'owner', 'repo', 'author', 'pr_number', 'title', 'state', 'created_at', 'updated_at', 'html_url'])
     );
 
     if (failures.length > 0) {
         await storage.writeText(
             `${runKeyPrefix}/prs_failed.csv`,
-            toCsv(failures, ['owner', 'repo', 'pr_number', 'error', 'html_url']),
+            toCsv(failures, ['owner', 'repo', 'pr_number', 'error', 'html_url'])
         );
     }
 
-    await storage.writeText(`${runKeyPrefix}/_SUCCESS`, `authored ok: ${downloaded} failed: ${failures.length}\n`);
+    const successLabel = mode === 'authored' ? 'authored' : 'reviewed';
+    await storage.writeText(`${runKeyPrefix}/_SUCCESS`, `${successLabel} ok: ${downloaded} failed: ${failures.length}\n`);
 
     return {
         runPrefix: runKeyPrefix,
@@ -461,4 +516,22 @@ export const downloadAuthoredPullRequests = async (
         failed: failures.length,
         failures,
     };
+};
+
+/* ------------------------------ Public API ------------------------------- */
+
+export const downloadAuthoredPullRequests = async (
+    token: string,
+    cfg: GitHubPrPipelineConfig,
+    storage: PrStorage
+): Promise<DownloadAuthoredResult> => {
+    return downloadPullRequests({ token, cfg, storage, mode: 'authored' });
+};
+
+export const downloadReviewedPullRequests = async (
+    token: string,
+    cfg: GitHubPrPipelineConfig,
+    storage: PrStorage
+): Promise<DownloadAuthoredResult> => {
+    return downloadPullRequests({ token, cfg, storage, mode: 'reviewed' });
 };

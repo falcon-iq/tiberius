@@ -21,6 +21,12 @@ export interface GitHubPrPipelineConfig {
         authorSuffix?: string;
 
         /**
+         * Suffix to append to reviewer name when searching GitHub.
+         * Default: '' (empty string)
+         */
+        reviewerSuffix?: string;
+
+        /**
          * Safety valve for GitHub Search API's practical cap (~1000 results/query).
          * If you set this, core will throw if it finds >= cap, prompting you to shard by date range.
          */
