@@ -1,5 +1,7 @@
 // libs/integrations/github/src/lib/types/index.ts
 
+import type { LogLevel } from '@libs/shared/utils';
+
 export type IsoDate = string;
 
 export interface GitHubPrPipelineConfig {
@@ -12,11 +14,17 @@ export interface GitHubPrPipelineConfig {
 
     options?: {
         perPage?: number; // default 100
-        log?: (msg: string) => void;
+
+        /**
+         * Log level for the pipeline execution.
+         * Default: 'info'
+         * Use 'debug' for verbose output, 'error' for errors only, 'silent' to suppress all logs.
+         */
+        logLevel?: LogLevel;
 
         /**
          * Suffix to append to author name when searching GitHub.
-         * Default: '_LinkedIn'
+         * Default: '' (empty string)
          */
         authorSuffix?: string;
 
@@ -31,12 +39,6 @@ export interface GitHubPrPipelineConfig {
          * If you set this, core will throw if it finds >= cap, prompting you to shard by date range.
          */
         searchResultHardCap?: number; // e.g. 950
-
-        /**
-         * Enable default console.log logging.
-         * Default: false (no logging unless custom logger provided)
-         */
-        enableDefaultLogging?: boolean;
     };
 }
 

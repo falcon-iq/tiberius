@@ -16,7 +16,7 @@ async function main() {
             // Otherwise leave it blank.
             reviewerSuffix: '_LinkedIn',
             perPage: 100,
-            enableDefaultLogging: true,
+            logLevel: 'debug', // 'debug' for verbose, 'error' for errors only, 'silent' to suppress all logs
             // searchResultHardCap: 950,
         },
     };
