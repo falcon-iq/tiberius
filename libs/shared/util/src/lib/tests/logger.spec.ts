@@ -29,7 +29,7 @@ jest.mock('pino', () => ({
     default: pinoMock,
 }));
 
-import { createLogger, getLogger, asLogFn, childLogger } from '../logger';
+import { createLogger, getLogger, asLogFn, childLogger, __resetLoggerForTesting } from '../logger';
 import type { Logger, LogLevel } from '../logger';
 
 describe('logger', () => {
@@ -45,6 +45,10 @@ describe('logger', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        // Reset singleton to ensure test isolation.
+        // Without this, the singleton instance persists across test cases,
+        // causing tests to fail or behave unexpectedly depending on execution order.
+        __resetLoggerForTesting();
     });
 
     afterEach(() => {
