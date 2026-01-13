@@ -5,7 +5,7 @@
 //  - downloadReviewedPullRequests (reviewed-by:<login>)
 //
 // Assumes you already have:
-//  - toCsv from @libs/shared/utils
+//  - toCsv and getLogger from @libs/shared/utils
 //  - types in ./types
 //  - PrStorage implementation that can writeText(key, content) and optional init()
 //  - This file replaces your existing prs.ts (or you can merge selectively)
@@ -13,7 +13,7 @@
 import { Octokit } from 'octokit';
 import { throttling } from '@octokit/plugin-throttling';
 import { retry } from '@octokit/plugin-retry';
-import { toCsv } from '@libs/shared/utils';
+import { toCsv, getLogger, type Logger } from '@libs/shared/utils';
 import type {
     IsoDate,
     GitHubPrPipelineConfig,
@@ -51,21 +51,13 @@ const validateIsoDate = (s: string): IsoDate => {
     return s;
 };
 
-const defaultLog = (msg: string): void => {
-    console.log(msg);
-};
-
-const noOpLog = (): void => {
-    // no-op: silent by default for web builds
-};
-
 /* ------------------------------ Octokit setup ---------------------------- */
 
 const MyOctokit = Octokit.plugin(throttling, retry);
 
 const createOctokit = (
     token: string,
-    log: (msg: string) => void
+    logger: Logger
 ): InstanceType<typeof MyOctokit> => {
     return new MyOctokit({
         auth: token,
@@ -74,8 +66,13 @@ const createOctokit = (
                 retryAfter: number,
                 options: { method?: string; url?: string } & Record<string, unknown>
             ) => {
-                log(
-                    `GitHub rate limit hit for ${options.method ?? 'UNKNOWN'} ${options.url ?? 'UNKNOWN'}. retryAfter=${retryAfter}s`
+                logger.warn(
+                    {
+                        retryAfter,
+                        method: options.method,
+                        url: options.url,
+                    },
+                    'GitHub rate limit hit'
                 );
                 return true;
             },
@@ -83,8 +80,13 @@ const createOctokit = (
                 retryAfter: number,
                 options: { method?: string; url?: string } & Record<string, unknown>
             ) => {
-                log(
-                    `GitHub secondary rate limit for ${options.method ?? 'UNKNOWN'} ${options.url ?? 'UNKNOWN'}. retryAfter=${retryAfter}s`
+                logger.warn(
+                    {
+                        retryAfter,
+                        method: options.method,
+                        url: options.url,
+                    },
+                    'GitHub secondary rate limit hit'
                 );
                 return true;
             },
@@ -150,10 +152,12 @@ const searchPRs = async (args: {
     startDate: IsoDate;
     endDate: IsoDate;
     perPage: number;
-    log: (msg: string) => void;
+    logger: Logger;
     hardCap?: number;
 }): Promise<SearchIssuesItem[]> => {
     const q = `org:${args.org} is:pr ${qualifierToQueryFragment(args.qualifier)} created:${args.startDate}..${args.endDate}`;
+
+    args.logger.debug({ query: q }, 'Searching GitHub for PRs');
 
     const items = await args.octokit.paginate(args.octokit.rest.search.issuesAndPullRequests, {
         q,
@@ -401,17 +405,28 @@ const downloadPullRequests = async (args: {
     // If you add cfg.end_date_reviewed later, switch on mode here.
     const endDate = validateIsoDate(cfg.end_date_authored);
 
-    const log = cfg.options?.log ?? (cfg.options?.enableDefaultLogging ? defaultLog : noOpLog);
+    // Create logger with optional custom log level
+    const logLevel = cfg.options?.logLevel ?? 'info';
+    const logger = getLogger({
+        name: 'github-pr-pipeline',
+        level: logLevel,
+        base: {
+            org: cfg.org,
+            mode,
+        },
+    });
 
-    const octokit = createOctokit(token, log);
+    logger.info({ startDate, endDate, user: cfg.user, org: cfg.org }, 'Starting PR download pipeline');
+
+    const octokit = createOctokit(token, logger);
     if (storage.init) await storage.init();
 
     const perPage = cfg.options?.perPage ?? 100;
     const hardCap = cfg.options?.searchResultHardCap;
 
     // Suffix defaults differ between authored and reviewed:
-    // - authored: your current default is "_LinkedIn"
-    // - reviewed: default should typically be "" because reviewed-by expects an actual GitHub login
+    // - authored: default is '' (empty string)
+    // - reviewed: default is '' (empty string)
     const authoredSuffix = cfg.options?.authorSuffix ?? '';
     const reviewedSuffix = cfg.options?.reviewerSuffix ?? '';
 
@@ -432,12 +447,19 @@ const downloadPullRequests = async (args: {
         startDate,
         endDate,
         perPage,
-        log,
+        logger,
         hardCap,
     });
 
-    log(
-        `Found ${items.length} PRs ${mode === 'authored' ? 'authored by' : 'reviewed by'} '${login}' in org '${cfg.org}' from ${startDate} to ${endDate}`
+    logger.info(
+        {
+            count: items.length,
+            login,
+            org: cfg.org,
+            startDate,
+            endDate,
+        },
+        `Found ${items.length} PRs ${mode === 'authored' ? 'authored by' : 'reviewed by'} '${login}'`
     );
 
     const runKeyPrefix = runPrefix(cfg.org, mode, login, startDate, endDate);
@@ -480,10 +502,21 @@ const downloadPullRequests = async (args: {
         const { owner, repo } = parseOwnerRepoFromSearchItem(item);
 
         try {
-            log(`(${i + 1}/${items.length}) ${owner}/${repo} #${prNumber}`);
+            logger.debug(
+                { owner, repo, prNumber, progress: `${i + 1}/${items.length}` },
+                `Processing PR #${prNumber}`
+            );
             await extractPrFull({ octokit, storage, owner, repo, prNumber, perPage });
             downloaded += 1;
+            logger.debug(
+                { owner, repo, prNumber, title: item.title, htmlUrl: item.html_url },
+                `✓ Downloaded PR #${prNumber}`
+            );
         } catch (e) {
+            logger.error(
+                { owner, repo, prNumber, error: (e as Error).message },
+                `Failed to download PR #${prNumber}`
+            );
             failures.push({
                 owner,
                 repo,
@@ -508,6 +541,11 @@ const downloadPullRequests = async (args: {
 
     const successLabel = mode === 'authored' ? 'authored' : 'reviewed';
     await storage.writeText(`${runKeyPrefix}/_SUCCESS`, `${successLabel} ok: ${downloaded} failed: ${failures.length}\n`);
+
+    logger.info(
+        { downloaded, failed: failures.length, runPrefix: runKeyPrefix },
+        `Pipeline complete: ${downloaded} downloaded, ${failures.length} failed`
+    );
 
     return {
         runPrefix: runKeyPrefix,
