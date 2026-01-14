@@ -403,7 +403,7 @@ const downloadPullRequests = async (args: {
 
     // NOTE: config naming may be imperfect; mirrors your current authored field.
     // If you add cfg.end_date_reviewed later, switch on mode here.
-    const endDate = validateIsoDate(cfg.end_date_authored);
+    const endDate = validateIsoDate(cfg.end_date);
 
     // Create logger with optional custom log level
     const logLevel = cfg.options?.logLevel ?? 'info';
@@ -426,14 +426,14 @@ const downloadPullRequests = async (args: {
 
     // Suffix defaults differ between authored and reviewed:
     // - authored: default is '' (empty string)
-    // - reviewed: default is '' (empty string)
+    // - reviewed: default is authoredSuffix
     const authoredSuffix = cfg.options?.authorSuffix ?? '';
-    const reviewedSuffix = cfg.options?.reviewerSuffix ?? '';
+    const reviewerSuffix = cfg.options?.reviewerSuffix ?? authoredSuffix;
 
     const login =
         mode === 'authored'
             ? `${cfg.user}${authoredSuffix}`
-            : `${cfg.user}${reviewedSuffix}`;
+            : `${cfg.user}${reviewerSuffix}`;
 
     const qualifier: SearchQualifier =
         mode === 'authored'

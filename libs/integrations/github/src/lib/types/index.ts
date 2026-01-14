@@ -10,7 +10,7 @@ export interface GitHubPrPipelineConfig {
     user: string;
 
     start_date: IsoDate;
-    end_date_authored: IsoDate;
+    end_date: IsoDate;
 
     options?: {
         perPage?: number; // default 100
