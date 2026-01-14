@@ -81,7 +81,10 @@ jobs:
             if [ "$count" -eq 0 ]; then
               echo "_No affected projects._"
             else
-              echo "$AFFECTED" | jq -r '.[]' | sed 's/^/- `&`/'
+              echo "$AFFECTED" | jq -r '.[]' | while read -r proj; do
+                [ -n "$proj" ] || continue
+                echo "- ✅ **$proj**"
+              done
             fi
           } >> "$GITHUB_STEP_SUMMARY"
         timeout-minutes: 10
