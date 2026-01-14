@@ -56,13 +56,34 @@ jobs:
           echo "NX_HEAD=$NX_HEAD"
 
           AFFECTED="$(npx nx show projects --affected --json)"
-          echo "Affected projects: $AFFECTED"
 
-          echo "$AFFECTED" \
-            | jq -r '.[]' \
-            | while read -r proj; do
-                [ -n "$proj" ] && echo "${proj}=true" >> "$GITHUB_OUTPUT"
-              done
+          echo "::group::🧭 Nx affected projects"
+          count="$(echo "$AFFECTED" | jq 'length')"
+
+          if [ "$count" -eq 0 ]; then
+            echo -e "\033[33mℹ️  No affected projects\033[0m"
+          else
+            echo -e "\033[32m✅ Affected projects ($count):\033[0m"
+            echo "$AFFECTED" | jq -r '.[]' | while read -r proj; do
+              [ -n "$proj" ] || continue
+              echo -e "  \033[36m•\033[0m \033[1m$proj\033[0m"
+              echo "${proj}=true" >> "$GITHUB_OUTPUT"
+            done
+          fi
+
+          echo "::endgroup::"
+
+          {
+            echo "## 🧭 Nx affected projects"
+            echo
+            echo "**Count:** $count"
+            echo
+            if [ "$count" -eq 0 ]; then
+              echo "_No affected projects._"
+            else
+              echo "$AFFECTED" | jq -r '.[]' | sed 's/^/- `&`/'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
         timeout-minutes: 10
 
       - name: Set up Java and Maven
