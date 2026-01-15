@@ -10,7 +10,10 @@
       "path": "./libs/integrations/github"
     },
     {
-      "path": "./libs/shared/util"
+      "path": "./libs/shared/validations"
+    },
+    {
+      "path": "./libs/shared/utils"
     }
   ]
 }
