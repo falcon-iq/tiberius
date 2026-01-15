@@ -28,7 +28,7 @@ Validates a date string in ISO format (YYYY-MM-DD).
 **Example:**
 
 ```typescript
-import { validateIsoDate } from '@libs/shared/validation';
+import { validateIsoDate } from '@libs/shared/validations';
 
 const date = validateIsoDate('2024-01-15'); // OK
 validateIsoDate('invalid'); // Throws Error: Invalid date 'invalid'. Expected YYYY-MM-DD.

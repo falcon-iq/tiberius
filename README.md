@@ -69,7 +69,45 @@ rm -rf ~/Library/Application\ Support/Code/User/workspaceStorage/*/redhat.java
 # Working With This Repo
 This is a mono repo. As such, there are multiple apps and tools all sharing this code base. The following holds true for everything within this repo.
 
-### Environments
+## Shared Libraries
+
+The monorepo includes several shared libraries that can be imported across projects:
+
+### @libs/shared/utils
+Common utility functions including CSV conversion and logging.
+
+```typescript
+import { toCsv, getLogger } from '@libs/shared/utils';
+```
+
+See [libs/shared/utils/README.md](libs/shared/utils/README.md) for full documentation.
+
+### @libs/shared/validations
+Validation utilities for common data types.
+
+```typescript
+import { validateIsoDate, type IsoDate } from '@libs/shared/validations';
+```
+
+See [libs/shared/validations/README.md](libs/shared/validations/README.md) for full documentation.
+
+### @libs/shared/ui
+Shared UI components for React applications.
+
+```typescript
+import { Modal } from '@libs/shared/ui';
+```
+
+See [libs/shared/ui/README.md](libs/shared/ui/README.md) for full documentation.
+
+### @libs/integrations/github
+GitHub API integration for downloading PR data.
+
+```typescript
+import { downloadAuthoredPullRequests, downloadReviewedPullRequests } from '@libs/integrations/github';
+```
+
+## Environments
 There are three environments:
  1. *development*
  2. *staging*
