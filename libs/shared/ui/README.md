@@ -2,6 +2,14 @@
 
 This library contains shared UI components for the Tiberius project.
 
+## Installation
+
+This library is part of the Tiberius monorepo. Import it using:
+
+```tsx
+import { Modal } from '@libs/shared/ui';
+```
+
 ## Components
 
 ### Modal
@@ -11,7 +19,8 @@ A reusable modal dialog component.
 #### Usage
 
 ```tsx
-import { Modal } from '@tiberius/shared-ui';
+import { Modal } from '@libs/shared/ui';
+import { useState } from 'react';
 
 function MyComponent() {
   const [isOpen, setIsOpen] = useState(false);
