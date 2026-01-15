@@ -90,6 +90,75 @@ const createOctokit = (
 
 type PrMode = 'authored' | 'reviewed';
 
+/* ---------------------------- CSV Column Schemas ------------------------- */
+
+const PR_META_COLUMNS = [
+    'owner',
+    'repo',
+    'pr_number',
+    'pr_title',
+    'pr_body',
+    'pr_state',
+    'pr_draft',
+    'pr_author',
+    'pr_created_at',
+    'pr_updated_at',
+    'pr_merged_at',
+    'pr_mergeable_state',
+    'pr_additions',
+    'pr_deletions',
+    'pr_changed_files',
+    'pr_commits_count',
+    'pr_issue_comments_count',
+    'pr_review_comments_count',
+    'pr_html_url',
+] as const;
+
+const COMMENT_COLUMNS = [
+    'owner',
+    'repo',
+    'pr_number',
+    'comment_type',
+    'comment_id',
+    'user',
+    'created_at',
+    'body',
+    'state',
+    'is_reviewer',
+    'path',
+    'line',
+    'side',
+] as const;
+
+const FILE_COLUMNS = [
+    'owner',
+    'repo',
+    'pr_number',
+    'filename',
+    'status',
+    'additions',
+    'deletions',
+    'changes',
+    'blob_url',
+    'raw_url',
+    'patch',
+] as const;
+
+const INDEX_COLUMNS = [
+    'org',
+    'owner',
+    'repo',
+    'author',
+    'pr_number',
+    'title',
+    'state',
+    'created_at',
+    'updated_at',
+    'html_url',
+] as const;
+
+const FAILED_COLUMNS = ['owner', 'repo', 'pr_number', 'error', 'html_url'] as const;
+
 const prPrefix = (owner: string, repo: string, prNumber: number): string => {
     return `${owner}/${repo}/pr_${prNumber}`;
 };
@@ -173,6 +242,101 @@ const searchPRs = async (args: {
     return mapped;
 };
 
+/* ----------------------- Comment Processing Helpers ---------------------- */
+
+type BaseCommentData = {
+    owner: string;
+    repo: string;
+    prNumber: number;
+};
+
+const createCommentRow = (
+    base: BaseCommentData,
+    comment: {
+        comment_type: 'ISSUE_COMMENT' | 'REVIEW_INLINE_COMMENT' | 'REVIEW_SUMMARY';
+        comment_id?: number;
+        user?: string;
+        created_at?: string;
+        body?: string | null;
+        state?: string | null;
+        is_reviewer: boolean;
+        path?: string | null;
+        line?: number | null;
+        side?: string | null;
+    }
+): CommentRow => ({
+    owner: base.owner,
+    repo: base.repo,
+    pr_number: base.prNumber,
+    ...comment,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const processIssueComments = (base: BaseCommentData, comments: any[]): CommentRow[] => {
+    return comments.map((c) =>
+        createCommentRow(base, {
+            comment_type: 'ISSUE_COMMENT',
+            comment_id: c.id,
+            user: c.user?.login,
+            created_at: c.created_at,
+            body: c.body ?? null,
+            state: null,
+            is_reviewer: false,
+            path: null,
+            line: null,
+            side: null,
+        })
+    );
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const processReviewInlineComments = (base: BaseCommentData, comments: any[]): CommentRow[] => {
+    return comments.map((c) =>
+        createCommentRow(base, {
+            comment_type: 'REVIEW_INLINE_COMMENT',
+            comment_id: c.id,
+            user: c.user?.login,
+            created_at: c.created_at,
+            body: c.body ?? null,
+            state: null,
+            is_reviewer: true,
+            path: c.path ?? null,
+            line: c.line ?? null,
+            side: c.side ?? null,
+        })
+    );
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const processReviewSummaries = (base: BaseCommentData, reviews: any[]): CommentRow[] => {
+    return reviews.map((r) =>
+        createCommentRow(base, {
+            comment_type: 'REVIEW_SUMMARY',
+            comment_id: r.id,
+            user: r.user?.login,
+            created_at: r.submitted_at,
+            body: r.body ?? null,
+            state: r.state ?? null,
+            is_reviewer: true,
+            path: null,
+            line: null,
+            side: null,
+        })
+    );
+};
+
+/* ------------------------- Storage Write Helper -------------------------- */
+
+const writeCsvToStorage = async <T extends Record<string, unknown>>(
+    storage: PrStorage,
+    key: string,
+    rows: T[],
+    columns: readonly string[]
+): Promise<void> => {
+    // Type assertion needed because toCsv expects specific keyof T, but we're using predefined column constants
+    await storage.writeText(key, toCsv(rows, columns as unknown as ReadonlyArray<Extract<keyof T, string>>));
+};
+
 const extractPrFull = async (args: {
     octokit: InstanceType<typeof MyOctokit>;
     storage: PrStorage;
@@ -207,138 +371,50 @@ const extractPrFull = async (args: {
         pr_html_url: pr.data.html_url,
     };
 
-    const metaKey = `${prPrefix(owner, repo, prNumber)}/pr_${prNumber}_meta.csv`;
-    await storage.writeText(
-        metaKey,
-        toCsv([prMeta], [
-            'owner',
-            'repo',
-            'pr_number',
-            'pr_title',
-            'pr_body',
-            'pr_state',
-            'pr_draft',
-            'pr_author',
-            'pr_created_at',
-            'pr_updated_at',
-            'pr_merged_at',
-            'pr_mergeable_state',
-            'pr_additions',
-            'pr_deletions',
-            'pr_changed_files',
-            'pr_commits_count',
-            'pr_issue_comments_count',
-            'pr_review_comments_count',
-            'pr_html_url',
-        ])
-    );
+    const prefix = prPrefix(owner, repo, prNumber);
+    await writeCsvToStorage(storage, `${prefix}/pr_${prNumber}_meta.csv`, [prMeta], PR_META_COLUMNS);
 
-    const issueComments = await octokit.paginate(octokit.rest.issues.listComments, {
-        owner,
-        repo,
-        issue_number: prNumber,
-        per_page: perPage,
-    });
-
-    const reviewInlineComments = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
-        owner,
-        repo,
-        pull_number: prNumber,
-        per_page: perPage,
-    });
-
-    const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
-        owner,
-        repo,
-        pull_number: prNumber,
-        per_page: perPage,
-    });
-
-    const prFiles = await octokit.paginate(octokit.rest.pulls.listFiles, {
-        owner,
-        repo,
-        pull_number: prNumber,
-        per_page: perPage,
-    });
-
-    const commentRows: CommentRow[] = [];
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const c of issueComments as any[]) {
-        commentRows.push({
+    // Fetch all comment types in parallel
+    const [issueComments, reviewInlineComments, reviews, prFiles] = await Promise.all([
+        octokit.paginate(octokit.rest.issues.listComments, {
             owner,
             repo,
-            pr_number: prNumber,
-            comment_type: 'ISSUE_COMMENT',
-            comment_id: c.id,
-            user: c.user?.login,
-            created_at: c.created_at,
-            body: c.body ?? null,
-            state: null,
-            is_reviewer: false,
-            path: null,
-            line: null,
-            side: null,
-        });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const c of reviewInlineComments as any[]) {
-        commentRows.push({
+            issue_number: prNumber,
+            per_page: perPage,
+        }),
+        octokit.paginate(octokit.rest.pulls.listReviewComments, {
             owner,
             repo,
-            pr_number: prNumber,
-            comment_type: 'REVIEW_INLINE_COMMENT',
-            comment_id: c.id,
-            user: c.user?.login,
-            created_at: c.created_at,
-            body: c.body ?? null,
-            state: null,
-            is_reviewer: true,
-            path: c.path ?? null,
-            line: c.line ?? null,
-            side: c.side ?? null,
-        });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const r of reviews as any[]) {
-        commentRows.push({
+            pull_number: prNumber,
+            per_page: perPage,
+        }),
+        octokit.paginate(octokit.rest.pulls.listReviews, {
             owner,
             repo,
-            pr_number: prNumber,
-            comment_type: 'REVIEW_SUMMARY',
-            comment_id: r.id,
-            user: r.user?.login,
-            created_at: r.submitted_at,
-            body: r.body ?? null,
-            state: r.state ?? null,
-            is_reviewer: true,
-            path: null,
-            line: null,
-            side: null,
-        });
-    }
+            pull_number: prNumber,
+            per_page: perPage,
+        }),
+        octokit.paginate(octokit.rest.pulls.listFiles, {
+            owner,
+            repo,
+            pull_number: prNumber,
+            per_page: perPage,
+        }),
+    ]);
 
-    const commentsKey = `${prPrefix(owner, repo, prNumber)}/pr_${prNumber}_comments.csv`;
-    await storage.writeText(
-        commentsKey,
-        toCsv(commentRows, [
-            'owner',
-            'repo',
-            'pr_number',
-            'comment_type',
-            'comment_id',
-            'user',
-            'created_at',
-            'body',
-            'state',
-            'is_reviewer',
-            'path',
-            'line',
-            'side',
-        ])
-    );
+    const base: BaseCommentData = { owner, repo, prNumber };
+
+    // Process all comments using helper functions
+    const commentRows: CommentRow[] = [
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...processIssueComments(base, issueComments as any[]),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...processReviewInlineComments(base, reviewInlineComments as any[]),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...processReviewSummaries(base, reviews as any[]),
+    ];
+
+    await writeCsvToStorage(storage, `${prefix}/pr_${prNumber}_comments.csv`, commentRows, COMMENT_COLUMNS);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fileRows: FileRow[] = (prFiles as any[]).map((f) => ({
@@ -355,23 +431,7 @@ const extractPrFull = async (args: {
         patch: f.patch,
     }));
 
-    const filesKey = `${prPrefix(owner, repo, prNumber)}/pr_${prNumber}_files.csv`;
-    await storage.writeText(
-        filesKey,
-        toCsv(fileRows, [
-            'owner',
-            'repo',
-            'pr_number',
-            'filename',
-            'status',
-            'additions',
-            'deletions',
-            'changes',
-            'blob_url',
-            'raw_url',
-            'patch',
-        ])
-    );
+    await writeCsvToStorage(storage, `${prefix}/pr_${prNumber}_files.csv`, fileRows, FILE_COLUMNS);
 };
 
 /* ------------------------- Unified pipeline runner ------------------------ */
@@ -518,13 +578,13 @@ const downloadPullRequests = async (args: {
 
     await storage.writeText(
         `${runKeyPrefix}/prs_index.csv`,
-        toCsv(indexRows, ['org', 'owner', 'repo', 'author', 'pr_number', 'title', 'state', 'created_at', 'updated_at', 'html_url'])
+        toCsv(indexRows, [...INDEX_COLUMNS])
     );
 
     if (failures.length > 0) {
         await storage.writeText(
             `${runKeyPrefix}/prs_failed.csv`,
-            toCsv(failures, ['owner', 'repo', 'pr_number', 'error', 'html_url'])
+            toCsv(failures, [...FAILED_COLUMNS])
         );
     }
 
