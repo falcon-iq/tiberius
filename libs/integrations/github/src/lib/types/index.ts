@@ -1,8 +1,9 @@
 // libs/integrations/github/src/lib/types/index.ts
 
 import type { LogLevel } from '@libs/shared/utils';
+import type { IsoDate } from '@libs/shared/validations';
 
-export type IsoDate = string;
+export type { IsoDate };
 
 export interface GitHubPrPipelineConfig {
     base_dir?: string; // optional: used by fs storage adapter, not required by core

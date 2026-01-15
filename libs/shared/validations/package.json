@@ -1,5 +1,5 @@
 {
-  "name": "@tiberius/shared-util",
+  "name": "@tiberius/shared-validations",
   "version": "0.0.1",
   "type": "module",
   "exports": {
