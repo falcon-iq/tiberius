@@ -331,10 +331,9 @@ const writeCsvToStorage = async <T extends Record<string, unknown>>(
     storage: PrStorage,
     key: string,
     rows: T[],
-    columns: readonly string[]
+    columns: ReadonlyArray<Extract<keyof T, string>>
 ): Promise<void> => {
-    // Type assertion needed because toCsv expects specific keyof T, but we're using predefined column constants
-    await storage.writeText(key, toCsv(rows, columns as unknown as ReadonlyArray<Extract<keyof T, string>>));
+    await storage.writeText(key, toCsv(rows, columns));
 };
 
 const extractPrFull = async (args: {
