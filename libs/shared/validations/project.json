@@ -1,7 +1,7 @@
 {
-  "name": "shared-util",
+  "name": "shared-validations",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared/util/src",
+  "sourceRoot": "libs/shared/validations/src",
   "projectType": "library",
   "tags": ["type:util", "scope:shared"]
 }

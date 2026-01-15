@@ -14,8 +14,8 @@ import { Octokit } from 'octokit';
 import { throttling } from '@octokit/plugin-throttling';
 import { retry } from '@octokit/plugin-retry';
 import { toCsv, getLogger, type Logger } from '@libs/shared/utils';
+import { validateIsoDate, type IsoDate } from '@libs/shared/validations';
 import type {
-    IsoDate,
     GitHubPrPipelineConfig,
     PrStorage,
     DownloadAuthoredResult, // reuse for reviewed too; schema is compatible
@@ -28,7 +28,6 @@ import type {
 } from './types';
 
 export type {
-    IsoDate,
     GitHubPrPipelineConfig,
     PrStorage,
     DownloadAuthoredResult,
@@ -39,17 +38,7 @@ export type {
     IndexRow,
     FailedRow,
 };
-
-/* ------------------------------- Validation ------------------------------ */
-
-const validateIsoDate = (s: string): IsoDate => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-        throw new Error(`Invalid date '${s}'. Expected YYYY-MM-DD.`);
-    }
-    const d = new Date(`${s}T00:00:00Z`);
-    if (Number.isNaN(d.getTime())) throw new Error(`Invalid date '${s}'.`);
-    return s;
-};
+export { validateIsoDate, type IsoDate };
 
 /* ------------------------------ Octokit setup ---------------------------- */
 

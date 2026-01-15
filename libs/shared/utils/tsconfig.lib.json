@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../../dist/libs/shared/util",
+    "outDir": "../../../dist/libs/shared/utils",
     "declaration": true,
     "types": ["node"],
     "module": "esnext",
