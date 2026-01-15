@@ -26,6 +26,9 @@ export interface ModalProps {
   /** If true, pressing Escape closes the modal (default true). */
   closeOnEscape?: boolean;
 
+  /** If true, shows the X close button in the top right (default true). */
+  showCloseButton?: boolean;
+
   /** Optional: focus this element (by id) when modal opens */
   initialFocusId?: string;
 }
@@ -38,6 +41,7 @@ export function Modal({
   size = "md",
   closeOnBackdrop = true,
   closeOnEscape = true,
+  showCloseButton = true,
   initialFocusId,
 }: ModalProps) {
   const titleId = useId();
@@ -129,14 +133,16 @@ export function Modal({
             <span />
           )}
 
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label="Close"
-            type="button"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {showCloseButton && (
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Close"
+              type="button"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         {children}
