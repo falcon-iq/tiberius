@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Modal } from '@libs/shared/ui';
-import { Plus, Trash2, Sun, Moon } from 'lucide-react';
+import { Plus, Trash2, Sun, Moon, Loader2 } from 'lucide-react';
+import { validateGitHubToken, type ValidateTokenResult } from '@libs/integrations/github/auth';
+import { useAsyncValidation } from '@libs/shared/hooks';
 
 interface OnboardingWizardProps {
   isOpen: boolean;
@@ -13,6 +15,13 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   const [users, setUsers] = useState<string[]>([]);
   const [newUser, setNewUser] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Use the async validation hook
+  const { validate, isValidating, validationError, isValid } = useAsyncValidation({
+    validator: validateGitHubToken,
+    extractErrorMessage: (result: ValidateTokenResult) => result.error ?? "Invalid GitHub token",
+    fallbackErrorMessage: "Failed to validate token. Please check your connection."
+  });
 
   // Initialize theme from system preference or localStorage
   useEffect(() => {
@@ -54,10 +63,10 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   }, [users]);
 
   const handleNext = useCallback(() => {
-    if (step === 1 && pat.trim()) {
+    if (step === 1 && isValid && !isValidating) {
       setStep(2);
     }
-  }, [step, pat]);
+  }, [step, isValid, isValidating]);
 
   const handleComplete = useCallback(() => {
     if (users.length > 0) {
@@ -114,15 +123,40 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
               <label htmlFor="wizard-pat" className="mb-2 block text-sm font-medium text-foreground">
                 Personal Access Token
               </label>
-              <input
-                id="wizard-pat"
-                type="password"
-                value={pat}
-                onChange={(e) => setPat(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                placeholder="Enter your PAT"
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              
+              <div className="relative">
+                <input
+                  id="wizard-pat"
+                  type="password"
+                  value={pat}
+                  onChange={(e) => setPat(e.target.value)}
+                  onBlur={(e) => {
+                    void validate(e.target.value);
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                  placeholder="Enter your PAT"
+                  className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                    validationError
+                      ? "border-destructive focus:ring-destructive"
+                      : "border-border focus:ring-primary"
+                  }`}
+                />
+
+                {isValidating && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-2 min-h-[20px]">
+                {validationError ? (
+                  <p className="text-xs text-destructive">
+                    {validationError}
+                  </p>
+                ) : null}
+              </div>
+
               <p className="mt-2 text-xs text-muted-foreground">
                 This token will be used to authenticate with your project management tools.
               </p>
@@ -131,7 +165,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
             <div className="flex justify-end">
               <button
                 onClick={handleNext}
-                disabled={!pat.trim()}
+                disabled={!isValid || isValidating}
                 className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
               >

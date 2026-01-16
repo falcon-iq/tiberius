@@ -32,6 +32,9 @@
     ],
     // Path mappings (note: paths don't merge from extends, so we must include shared paths here)
     "paths": {
+      "@libs/shared/hooks": [
+        "../../libs/shared/hooks/src/index.ts"
+      ],
       "@libs/shared/ui": [
         "../../libs/shared/ui/src/index.ts"
       ],
@@ -93,6 +96,9 @@
     ".vite"
   ],
   "references": [
+    {
+      "path": "../../libs/shared/utils"
+    },
     {
       "path": "../../libs/shared/ui"
     }
