@@ -35,8 +35,17 @@
       "@libs/shared/ui": [
         "../../libs/shared/ui/src/index.ts"
       ],
+      "@libs/shared/utils": [
+        "../../libs/shared/utils/src/index.ts"
+      ],
+      "@libs/shared/validations": [
+        "../../libs/shared/validations/src/index.ts"
+      ],
       "@libs/integrations/github": [
         "../../libs/integrations/github/src/index.ts"
+      ],
+      "@libs/integrations/github/auth": [
+        "../../libs/integrations/github/src/lib/auth.ts"
       ],
       "@styles/*": [
         "src/renderer/styles/*"
