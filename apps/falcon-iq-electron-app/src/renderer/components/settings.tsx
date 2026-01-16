@@ -1,89 +1,36 @@
 import { useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { Modal } from "@libs/shared/ui";
 import { useForm } from "react-hook-form";
-import { validateGitHubToken } from "@libs/integrations/github/auth";
+import { validateGitHubToken, type ValidateTokenResult } from "@libs/integrations/github/auth";
 import { Loader2 } from "lucide-react";
-import { getLogger } from '@libs/shared/utils';
+import { useAsyncValidation } from '@libs/shared/hooks';
 
 interface SettingsFormData {
   pat: string;
 }
 
-const logger = getLogger({ name: "settings" });
-
 export const Settings = () => {
   const router = useRouter();
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationError, setValidationError] = useState<string>("");
-  const [isValid, setIsValid] = useState(false);
-
+  
   const { register, handleSubmit, setValue } = useForm<SettingsFormData>({
     defaultValues: { pat: "" },
   });
 
-  // Track the last value we validated to avoid validating the same token repeatedly
-  const lastValidatedRef = useRef<string>("");
-
-  // Debounce timer to avoid blur/focus churn triggering back-to-back validations
-  const validateTimerRef = useRef<number | null>(null);
+  // Use the async validation hook
+  const { validate, isValidating, validationError, isValid } = useAsyncValidation({
+    validator: validateGitHubToken,
+    extractErrorMessage: (result: ValidateTokenResult) => result.error ?? "Invalid GitHub token",
+    fallbackErrorMessage: "Failed to validate token. Please check your connection."
+  });
 
   useEffect(() => {
     const storedPat = localStorage.getItem("manager_buddy_pat") ?? "";
     setValue("pat", storedPat);
   }, [setValue]);
 
-  useEffect(() => {
-    return () => {
-      if (validateTimerRef.current) {
-        window.clearTimeout(validateTimerRef.current);
-        validateTimerRef.current = null;
-      }
-    };
-  }, []);
-
   const handleClose = () => {
     router.history.back();
-  };
-
-  const validatePat = async (raw: string) => {
-    const v = raw.trim();
-    if (!v) {
-      setValidationError("");
-      setIsValid(false);
-      return;
-    }
-
-    // Prevent re-entrancy during focus/blur churn
-    if (isValidating) return;
-
-    // Prevent validating the same value repeatedly
-    if (v === lastValidatedRef.current) return;
-
-    // Mark as last validated up front to suppress loops.
-    lastValidatedRef.current = v;
-
-    setIsValidating(true);
-    setValidationError("");
-    
-    try {
-      const result = await validateGitHubToken(v);
-      
-      if (result.valid) {
-        setIsValid(true);
-        setValidationError("");
-      } else {
-        setIsValid(false);
-        setValidationError(result.error || "Invalid GitHub token");
-      }
-    } catch (err) {
-      logger.error(err, "Failed to validate token");
-      lastValidatedRef.current = "";
-      setIsValid(false);
-      setValidationError("Failed to validate token. Please check your connection.");
-    } finally {
-      setIsValidating(false);
-    }
   };
 
   const onSubmit = (data: SettingsFormData) => {
@@ -117,7 +64,7 @@ export const Settings = () => {
                 {...patField}
                 onBlur={(e) => {
                   patField.onBlur(e);
-                  void validatePat(e.target.value);
+                  void validate(e.target.value);
                 }}
                 placeholder="Enter your PAT"
                 className={`w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
