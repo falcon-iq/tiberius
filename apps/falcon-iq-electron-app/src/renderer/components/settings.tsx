@@ -8,13 +8,15 @@ import { useAsyncValidation } from '@libs/shared/hooks';
 
 interface SettingsFormData {
   pat: string;
+  suffix: string;
 }
 
 export const Settings = () => {
   const router = useRouter();
   
-  const { register, handleSubmit, setValue } = useForm<SettingsFormData>({
-    defaultValues: { pat: "" },
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<SettingsFormData>({
+    defaultValues: { pat: "", suffix: "" },
+    mode: "onBlur", // Validate on blur instead of only on submit
   });
 
   // Use the async validation hook
@@ -26,7 +28,9 @@ export const Settings = () => {
 
   useEffect(() => {
     const storedPat = localStorage.getItem("manager_buddy_pat") ?? "";
+    const storedSuffix = localStorage.getItem("manager_buddy_suffix") ?? "";
     setValue("pat", storedPat);
+    setValue("suffix", storedSuffix);
   }, [setValue]);
 
   const handleClose = () => {
@@ -35,6 +39,7 @@ export const Settings = () => {
 
   const onSubmit = (data: SettingsFormData) => {
     localStorage.setItem("manager_buddy_pat", data.pat);
+    localStorage.setItem("manager_buddy_suffix", data.suffix);
     handleClose();
   };
 
@@ -88,6 +93,38 @@ export const Settings = () => {
                 </p>
               ) : null}
             </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="suffix"
+            className="mb-2 block text-sm font-medium text-foreground"
+          >
+            Suffix
+          </label>
+
+          <input
+            id="suffix"
+            type="text"
+            {...register("suffix", {
+              required: "Suffix is required",
+              validate: (value) => value.trim().length > 0 || "Suffix cannot be empty"
+            })}
+            placeholder="Enter suffix"
+            className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+              errors.suffix
+                ? "border-destructive focus:ring-destructive"
+                : "border-border focus:ring-primary"
+            }`}
+          />
+
+          <div className="mt-2 min-h-[20px]">
+            {errors.suffix ? (
+              <p className="text-xs text-destructive">
+                {errors.suffix.message}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-4">

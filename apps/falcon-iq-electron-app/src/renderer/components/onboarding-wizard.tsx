@@ -1,26 +1,53 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Modal } from '@libs/shared/ui';
 import { Plus, Trash2, Sun, Moon, Loader2 } from 'lucide-react';
-import { validateGitHubToken, type ValidateTokenResult } from '@libs/integrations/github/auth';
+import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult } from '@libs/integrations/github/auth';
 import { useAsyncValidation } from '@libs/shared/hooks';
+import { useForm } from 'react-hook-form';
 
 interface OnboardingWizardProps {
   isOpen: boolean;
   onComplete: (pat: string, users: string[]) => void;
 }
 
+interface Step1FormData {
+  pat: string;
+  suffix: string;
+}
+
 export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) => {
   const [step, setStep] = useState(1);
-  const [pat, setPat] = useState('');
   const [users, setUsers] = useState<string[]>([]);
   const [newUser, setNewUser] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Use the async validation hook
+  // React Hook Form for Step 1 (PAT + Suffix)
+  const { register, watch, formState: { errors } } = useForm<Step1FormData>({
+    defaultValues: { pat: "", suffix: "" },
+    mode: "onBlur", // Validate on blur
+  });
+
+  const pat = watch("pat");
+  const suffix = watch("suffix");
+
+  // Use the async validation hook for PAT
   const { validate, isValidating, validationError, isValid } = useAsyncValidation({
     validator: validateGitHubToken,
     extractErrorMessage: (result: ValidateTokenResult) => result.error ?? "Invalid GitHub token",
     fallbackErrorMessage: "Failed to validate token. Please check your connection."
+  });
+
+  // Use the async validation hook for GitHub username
+  const { 
+    validate: validateUsername, 
+    isValidating: isValidatingUsername, 
+    validationError: usernameValidationError, 
+    isValid: isUsernameValid,
+    reset: resetUsernameValidation
+  } = useAsyncValidation({
+    validator: (username: string) => validateGitHubUser(pat, username),
+    extractErrorMessage: (result: ValidateUserResult) => result.error ?? "Invalid GitHub username",
+    fallbackErrorMessage: "Failed to validate username. Please try again."
   });
 
   // Initialize theme from system preference or localStorage
@@ -52,28 +79,28 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   }, []);
 
   const handleAddUser = useCallback(() => {
-    if (newUser.trim() && !users.includes(newUser.trim())) {
+    if (newUser.trim() && !users.includes(newUser.trim()) && isUsernameValid && !isValidatingUsername) {
       setUsers([...users, newUser.trim()]);
       setNewUser('');
+      resetUsernameValidation(); // Clear validation state for next user
     }
-  }, [newUser, users]);
+  }, [newUser, users, isUsernameValid, isValidatingUsername, resetUsernameValidation]);
 
   const handleRemoveUser = useCallback((userToRemove: string) => {
     setUsers(users.filter((user) => user !== userToRemove));
   }, [users]);
 
   const handleNext = useCallback(() => {
-    if (step === 1 && isValid && !isValidating) {
+    if (step === 1 && isValid && !isValidating && suffix.trim().length > 0) {
       setStep(2);
     }
-  }, [step, isValid, isValidating]);
+  }, [step, isValid, isValidating, suffix]);
 
   const handleComplete = useCallback(() => {
     if (users.length > 0) {
       onComplete(pat, users);
       // Reset state after completion
       setStep(1);
-      setPat('');
       setUsers([]);
       setNewUser('');
     }
@@ -120,52 +147,86 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
           <div className="space-y-6">
             <div>
               <h2 className="mb-4 text-lg font-semibold text-foreground">Step 1: Add Your Personal Access Token</h2>
-              <label htmlFor="wizard-pat" className="mb-2 block text-sm font-medium text-foreground">
-                Personal Access Token
-              </label>
               
-              <div className="relative">
+              {/* PAT Field */}
+              <div className="mb-4">
+                <label htmlFor="wizard-pat" className="mb-2 block text-sm font-medium text-foreground">
+                  Personal Access Token
+                </label>
+                
+                <div className="relative">
+                  <input
+                    id="wizard-pat"
+                    type="password"
+                    {...register("pat")}
+                    onBlur={(e) => {
+                      void validate(e.target.value);
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                    placeholder="Enter your PAT"
+                    className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                      validationError
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-border focus:ring-primary"
+                    }`}
+                  />
+
+                  {isValidating && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-2 min-h-[20px]">
+                  {validationError ? (
+                    <p className="text-xs text-destructive">
+                      {validationError}
+                    </p>
+                  ) : null}
+                </div>
+
+                <p className="mt-2 text-xs text-muted-foreground">
+                  This token will be used to authenticate with your project management tools.
+                </p>
+              </div>
+
+              {/* Suffix Field */}
+              <div>
+                <label htmlFor="wizard-suffix" className="mb-2 block text-sm font-medium text-foreground">
+                  Suffix
+                </label>
+
                 <input
-                  id="wizard-pat"
-                  type="password"
-                  value={pat}
-                  onChange={(e) => setPat(e.target.value)}
-                  onBlur={(e) => {
-                    void validate(e.target.value);
-                  }}
+                  id="wizard-suffix"
+                  type="text"
+                  {...register("suffix", {
+                    required: "Suffix is required",
+                    validate: (value) => value.trim().length > 0 || "Suffix cannot be empty"
+                  })}
                   onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                  placeholder="Enter your PAT"
-                  className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-                    validationError
+                  placeholder="Enter suffix"
+                  className={`w-full rounded-lg border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                    errors.suffix
                       ? "border-destructive focus:ring-destructive"
                       : "border-border focus:ring-primary"
                   }`}
                 />
 
-                {isValidating && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  </div>
-                )}
+                <div className="mt-2 min-h-[20px]">
+                  {errors.suffix ? (
+                    <p className="text-xs text-destructive">
+                      {errors.suffix.message}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-
-              <div className="mt-2 min-h-[20px]">
-                {validationError ? (
-                  <p className="text-xs text-destructive">
-                    {validationError}
-                  </p>
-                ) : null}
-              </div>
-
-              <p className="mt-2 text-xs text-muted-foreground">
-                This token will be used to authenticate with your project management tools.
-              </p>
             </div>
 
             <div className="flex justify-end">
               <button
                 onClick={handleNext}
-                disabled={!isValid || isValidating}
+                disabled={!isValid || isValidating || !!errors.suffix || suffix.trim().length === 0}
                 className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
               >
@@ -180,24 +241,51 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
           <div className="space-y-6">
             <div>
               <h2 className="mb-4 text-lg font-semibold text-foreground">Step 2: Add Team Members</h2>
-              <div className="mb-4 flex gap-2">
-                <input
-                  id="wizard-new-user"
-                  type="text"
-                  value={newUser}
-                  onChange={(e) => setNewUser(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
-                  placeholder="Enter username"
-                  className="flex-1 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  onClick={handleAddUser}
-                  className="rounded-lg bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
-                  type="button"
-                  aria-label="Add user"
-                >
-                  <Plus className="h-5 w-5" />
-                </button>
+              <div className="mb-4">
+                <div className="relative flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      id="wizard-new-user"
+                      type="text"
+                      value={newUser}
+                      onChange={(e) => setNewUser(e.target.value)}
+                      onBlur={(e) => {
+                        void validateUsername(e.target.value);
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
+                      placeholder="Enter username"
+                      className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                        usernameValidationError
+                          ? "border-destructive focus:ring-destructive"
+                          : "border-border focus:ring-primary"
+                      }`}
+                    />
+                    
+                    {isValidatingUsername && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={handleAddUser}
+                    disabled={!isUsernameValid || isValidatingUsername || !newUser.trim()}
+                    className="rounded-lg bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    aria-label="Add user"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </div>
+                
+                <div className="mt-2 min-h-[20px]">
+                  {usernameValidationError ? (
+                    <p className="text-xs text-destructive">
+                      {usernameValidationError}
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
               {/* User List */}
