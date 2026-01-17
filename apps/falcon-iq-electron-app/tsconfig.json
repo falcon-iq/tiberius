@@ -48,7 +48,7 @@
         "../../libs/integrations/github/src/index.ts"
       ],
       "@libs/integrations/github/auth": [
-        "../../libs/integrations/github/src/lib/auth.ts"
+        "../../libs/integrations/github/src/auth.ts"
       ],
       "@styles/*": [
         "src/renderer/styles/*"

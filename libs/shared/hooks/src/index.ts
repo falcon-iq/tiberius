@@ -1,6 +1,6 @@
-export { useAsyncValidation } from './lib/use-async-validation';
-export type { 
-  UseAsyncValidationOptions, 
-  UseAsyncValidationReturn, 
-  ValidationResult 
-} from './lib/use-async-validation';
+export { useAsyncValidation } from './use-async-validation';
+export type {
+  UseAsyncValidationOptions,
+  UseAsyncValidationReturn,
+  ValidationResult
+} from './use-async-validation';

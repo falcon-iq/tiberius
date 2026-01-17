@@ -3,9 +3,14 @@
   "compilerOptions": {
     "outDir": "../../../dist/libs/shared/hooks",
     "declaration": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
   "exclude": [
     "jest.config.ts",
     "src/**/*.spec.ts",

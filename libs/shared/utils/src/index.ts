@@ -1,2 +1,2 @@
-export * from './lib/csv';
-export * from './lib/logger';
+export * from './csv';
+export * from './logger';
