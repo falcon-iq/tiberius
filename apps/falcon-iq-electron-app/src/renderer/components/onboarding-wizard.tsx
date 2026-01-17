@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Modal } from '@libs/shared/ui';
+import { Modal } from '@libs/shared/ui/modal/modal';
 import { Plus, Trash2, Sun, Moon, Loader2 } from 'lucide-react';
 import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult } from '@libs/integrations/github/auth';
-import { useAsyncValidation } from '@libs/shared/hooks';
+import { githubUsername } from '@libs/integrations/github/username';
+import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useForm } from 'react-hook-form';
+
 
 interface OnboardingWizardProps {
   isOpen: boolean;
@@ -38,10 +40,10 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   });
 
   // Use the async validation hook for GitHub username
-  const { 
-    validate: validateUsername, 
-    isValidating: isValidatingUsername, 
-    validationError: usernameValidationError, 
+  const {
+    validate: validateUsername,
+    isValidating: isValidatingUsername,
+    validationError: usernameValidationError,
     isValid: isUsernameValid,
     reset: resetUsernameValidation
   } = useAsyncValidation({
@@ -55,7 +57,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-    
+
     setIsDarkMode(shouldBeDark);
     if (shouldBeDark) {
       document.documentElement.classList.add('dark');
@@ -124,7 +126,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
         <div className="text-center relative">
           <h1 className="text-2xl font-bold text-foreground">Welcome to Falcon IQ</h1>
           <p className="mt-2 text-sm text-muted-foreground">Let's get you set up in just a few steps</p>
-          
+
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
@@ -147,13 +149,13 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
           <div className="space-y-6">
             <div>
               <h2 className="mb-4 text-lg font-semibold text-foreground">Step 1: Add Your Personal Access Token</h2>
-              
+
               {/* PAT Field */}
               <div className="mb-4">
                 <label htmlFor="wizard-pat" className="mb-2 block text-sm font-medium text-foreground">
                   Personal Access Token
                 </label>
-                
+
                 <div className="relative">
                   <input
                     id="wizard-pat"
@@ -164,11 +166,10 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                     }}
                     onKeyDown={(e) => e.key === 'Enter' && handleNext()}
                     placeholder="Enter your PAT"
-                    className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-                      validationError
-                        ? "border-destructive focus:ring-destructive"
-                        : "border-border focus:ring-primary"
-                    }`}
+                    className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${validationError
+                      ? "border-destructive focus:ring-destructive"
+                      : "border-border focus:ring-primary"
+                      }`}
                   />
 
                   {isValidating && (
@@ -183,12 +184,12 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                     <p className="text-xs text-destructive">
                       {validationError}
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      This token will be used to authenticate with your project management tools.
+                    </p>
+                  )}
                 </div>
-
-                <p className="mt-2 text-xs text-muted-foreground">
-                  This token will be used to authenticate with your project management tools.
-                </p>
               </div>
 
               {/* Suffix Field */}
@@ -206,11 +207,10 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                   })}
                   onKeyDown={(e) => e.key === 'Enter' && handleNext()}
                   placeholder="Enter suffix"
-                  className={`w-full rounded-lg border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-                    errors.suffix
-                      ? "border-destructive focus:ring-destructive"
-                      : "border-border focus:ring-primary"
-                  }`}
+                  className={`w-full rounded-lg border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${errors.suffix
+                    ? "border-destructive focus:ring-destructive"
+                    : "border-border focus:ring-primary"
+                    }`}
                 />
 
                 <div className="mt-2 min-h-[20px]">
@@ -250,24 +250,27 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                       value={newUser}
                       onChange={(e) => setNewUser(e.target.value)}
                       onBlur={(e) => {
-                        void validateUsername(e.target.value);
+                        const username = githubUsername(e.target.value, suffix);
+                        if (username !== e.target.value) {
+                          setNewUser(username);
+                        }
+                        void validateUsername(username);
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
                       placeholder="Enter username"
-                      className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
-                        usernameValidationError
-                          ? "border-destructive focus:ring-destructive"
-                          : "border-border focus:ring-primary"
-                      }`}
+                      className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${usernameValidationError
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-border focus:ring-primary"
+                        }`}
                     />
-                    
+
                     {isValidatingUsername && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       </div>
                     )}
                   </div>
-                  
+
                   <button
                     onClick={handleAddUser}
                     disabled={!isUsernameValid || isValidatingUsername || !newUser.trim()}
@@ -278,7 +281,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                     <Plus className="h-5 w-5" />
                   </button>
                 </div>
-                
+
                 <div className="mt-2 min-h-[20px]">
                   {usernameValidationError ? (
                     <p className="text-xs text-destructive">

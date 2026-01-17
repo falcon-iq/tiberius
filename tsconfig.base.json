@@ -23,17 +23,17 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@libs/shared/hooks": [
-        "libs/shared/hooks/src/index.ts"
+      "@libs/shared/hooks/*": [
+        "libs/shared/hooks/src/*"
       ],
-      "@libs/shared/ui": [
-        "libs/shared/ui/src/index.ts"
+      "@libs/shared/ui/*": [
+        "libs/shared/ui/src/*"
       ],
-      "@libs/shared/utils": [
-        "libs/shared/utils/src/index.ts"
+      "@libs/shared/utils/*": [
+        "libs/shared/utils/src/*"
       ],
-      "@libs/shared/validations": [
-        "libs/shared/validations/src/index.ts"
+      "@libs/shared/validations/*": [
+        "libs/shared/validations/src/*"
       ],
       "@libs/integrations/github": [
         "libs/integrations/github/src/index.ts"

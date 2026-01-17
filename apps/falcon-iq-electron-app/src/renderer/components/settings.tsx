@@ -1,10 +1,10 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Modal } from "@libs/shared/ui";
+import { Modal } from "@libs/shared/ui/modal/modal";
 import { useForm } from "react-hook-form";
 import { validateGitHubToken, type ValidateTokenResult } from "@libs/integrations/github/auth";
 import { Loader2 } from "lucide-react";
-import { useAsyncValidation } from '@libs/shared/hooks';
+import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 
 interface SettingsFormData {
   pat: string;
