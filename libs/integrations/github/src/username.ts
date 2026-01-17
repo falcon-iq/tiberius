@@ -27,24 +27,24 @@ export const githubUsername = (username: string, suffix: string): string => {
     }
 
     // Validate username
-    const trimmedUsername = username.trim();
-    if (!trimmedUsername) {
+    const trimmedLowercaseUsername = username.trim().toLowerCase();
+    if (!trimmedLowercaseUsername) {
         throw new Error('Username is required and cannot be empty');
     }
 
     // If username already ends with suffix, return as-is
-    if (trimmedUsername.endsWith(trimmedSuffix)) {
-        return trimmedUsername;
+    if (trimmedLowercaseUsername.endsWith(trimmedSuffix.toLowerCase())) {
+        return trimmedLowercaseUsername;
     }
 
     // Check if suffix appears in the middle (likely malformed)
-    if (trimmedUsername.includes(trimmedSuffix)) {
+    if (trimmedLowercaseUsername.includes(trimmedSuffix)) {
         throw new Error(
-            `Username "${trimmedUsername}" contains suffix "${trimmedSuffix}" in an incorrect position. ` +
+            `Username "${trimmedLowercaseUsername}" contains suffix "${trimmedSuffix}" in an incorrect position. ` +
             `Suffix must only appear at the end.`
         );
     }
 
     // Append suffix
-    return `${trimmedUsername}_${trimmedSuffix}`;
+    return `${trimmedLowercaseUsername}_${trimmedSuffix}`;
 };
