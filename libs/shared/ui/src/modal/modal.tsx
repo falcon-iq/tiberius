@@ -26,6 +26,9 @@ export interface ModalProps {
   /** If true, pressing Escape closes the modal (default true). */
   closeOnEscape?: boolean;
 
+  /** If true, shows the X close button in the top right (default true). */
+  showCloseButton?: boolean;
+
   /** Optional: focus this element (by id) when modal opens */
   initialFocusId?: string;
 }
@@ -38,14 +41,21 @@ export function Modal({
   size = "md",
   closeOnBackdrop = true,
   closeOnEscape = true,
+  showCloseButton = true,
   initialFocusId,
 }: ModalProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const lastActiveElementRef = useRef<HTMLElement | null>(null);
 
+  // NEW: ensure we only apply initial focus once per open
+  const didSetInitialFocusRef = useRef(false);
+
   useEffect(() => {
     if (!isOpen) return;
+
+    // Reset per-open flag
+    didSetInitialFocusRef.current = false;
 
     // Save focus so we can restore it on close
     lastActiveElementRef.current = document.activeElement as HTMLElement | null;
@@ -56,43 +66,48 @@ export function Modal({
         onClose();
       }
 
-      // Focus trap: Tab key handling
       if (e.key === 'Tab' && panelRef.current) {
         const focusableElements = panelRef.current.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
+
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
+        if (!firstElement || !lastElement) return;
+
         if (e.shiftKey && document.activeElement === firstElement) {
           e.preventDefault();
-          lastElement?.focus();
+          lastElement.focus();
         } else if (!e.shiftKey && document.activeElement === lastElement) {
           e.preventDefault();
-          firstElement?.focus();
+          firstElement.focus();
         }
       }
     };
 
     document.addEventListener('keydown', onKeyDown);
 
-    // Lock background scroll
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Focus management: focus initial target, else focus panel
+    // Focus initial target ONCE per open
     queueMicrotask(() => {
+      if (!isOpen) return;
+      if (didSetInitialFocusRef.current) return;
+
+      didSetInitialFocusRef.current = true;
+
       const el =
         (initialFocusId ? document.getElementById(initialFocusId) : null) ??
         panelRef.current;
+
       el?.focus();
     });
 
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = prevOverflow;
-
-      // Restore focus
       lastActiveElementRef.current?.focus();
     };
   }, [isOpen, onClose, closeOnEscape, initialFocusId]);
@@ -129,14 +144,16 @@ export function Modal({
             <span />
           )}
 
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label="Close"
-            type="button"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {showCloseButton && (
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Close"
+              type="button"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         {children}

@@ -1,7 +1,7 @@
 // libs/integrations/github/src/lib/types/index.ts
 
-import type { LogLevel } from '@libs/shared/utils';
-import type { IsoDate } from '@libs/shared/validations';
+import type { LogLevel } from '@libs/shared/utils/logger';
+import type { IsoDate } from '@libs/shared/validations/date';
 
 export type { IsoDate };
 
