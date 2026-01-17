@@ -38,7 +38,7 @@ const App = () => {
     <>
       <RouterProvider router={router} />
       {/* TEMPORARY: Wizard for testing - remove after testing */}
-      <OnboardingWizard isOpen={showWizard} onComplete={handleWizardComplete} />
+      {/* <OnboardingWizard isOpen={showWizard} onComplete={handleWizardComplete} /> */}
     </>
   );
 };
