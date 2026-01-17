@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getLogger } from '@libs/shared/utils';
+import { getLogger } from '@libs/shared/utils/logger';
 
 const logger = getLogger({ name: 'use-async-validation' });
 

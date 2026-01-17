@@ -32,23 +32,20 @@
     ],
     // Path mappings (note: paths don't merge from extends, so we must include shared paths here)
     "paths": {
-      "@libs/shared/hooks": [
-        "../../libs/shared/hooks/src/index.ts"
+      "@libs/shared/hooks/*": [
+        "../../libs/shared/hooks/src/*"
       ],
-      "@libs/shared/ui": [
-        "../../libs/shared/ui/src/index.ts"
+      "@libs/shared/ui/*": [
+        "../../libs/shared/ui/src/*"
       ],
-      "@libs/shared/utils": [
-        "../../libs/shared/utils/src/index.ts"
+      "@libs/shared/utils/*": [
+        "../../libs/shared/utils/src/*"
       ],
-      "@libs/shared/validations": [
-        "../../libs/shared/validations/src/index.ts"
+      "@libs/shared/validations/*": [
+        "../../libs/shared/validations/src/*"
       ],
-      "@libs/integrations/github": [
-        "../../libs/integrations/github/src/index.ts"
-      ],
-      "@libs/integrations/github/auth": [
-        "../../libs/integrations/github/src/auth.ts"
+      "@libs/integrations/github/*": [
+        "../../libs/integrations/github/src/*"
       ],
       "@styles/*": [
         "src/renderer/styles/*"
@@ -65,21 +62,6 @@
       "@generatedtypes/*": [
         "src/renderer/types/*"
       ],
-      "@utils/*": [
-        "src/renderer/utils/*"
-      ],
-      "@hooks/*": [
-        "src/renderer/hooks/*"
-      ],
-      "@contexts/*": [
-        "src/renderer/contexts/*"
-      ],
-      "@services/*": [
-        "src/renderer/services/*"
-      ],
-      "@assets/*": [
-        "src/renderer/assets/*"
-      ]
     }
   },
   "include": [
