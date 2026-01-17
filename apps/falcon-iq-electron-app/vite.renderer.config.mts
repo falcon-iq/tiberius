@@ -24,7 +24,7 @@ export default defineConfig({
     alias: {
       '@libs/shared/utils': resolve(__dirname, '../../libs/shared/utils/src/index.ts'),
       '@libs/shared/validations': resolve(__dirname, '../../libs/shared/validations/src/index.ts'),
-      '@libs/integrations/github/auth': resolve(__dirname, '../../libs/integrations/github/src/lib/auth.ts'),
+      '@libs/integrations/github/auth': resolve(__dirname, '../../libs/integrations/github/src/auth.ts'),
     },
   },
 });

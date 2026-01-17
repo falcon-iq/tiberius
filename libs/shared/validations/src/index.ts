@@ -1,1 +1,1 @@
-export { validateIsoDate, type IsoDate } from './lib/date';
+export { validateIsoDate, type IsoDate } from './date';

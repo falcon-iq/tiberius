@@ -1,4 +1,4 @@
-export * from "./lib/prs";
-export { FsPrStorage } from "./lib/prs.fs-storage";
-export { MemoryPrStorage } from "./lib/prs.memory-storage";
-export * from "./lib/auth";
+export * from "./prs";
+export { FsPrStorage } from "./prs.fs-storage";
+export { MemoryPrStorage } from "./prs.memory-storage";
+export * from "./auth";

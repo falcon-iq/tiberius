@@ -1,1 +1,1 @@
-export * from './lib/modal/index';
+export * from './modal/index';
