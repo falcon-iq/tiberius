@@ -97,7 +97,7 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared/utils"
+      "path": "../../libs/shared/hooks"
     },
     {
       "path": "../../libs/shared/ui"
