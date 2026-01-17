@@ -9,6 +9,7 @@ export default {
   coverageDirectory: '../../../coverage/libs/shared/hooks',
   moduleNameMapper: {
     '^@libs/shared/hooks$': '<rootDir>/src/index.ts',
-    '^@libs/shared/utils$': '<rootDir>/../../utils/src/index.ts',
+    '^@libs/shared/utils/logger$': '<rootDir>/../utils/src/logger.ts',
+    '^@libs/shared/utils$': '<rootDir>/../utils/src/index.ts',
   },
 };

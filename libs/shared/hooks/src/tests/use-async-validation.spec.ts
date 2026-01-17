@@ -2,15 +2,15 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useAsyncValidation, type ValidationResult } from '../use-async-validation';
 
 describe('useAsyncValidation', () => {
-  const mockSuccessValidator = jest.fn(async (value: string): Promise<ValidationResult> => {
+  const mockSuccessValidator = jest.fn(async (value: string, ctx: { signal: AbortSignal }): Promise<ValidationResult> => {
     return { valid: true };
   });
 
-  const mockFailureValidator = jest.fn(async (value: string): Promise<ValidationResult> => {
+  const mockFailureValidator = jest.fn(async (value: string, ctx: { signal: AbortSignal }): Promise<ValidationResult> => {
     return { valid: false, error: 'Invalid value' };
   });
 
-  const mockThrowingValidator = jest.fn(async (value: string): Promise<ValidationResult> => {
+  const mockThrowingValidator = jest.fn(async (value: string, ctx: { signal: AbortSignal }): Promise<ValidationResult> => {
     throw new Error('Network error');
   });
 
@@ -36,7 +36,7 @@ describe('useAsyncValidation', () => {
         expect(result.current.validationError).toBe('');
       });
 
-      expect(mockSuccessValidator).toHaveBeenCalledWith('test-value');
+      expect(mockSuccessValidator).toHaveBeenCalledWith('test-value', expect.objectContaining({ signal: expect.any(AbortSignal) }));
       expect(mockSuccessValidator).toHaveBeenCalledTimes(1);
     });
 
@@ -54,7 +54,7 @@ describe('useAsyncValidation', () => {
         expect(result.current.validationError).toBe('Invalid value');
       });
 
-      expect(mockFailureValidator).toHaveBeenCalledWith('bad-value');
+      expect(mockFailureValidator).toHaveBeenCalledWith('bad-value', expect.objectContaining({ signal: expect.any(AbortSignal) }));
     });
 
     it('should handle exceptions with fallback message', async () => {
@@ -89,9 +89,11 @@ describe('useAsyncValidation', () => {
       // Then validate empty string
       await result.current.validate('');
 
-      expect(result.current.isValid).toBe(false);
-      expect(result.current.validationError).toBe('');
-      expect(result.current.isValidating).toBe(false);
+      await waitFor(() => {
+        expect(result.current.isValid).toBe(false);
+        expect(result.current.validationError).toBe('');
+        expect(result.current.isValidating).toBe(false);
+      });
     });
 
     it('should trim whitespace', async () => {
@@ -107,7 +109,7 @@ describe('useAsyncValidation', () => {
         expect(result.current.isValid).toBe(true);
       });
 
-      expect(mockSuccessValidator).toHaveBeenCalledWith('test-value');
+      expect(mockSuccessValidator).toHaveBeenCalledWith('test-value', expect.objectContaining({ signal: expect.any(AbortSignal) }));
     });
   });
 
@@ -142,16 +144,20 @@ describe('useAsyncValidation', () => {
       await result.current.validate('value2');
       await waitFor(() => expect(mockSuccessValidator).toHaveBeenCalledTimes(2));
 
-      expect(mockSuccessValidator).toHaveBeenNthCalledWith(1, 'value1');
-      expect(mockSuccessValidator).toHaveBeenNthCalledWith(2, 'value2');
+      expect(mockSuccessValidator).toHaveBeenNthCalledWith(1, 'value1', expect.objectContaining({ signal: expect.any(AbortSignal) }));
+      expect(mockSuccessValidator).toHaveBeenNthCalledWith(2, 'value2', expect.objectContaining({ signal: expect.any(AbortSignal) }));
     });
   });
 
   describe('re-entrancy protection', () => {
-    it('should prevent concurrent validations', async () => {
+    it('should cancel previous validation when new one starts', async () => {
       const slowValidator = jest.fn(
-        async (value: string): Promise<ValidationResult> => {
+        async (value: string, ctx: { signal: AbortSignal }): Promise<ValidationResult> => {
           await new Promise((resolve) => setTimeout(resolve, 100));
+          // Check if aborted during the delay
+          if (ctx.signal.aborted) {
+            throw new Error('Aborted');
+          }
           return { valid: true };
         }
       );
@@ -166,13 +172,15 @@ describe('useAsyncValidation', () => {
       void result.current.validate('value1');
 
       // Immediately try second validation while first is still running
+      // This should abort the first and start the second
       await result.current.validate('value2');
 
       await waitFor(() => expect(result.current.isValid).toBe(true));
 
-      // Should only have been called once
-      expect(slowValidator).toHaveBeenCalledTimes(1);
-      expect(slowValidator).toHaveBeenCalledWith('value1');
+      // Both will be called, but the first will be aborted
+      expect(slowValidator).toHaveBeenCalledTimes(2);
+      expect(slowValidator).toHaveBeenNthCalledWith(1, 'value1', expect.objectContaining({ signal: expect.any(AbortSignal) }));
+      expect(slowValidator).toHaveBeenNthCalledWith(2, 'value2', expect.objectContaining({ signal: expect.any(AbortSignal) }));
     });
   });
 
@@ -267,9 +275,11 @@ describe('useAsyncValidation', () => {
       // Reset
       result.current.reset();
 
-      expect(result.current.isValid).toBe(false);
-      expect(result.current.validationError).toBe('');
-      expect(result.current.isValidating).toBe(false);
+      await waitFor(() => {
+        expect(result.current.isValid).toBe(false);
+        expect(result.current.validationError).toBe('');
+        expect(result.current.isValidating).toBe(false);
+      });
     });
 
     it('should allow re-validating same value after reset', async () => {
