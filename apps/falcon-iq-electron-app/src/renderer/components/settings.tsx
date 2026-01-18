@@ -149,7 +149,7 @@ export const Settings = () => {
             htmlFor="suffix"
             className="mb-2 block text-sm font-medium text-foreground"
           >
-            Suffix
+            Company Suffix
           </label>
 
           <input
@@ -159,7 +159,7 @@ export const Settings = () => {
               required: "Suffix is required",
               validate: (value) => value.trim().length > 0 || "Suffix cannot be empty"
             })}
-            placeholder="Enter suffix"
+            placeholder="Enter company suffix"
             className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${errors.suffix
               ? "border-destructive focus:ring-destructive"
               : "border-border focus:ring-primary"

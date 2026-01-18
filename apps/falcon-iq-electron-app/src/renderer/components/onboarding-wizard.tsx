@@ -195,7 +195,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
               {/* Suffix Field */}
               <div>
                 <label htmlFor="wizard-suffix" className="mb-2 block text-sm font-medium text-foreground">
-                  Suffix
+                  Company Suffix
                 </label>
 
                 <input
@@ -206,7 +206,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                     validate: (value) => value.trim().length > 0 || "Suffix cannot be empty"
                   })}
                   onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                  placeholder="Enter suffix"
+                  placeholder="Enter company suffix"
                   className={`w-full rounded-lg border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${errors.suffix
                     ? "border-destructive focus:ring-destructive"
                     : "border-border focus:ring-primary"
