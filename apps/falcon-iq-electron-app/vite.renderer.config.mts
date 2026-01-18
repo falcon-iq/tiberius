@@ -22,7 +22,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@libs/shared/utils': resolve(__dirname, '../../libs/shared/utils/src'),
+      '@libs/shared': resolve(__dirname, '../../libs/shared/src'),
     },
   },
 });

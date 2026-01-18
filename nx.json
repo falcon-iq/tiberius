@@ -54,7 +54,8 @@
   },
   "projectGlobPatterns": [
     "apps/*",
-    "libs/*"
+    "libs/*",
+    "libs/shared/src/*"
   ],
   "targetDefaults": {
     "test": {

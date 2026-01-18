@@ -122,10 +122,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
 /* Scan shared UI library for Tailwind classes - must be AFTER @theme */
-@source "../../../../../libs/shared/ui";
+@source "../../../../../libs/shared/src/ui";

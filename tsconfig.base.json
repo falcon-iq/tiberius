@@ -23,17 +23,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@libs/shared/hooks/*": [
-        "libs/shared/hooks/src/*"
-      ],
-      "@libs/shared/ui/*": [
-        "libs/shared/ui/src/*"
-      ],
-      "@libs/shared/utils/*": [
-        "libs/shared/utils/src/*"
-      ],
-      "@libs/shared/validations/*": [
-        "libs/shared/validations/src/*"
+      "@libs/shared/*": [
+        "libs/shared/src/*"
       ],
       "@libs/integrations/github": [
         "libs/integrations/github/src/index.ts"
