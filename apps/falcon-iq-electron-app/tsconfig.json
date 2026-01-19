@@ -70,10 +70,7 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared/src/hooks"
-    },
-    {
-      "path": "../../libs/shared/src/ui"
+      "path": "../../libs/shared"
     }
   ]
 }

@@ -10,6 +10,11 @@ target
 libs/**/*.js
 libs/**/*.js.map
 !libs/**/jest.preset.js
+!libs/**/jest.config.js
+
+# TypeScript declaration files (build artifacts)
+libs/**/*.d.ts
+libs/**/*.d.ts.map
 
 # dependencies
 node_modules

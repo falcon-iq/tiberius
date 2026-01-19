@@ -14,7 +14,6 @@ interface OnboardingWizardProps {
 
 interface Step1FormData {
   pat: string;
-  suffix: string;
 }
 
 export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) => {
@@ -22,21 +21,27 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   const [users, setUsers] = useState<string[]>([]);
   const [newUser, setNewUser] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
 
-  // React Hook Form for Step 1 (PAT + Suffix)
-  const { register, watch, formState: { errors } } = useForm<Step1FormData>({
-    defaultValues: { pat: "", suffix: "" },
+  // React Hook Form for Step 1 (PAT only, suffix is auto-detected)
+  const { register, watch } = useForm<Step1FormData>({
+    defaultValues: { pat: "" },
     mode: "onBlur", // Validate on blur
   });
 
   const pat = watch("pat");
-  const suffix = watch("suffix");
 
   // Use the async validation hook for PAT
   const { validate, isValidating, validationError, isValid } = useAsyncValidation({
     validator: validateGitHubToken,
     extractErrorMessage: (result: ValidateTokenResult) => result.error ?? "Invalid GitHub token",
-    fallbackErrorMessage: "Failed to validate token. Please check your connection."
+    fallbackErrorMessage: "Failed to validate token. Please check your connection.",
+    onSuccess: (result: ValidateTokenResult) => {
+      setTokenMetadata(result);
+    },
+    onError: () => {
+      setTokenMetadata(null);
+    }
   });
 
   // Use the async validation hook for GitHub username
@@ -93,10 +98,10 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   }, [users]);
 
   const handleNext = useCallback(() => {
-    if (step === 1 && isValid && !isValidating && suffix.trim().length > 0) {
+    if (step === 1 && isValid && !isValidating) {
       setStep(2);
     }
-  }, [step, isValid, isValidating, suffix]);
+  }, [step, isValid, isValidating]);
 
   const handleComplete = useCallback(() => {
     if (users.length > 0) {
@@ -192,41 +197,40 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                 </div>
               </div>
 
-              {/* Suffix Field */}
-              <div>
-                <label htmlFor="wizard-suffix" className="mb-2 block text-sm font-medium text-foreground">
-                  Company Suffix
-                </label>
-
-                <input
-                  id="wizard-suffix"
-                  type="text"
-                  {...register("suffix", {
-                    required: "Suffix is required",
-                    validate: (value) => value.trim().length > 0 || "Suffix cannot be empty"
-                  })}
-                  onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                  placeholder="Enter company suffix"
-                  className={`w-full rounded-lg border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${errors.suffix
-                    ? "border-destructive focus:ring-destructive"
-                    : "border-border focus:ring-primary"
-                    }`}
-                />
-
-                <div className="mt-2 min-h-[20px]">
-                  {errors.suffix ? (
-                    <p className="text-xs text-destructive">
-                      {errors.suffix.message}
-                    </p>
-                  ) : null}
+              {/* EMU Status Display */}
+              {isValid && tokenMetadata && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">
+                    Enterprise Managed User (EMU) Status
+                  </label>
+                  <div className={`px-4 py-3 rounded-lg border ${
+                    tokenMetadata.emu 
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
+                      : 'bg-muted border-border'
+                  }`}>
+                    {tokenMetadata.emu && tokenMetadata.emu_suffix ? (
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                          ✓ EMU User Detected
+                        </p>
+                        <p className="text-sm text-foreground">
+                          Company Suffix: <span className="font-mono font-semibold">{tokenMetadata.emu_suffix}</span>
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Not an EMU user
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="flex justify-end">
               <button
                 onClick={handleNext}
-                disabled={!isValid || isValidating || !!errors.suffix || suffix.trim().length === 0}
+                disabled={!isValid || isValidating}
                 className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
               >
@@ -250,7 +254,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                       value={newUser}
                       onChange={(e) => setNewUser(e.target.value)}
                       onBlur={(e) => {
-                        const username = githubUsername(e.target.value, suffix);
+                        const username = githubUsername(e.target.value, tokenMetadata?.emu_suffix || '');
                         if (username !== e.target.value) {
                           setNewUser(username);
                         }

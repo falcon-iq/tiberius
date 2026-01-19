@@ -17,10 +17,7 @@
   ],
   "references": [
     {
-      "path": "../../shared/src/validations/tsconfig.json"
-    },
-    {
-      "path": "../../shared/src/utils/tsconfig.json"
+      "path": "../../shared"
     }
   ]
 }

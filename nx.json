@@ -22,26 +22,6 @@
   "nxCloudId": "68e951a5773504607e80d0e5",
   "plugins": [
     {
-      "plugin": "@nx/js/typescript",
-      "options": {
-        "typecheck": {
-          "targetName": "typecheck"
-        },
-        "build": {
-          "targetName": "build",
-          "configName": "tsconfig.lib.json",
-          "buildDepsName": "build-deps",
-          "watchDepsName": "watch-deps"
-        }
-      }
-    },
-    {
-      "plugin": "@nx/jest/plugin",
-      "options": {
-        "targetName": "test"
-      }
-    },
-    {
       "plugin": "@nx/eslint/plugin",
       "options": {
         "targetName": "lint"
@@ -54,8 +34,7 @@
   },
   "projectGlobPatterns": [
     "apps/*",
-    "libs/*",
-    "libs/shared/src/*"
+    "libs/*"
   ],
   "targetDefaults": {
     "test": {

@@ -16,6 +16,10 @@ export interface ValidateTokenResult {
     error?: string;
     /** Token scopes/permissions (only present if valid) */
     scopes?: string[];
+    /** EMU true if it is an entrprise managed user (EMU) */
+    emu?: boolean;
+    /** EMU suffix if it is an entrprise managed user (EMU) */
+    emu_suffix?: string;
 }
 
 /**
@@ -44,6 +48,18 @@ export interface ValidateUserResult {
         type: string;
     };
 }
+
+const parseEmuSuffix = (login: string): string | undefined => {
+    const i = login.lastIndexOf('_');
+    if (i <= 0 || i === login.length - 1) return undefined;
+
+    const suffix = login.slice(i + 1);
+
+    // Heuristic validation: adjust to your reality
+    if (!/^[a-z0-9-]{2,20}$/i.test(suffix)) return undefined;
+
+    return suffix;
+};
 
 /**
  * Validates a GitHub Personal Access Token (PAT) by attempting to authenticate
@@ -91,10 +107,16 @@ export async function validateGitHubToken(
             ? scopesHeader.split(',').map((s) => s.trim()).filter(Boolean)
             : undefined;
 
+        // Check if the user is an entrprise managed user (EMU)
+        const emu = response.data?.plan?.name === 'emu_user' || false;
+        const emu_suffix = emu ? parseEmuSuffix(response.data.login) : undefined;
+
         return {
             valid: true,
             username: response.data.login,
             scopes,
+            emu,
+            emu_suffix,
         };
     } catch (error: unknown) {
         // Handle different error types
