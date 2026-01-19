@@ -67,5 +67,13 @@
     "node_modules",
     "dist",
     ".vite"
+  ],
+  "references": [
+    {
+      "path": "../../libs/shared/src/hooks"
+    },
+    {
+      "path": "../../libs/shared/src/ui"
+    }
   ]
 }

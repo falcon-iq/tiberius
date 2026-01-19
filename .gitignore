@@ -6,6 +6,11 @@ tmp
 out-tsc
 target
 
+# Transpiled JS files in libs (we use TS)
+libs/**/*.js
+libs/**/*.js.map
+!libs/**/jest.preset.js
+
 # dependencies
 node_modules
 
@@ -59,3 +64,8 @@ test-output
 # NX graph visualization
 /static
 project-graph.html
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
