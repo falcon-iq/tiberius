@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Modal } from '@libs/shared/ui/modal/modal';
 import { Plus, Trash2, Sun, Moon, Loader2 } from 'lucide-react';
 import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult } from '@libs/integrations/github/auth';
 import { githubUsername } from '@libs/integrations/github/username';
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
+import { useTheme } from '@libs/shared/hooks/use-theme';
 import { useForm } from 'react-hook-form';
 
 
@@ -20,9 +21,11 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   const [step, setStep] = useState(1);
   const [users, setUsers] = useState<string[]>([]);
   const [newUser, setNewUser] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
+
+  // Use shared theme hook instead of managing theme locally
+  const { isDarkMode, toggleTheme } = useTheme();
 
   // React Hook Form for Step 1 (PAT only, suffix is auto-detected)
   const { register, watch } = useForm<Step1FormData>({
@@ -57,34 +60,6 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
     extractErrorMessage: (result: ValidateUserResult) => result.error ?? "Invalid GitHub username",
     fallbackErrorMessage: "Failed to validate username. Please try again."
   });
-
-  // Initialize theme from system preference or localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-
-    setIsDarkMode(shouldBeDark);
-    if (shouldBeDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setIsDarkMode((prev) => {
-      const newIsDark = !prev;
-      if (newIsDark) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      }
-      return newIsDark;
-    });
-  }, []);
 
   const handleAddUser = useCallback(() => {
     const trimmedUser = newUser.trim();

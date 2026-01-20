@@ -3,26 +3,14 @@ import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import NavigationSidebar from '@components/navigation-side-bar';
 import MainWorkArea from '@components/main-work-area';
 import AgentSidebar from '@components/agent-side-bar';
-import { useState, useEffect } from 'react';
+import { useTheme } from '@libs/shared/hooks/use-theme';
 
 export const Route = createRootRoute({
   component: RootLayout,
 });
 
 function RootLayout() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <>
