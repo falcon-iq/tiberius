@@ -14,4 +14,8 @@ module.exports = {
     '<rootDir>/src/**/tests/**/*.spec.ts',
     '<rootDir>/src/**/tests/**/*.spec.tsx',
   ],
+  // Suppress console output during tests to reduce noise
+  silent: false,
+  // Configure to suppress specific log levels (optional)
+  setupFilesAfterEnv: ['<rootDir>/../../jest.setup.js'],
 };

@@ -42,7 +42,7 @@ describe('useTheme', () => {
 
   it('should throw error when used outside ThemeProvider', () => {
     // Suppress console.error for this test
-    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(jest.fn());
 
     expect(() => {
       renderHook(() => useTheme());
