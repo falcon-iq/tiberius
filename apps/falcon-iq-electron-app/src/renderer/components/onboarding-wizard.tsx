@@ -63,24 +63,29 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
 
   const handleAddUser = useCallback(() => {
     const trimmedUser = newUser.trim();
-    const isDuplicate = users.some(user => user.toLowerCase() === trimmedUser.toLowerCase());
-    
-    if (isDuplicate && trimmedUser) {
-      setDuplicateError(`"${trimmedUser}" has already been added`);
-      return;
-    }
-    
+
     if (trimmedUser && isUsernameValid && !isValidatingUsername) {
-      setUsers([...users, trimmedUser]);
+      setUsers(prev => {
+        // Check for duplicates using the current state
+        const isDuplicate = prev.some(user => user.toLowerCase() === trimmedUser.toLowerCase());
+
+        if (isDuplicate) {
+          setDuplicateError(`"${trimmedUser}" has already been added`);
+          return prev; // Return unchanged state
+        }
+
+        // Clear error and add new user
+        setDuplicateError(null);
+        return [...prev, trimmedUser];
+      });
       setNewUser('');
-      setDuplicateError(null);
       resetUsernameValidation(); // Clear validation state for next user
     }
-  }, [newUser, users, isUsernameValid, isValidatingUsername, resetUsernameValidation]);
+  }, [newUser, isUsernameValid, isValidatingUsername, resetUsernameValidation]);
 
   const handleRemoveUser = useCallback((userToRemove: string) => {
-    setUsers(users.filter((user) => user !== userToRemove));
-  }, [users]);
+    setUsers(prev => prev.filter((user) => user !== userToRemove));
+  }, []);
 
   const handleNext = useCallback(() => {
     if (step === 1 && isValid && !isValidating) {
@@ -188,11 +193,10 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                   <label className="block text-sm font-medium text-foreground">
                     Enterprise Managed User (EMU) Status
                   </label>
-                  <div className={`px-4 py-3 rounded-lg border ${
-                    tokenMetadata.emu 
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-                      : 'bg-muted border-border'
-                  }`}>
+                  <div className={`px-4 py-3 rounded-lg border ${tokenMetadata.emu
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                    : 'bg-muted border-border'
+                    }`}>
                     {tokenMetadata.emu && tokenMetadata.emu_suffix ? (
                       <div className="space-y-1">
                         <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
@@ -292,9 +296,9 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                 {users.length === 0 && (
                   <p className="py-8 text-center text-sm text-muted-foreground">No team members added yet</p>
                 )}
-                {users.map((user) => (
+                {users.map((user, index) => (
                   <div
-                    key={user}
+                    key={index}
                     className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3"
                   >
                     <span className="text-sm text-foreground">{user}</span>
