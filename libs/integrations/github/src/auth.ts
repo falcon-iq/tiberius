@@ -3,6 +3,7 @@
 // GitHub Personal Access Token (PAT) validation utilities
 
 import { Octokit } from 'octokit';
+import { parseEmuSuffix } from './username';
 
 /**
  * Result of GitHub token validation
@@ -48,18 +49,6 @@ export interface ValidateUserResult {
         type: string;
     };
 }
-
-const parseEmuSuffix = (login: string): string | undefined => {
-    const i = login.lastIndexOf('_');
-    if (i <= 0 || i === login.length - 1) return undefined;
-
-    const suffix = login.slice(i + 1);
-
-    // Heuristic validation: adjust to your reality
-    if (!/^[a-z0-9-]{2,20}$/i.test(suffix)) return undefined;
-
-    return suffix;
-};
 
 /**
  * Validates a GitHub Personal Access Token (PAT) by attempting to authenticate

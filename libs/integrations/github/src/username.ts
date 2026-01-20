@@ -25,9 +25,9 @@ export const githubUsername = (username: string, suffix: string): string => {
     if (!trimmedSuffix) {
         throw new Error('Suffix is required and cannot be empty');
     }
-
-    // Validate username
     const trimmedLowercaseUsername = username.trim().toLowerCase();
+
+    // Validate non empty username
     if (!trimmedLowercaseUsername) {
         throw new Error('Username is required and cannot be empty');
     }
@@ -47,4 +47,22 @@ export const githubUsername = (username: string, suffix: string): string => {
 
     // Append suffix
     return `${trimmedLowercaseUsername}_${trimmedSuffix}`;
+};
+
+/**
+ * Parses the suffix from a GitHub username if it is an entrprise managed user (EMU).
+ * 
+ * @param username - The GitHub username to parse
+ * @returns The suffix if it is an entrprise managed user (EMU)
+ */
+export const parseEmuSuffix = (username: string): string | undefined => {
+    const i = username.lastIndexOf('_');
+    if (i <= 0 || i === username.length - 1) return undefined;
+
+    const suffix = username.slice(i + 1);
+
+    // Heuristic validation: adjust to your reality
+    if (!/^[a-z0-9-]{2,20}$/i.test(suffix)) return undefined;
+
+    return suffix;
 };

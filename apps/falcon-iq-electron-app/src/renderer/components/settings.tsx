@@ -9,16 +9,16 @@ import { githubUsername } from '@libs/integrations/github/username';
 
 interface SettingsFormData {
   pat: string;
-  suffix: string;
 }
 
 export const Settings = () => {
   const router = useRouter();
   const [users, setUsers] = useState<string[]>([]);
   const [newUser, setNewUser] = useState('');
+  const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
 
-  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<SettingsFormData>({
-    defaultValues: { pat: "", suffix: "" },
+  const { register, handleSubmit, setValue, getValues } = useForm<SettingsFormData>({
+    defaultValues: { pat: "" },
     mode: "onBlur", // Validate on blur instead of only on submit
   });
 
@@ -26,7 +26,13 @@ export const Settings = () => {
   const { validate, isValidating, validationError, isValid } = useAsyncValidation({
     validator: validateGitHubToken,
     extractErrorMessage: (result: ValidateTokenResult) => result.error ?? "Invalid GitHub token",
-    fallbackErrorMessage: "Failed to validate token. Please check your connection."
+    fallbackErrorMessage: "Failed to validate token. Please check your connection.",
+    onSuccess: (result: ValidateTokenResult) => {
+      setTokenMetadata(result);
+    },
+    onError: () => {
+      setTokenMetadata(null);
+    }
   });
 
   // Use the async validation hook for GitHub username
@@ -47,11 +53,14 @@ export const Settings = () => {
 
   useEffect(() => {
     const storedPat = localStorage.getItem("manager_buddy_pat") ?? "";
-    const storedSuffix = localStorage.getItem("manager_buddy_suffix") ?? "";
     const storedUsers = localStorage.getItem("manager_buddy_users");
 
     setValue("pat", storedPat);
-    setValue("suffix", storedSuffix);
+
+    // Validate the stored PAT to get metadata
+    if (storedPat) {
+      void validate(storedPat);
+    }
 
     if (storedUsers) {
       try {
@@ -62,7 +71,7 @@ export const Settings = () => {
         setUsers([]);
       }
     }
-  }, [setValue]);
+  }, [setValue]); // Only setValue is needed - validate is intentionally omitted to run only on mount
 
   const handleClose = useCallback(() => {
     router.history.back();
@@ -82,7 +91,6 @@ export const Settings = () => {
 
   const onSubmit = (data: SettingsFormData) => {
     localStorage.setItem("manager_buddy_pat", data.pat);
-    localStorage.setItem("manager_buddy_suffix", data.suffix);
     localStorage.setItem("manager_buddy_users", JSON.stringify(users));
     handleClose();
   };
@@ -143,37 +151,33 @@ export const Settings = () => {
           </div>
         </div>
 
-        {/* Suffix */}
-        <div>
-          <label
-            htmlFor="suffix"
-            className="mb-2 block text-sm font-medium text-foreground"
-          >
-            Company Suffix
-          </label>
-
-          <input
-            id="suffix"
-            type="text"
-            {...register("suffix", {
-              required: "Suffix is required",
-              validate: (value) => value.trim().length > 0 || "Suffix cannot be empty"
-            })}
-            placeholder="Enter company suffix"
-            className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${errors.suffix
-              ? "border-destructive focus:ring-destructive"
-              : "border-border focus:ring-primary"
-              }`}
-          />
-
-          <div className="mt-1 min-h-[16px]">
-            {errors.suffix ? (
-              <p className="text-xs text-destructive">
-                {errors.suffix.message}
-              </p>
-            ) : null}
+        {/* EMU Status Display */}
+        {isValid && tokenMetadata && (
+          <div>
+            <label className="mb-2 block text-sm font-medium text-foreground">
+              Enterprise Managed User (EMU) Status
+            </label>
+            <div className={`px-4 py-3 rounded-lg border ${tokenMetadata.emu
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                : 'bg-muted border-border'
+              }`}>
+              {tokenMetadata.emu && tokenMetadata.emu_suffix ? (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    ✓ EMU User Detected
+                  </p>
+                  <p className="text-sm text-foreground">
+                    Company Suffix: <span className="font-mono font-semibold">{tokenMetadata.emu_suffix}</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Not an EMU user
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Team Members */}
         <div>
@@ -192,8 +196,7 @@ export const Settings = () => {
                 value={newUser}
                 onChange={(e) => setNewUser(e.target.value)}
                 onBlur={(e) => {
-                  const currentSuffix = getValues("suffix");
-                  const username = githubUsername(e.target.value, currentSuffix);
+                  const username = githubUsername(e.target.value, tokenMetadata?.emu_suffix || '');
                   if (username !== e.target.value) {
                     setNewUser(username);
                   }
