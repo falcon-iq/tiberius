@@ -12,9 +12,11 @@ libs/**/*.js.map
 !libs/**/jest.preset.js
 !libs/**/jest.config.js
 
-# TypeScript declaration files (build artifacts)
+# TypeScript
 libs/**/*.d.ts
 libs/**/*.d.ts.map
+*.tsbuildinfo
+tsconfig.tsbuildinfo
 
 # dependencies
 node_modules
@@ -69,8 +71,5 @@ test-output
 # NX graph visualization
 /static
 project-graph.html
-
-# TypeScript incremental build cache
-*.tsbuildinfo
-tsconfig.tsbuildinfo
-
+project-graph.json
+nx-graph.html

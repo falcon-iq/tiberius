@@ -16,6 +16,7 @@ export const Settings = () => {
   const [users, setUsers] = useState<string[]>([]);
   const [newUser, setNewUser] = useState('');
   const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   const { register, handleSubmit, setValue, getValues } = useForm<SettingsFormData>({
     defaultValues: { pat: "" },
@@ -78,9 +79,18 @@ export const Settings = () => {
   }, [router]);
 
   const handleAddUser = useCallback(() => {
-    if (newUser.trim() && !users.includes(newUser.trim()) && isUsernameValid && !isValidatingUsername) {
-      setUsers([...users, newUser.trim()]);
+    const trimmedUser = newUser.trim();
+    const isDuplicate = users.some(user => user.toLowerCase() === trimmedUser.toLowerCase());
+
+    if (isDuplicate && trimmedUser) {
+      setDuplicateError(`"${trimmedUser}" has already been added`);
+      return;
+    }
+
+    if (trimmedUser && isUsernameValid && !isValidatingUsername) {
+      setUsers([...users, trimmedUser]);
       setNewUser('');
+      setDuplicateError(null);
       resetUsernameValidation(); // Clear validation state for next user
     }
   }, [newUser, users, isUsernameValid, isValidatingUsername, resetUsernameValidation]);
@@ -158,8 +168,8 @@ export const Settings = () => {
               Enterprise Managed User (EMU) Status
             </label>
             <div className={`px-4 py-3 rounded-lg border ${tokenMetadata.emu
-                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                : 'bg-muted border-border'
+              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+              : 'bg-muted border-border'
               }`}>
               {tokenMetadata.emu && tokenMetadata.emu_suffix ? (
                 <div className="space-y-1">
@@ -194,7 +204,10 @@ export const Settings = () => {
                 id="new-user"
                 type="text"
                 value={newUser}
-                onChange={(e) => setNewUser(e.target.value)}
+                onChange={(e) => {
+                  setNewUser(e.target.value);
+                  setDuplicateError(null);
+                }}
                 onBlur={(e) => {
                   const username = githubUsername(e.target.value, tokenMetadata?.emu_suffix || '');
                   if (username !== e.target.value) {
@@ -204,7 +217,7 @@ export const Settings = () => {
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddUser())}
                 placeholder="Enter username"
-                className={`w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${usernameValidationError
+                className={`w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${usernameValidationError || duplicateError
                   ? "border-destructive focus:ring-destructive"
                   : "border-border focus:ring-primary"
                   }`}
@@ -229,7 +242,11 @@ export const Settings = () => {
           </div>
 
           <div className="mt-1 min-h-[16px]">
-            {usernameValidationError ? (
+            {duplicateError ? (
+              <p className="text-xs text-destructive">
+                {duplicateError}
+              </p>
+            ) : usernameValidationError ? (
               <p className="text-xs text-destructive">
                 {usernameValidationError}
               </p>

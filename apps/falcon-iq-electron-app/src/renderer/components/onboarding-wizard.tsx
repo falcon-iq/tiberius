@@ -22,6 +22,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   const [newUser, setNewUser] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
 
   // React Hook Form for Step 1 (PAT only, suffix is auto-detected)
   const { register, watch } = useForm<Step1FormData>({
@@ -86,9 +87,18 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   }, []);
 
   const handleAddUser = useCallback(() => {
-    if (newUser.trim() && !users.includes(newUser.trim()) && isUsernameValid && !isValidatingUsername) {
-      setUsers([...users, newUser.trim()]);
+    const trimmedUser = newUser.trim();
+    const isDuplicate = users.some(user => user.toLowerCase() === trimmedUser.toLowerCase());
+    
+    if (isDuplicate && trimmedUser) {
+      setDuplicateError(`"${trimmedUser}" has already been added`);
+      return;
+    }
+    
+    if (trimmedUser && isUsernameValid && !isValidatingUsername) {
+      setUsers([...users, trimmedUser]);
       setNewUser('');
+      setDuplicateError(null);
       resetUsernameValidation(); // Clear validation state for next user
     }
   }, [newUser, users, isUsernameValid, isValidatingUsername, resetUsernameValidation]);
@@ -252,7 +262,10 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                       id="wizard-new-user"
                       type="text"
                       value={newUser}
-                      onChange={(e) => setNewUser(e.target.value)}
+                      onChange={(e) => {
+                        setNewUser(e.target.value);
+                        setDuplicateError(null);
+                      }}
                       onBlur={(e) => {
                         const username = githubUsername(e.target.value, tokenMetadata?.emu_suffix || '');
                         if (username !== e.target.value) {
@@ -262,7 +275,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
                       placeholder="Enter username"
-                      className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${usernameValidationError
+                      className={`w-full rounded-lg border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${usernameValidationError || duplicateError
                         ? "border-destructive focus:ring-destructive"
                         : "border-border focus:ring-primary"
                         }`}
@@ -287,7 +300,11 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                 </div>
 
                 <div className="mt-2 min-h-[20px]">
-                  {usernameValidationError ? (
+                  {duplicateError ? (
+                    <p className="text-xs text-destructive">
+                      {duplicateError}
+                    </p>
+                  ) : usernameValidationError ? (
                     <p className="text-xs text-destructive">
                       {usernameValidationError}
                     </p>

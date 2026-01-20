@@ -53,6 +53,21 @@
       "@generatedtypes/*": [
         "src/renderer/types/*"
       ],
+      "@utils/*": [
+        "src/renderer/utils/*"
+      ],
+      "@hooks/*": [
+        "src/renderer/hooks/*"
+      ],
+      "@contexts/*": [
+        "src/renderer/contexts/*"
+      ],
+      "@services/*": [
+        "src/renderer/services/*"
+      ],
+      "@assets/*": [
+        "src/renderer/assets/*"
+      ]
     }
   },
   "include": [
