@@ -32,11 +32,11 @@
     ],
     // Path mappings (note: paths don't merge from extends, so we must include shared paths here)
     "paths": {
-      "@libs/shared/ui": [
-        "../../libs/shared/ui/src/index.ts"
+      "@libs/shared/*": [
+        "../../libs/shared/src/*"
       ],
-      "@libs/integrations/github": [
-        "../../libs/integrations/github/src/index.ts"
+      "@libs/integrations/github/*": [
+        "../../libs/integrations/github/src/*"
       ],
       "@styles/*": [
         "src/renderer/styles/*"
@@ -85,7 +85,7 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared/ui"
+      "path": "../../libs/shared"
     }
   ]
 }
