@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 // Mock import.meta before importing the logger module
 // Jest doesn't support import.meta, so we need to handle it
 

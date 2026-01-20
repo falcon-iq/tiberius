@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAsyncValidation, type ValidationResult } from '../use-async-validation';
 
 describe('useAsyncValidation', () => {
@@ -29,7 +29,9 @@ describe('useAsyncValidation', () => {
       expect(result.current.isValid).toBe(false);
       expect(result.current.isValidating).toBe(false);
 
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
 
       await waitFor(() => {
         expect(result.current.isValid).toBe(true);
@@ -47,7 +49,9 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('bad-value');
+      await act(async () => {
+        await result.current.validate('bad-value');
+      });
 
       await waitFor(() => {
         expect(result.current.isValid).toBe(false);
@@ -65,7 +69,9 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
 
       await waitFor(() => {
         expect(result.current.isValid).toBe(false);
@@ -83,11 +89,15 @@ describe('useAsyncValidation', () => {
       );
 
       // First validate a value
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
       await waitFor(() => expect(result.current.isValid).toBe(true));
 
       // Then validate empty string
-      await result.current.validate('');
+      await act(async () => {
+        await result.current.validate('');
+      });
 
       await waitFor(() => {
         expect(result.current.isValid).toBe(false);
@@ -103,7 +113,9 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('  test-value  ');
+      await act(async () => {
+        await result.current.validate('  test-value  ');
+      });
 
       await waitFor(() => {
         expect(result.current.isValid).toBe(true);
@@ -121,11 +133,15 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
       await waitFor(() => expect(result.current.isValid).toBe(true));
 
       // Try to validate the same value again
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
 
       // Should still only be called once
       expect(mockSuccessValidator).toHaveBeenCalledTimes(1);
@@ -138,10 +154,14 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('value1');
+      await act(async () => {
+        await result.current.validate('value1');
+      });
       await waitFor(() => expect(result.current.isValid).toBe(true));
 
-      await result.current.validate('value2');
+      await act(async () => {
+        await result.current.validate('value2');
+      });
       await waitFor(() => expect(mockSuccessValidator).toHaveBeenCalledTimes(2));
 
       expect(mockSuccessValidator).toHaveBeenNthCalledWith(1, 'value1', expect.objectContaining({ signal: expect.any(AbortSignal) }));
@@ -169,11 +189,15 @@ describe('useAsyncValidation', () => {
       );
 
       // Start first validation
-      void result.current.validate('value1');
+      await act(async () => {
+        void result.current.validate('value1');
+      });
 
       // Immediately try second validation while first is still running
       // This should abort the first and start the second
-      await result.current.validate('value2');
+      await act(async () => {
+        await result.current.validate('value2');
+      });
 
       await waitFor(() => expect(result.current.isValid).toBe(true));
 
@@ -194,7 +218,9 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
 
       await waitFor(() => {
         expect(onSuccess).toHaveBeenCalledWith({ valid: true });
@@ -210,7 +236,9 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('bad-value');
+      await act(async () => {
+        await result.current.validate('bad-value');
+      });
 
       await waitFor(() => {
         expect(onError).toHaveBeenCalledWith('Invalid value');
@@ -227,7 +255,9 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
 
       await waitFor(() => {
         expect(onError).toHaveBeenCalledWith('Connection failed');
@@ -252,7 +282,9 @@ describe('useAsyncValidation', () => {
         })
       );
 
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
 
       await waitFor(() => {
         expect(result.current.validationError).toBe('Detailed error message');
@@ -269,11 +301,15 @@ describe('useAsyncValidation', () => {
       );
 
       // Validate a value
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
       await waitFor(() => expect(result.current.isValid).toBe(true));
 
       // Reset
-      result.current.reset();
+      act(() => {
+        result.current.reset();
+      });
 
       await waitFor(() => {
         expect(result.current.isValid).toBe(false);
@@ -290,17 +326,25 @@ describe('useAsyncValidation', () => {
       );
 
       // First validation
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
       await waitFor(() => expect(result.current.isValid).toBe(true));
       expect(mockSuccessValidator).toHaveBeenCalledTimes(1);
 
       // Try to validate same value again (should be skipped)
-      await result.current.validate('test-value');
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
       expect(mockSuccessValidator).toHaveBeenCalledTimes(1);
 
       // Reset and validate again
-      result.current.reset();
-      await result.current.validate('test-value');
+      act(() => {
+        result.current.reset();
+      });
+      await act(async () => {
+        await result.current.validate('test-value');
+      });
       await waitFor(() => expect(mockSuccessValidator).toHaveBeenCalledTimes(2));
     });
   });

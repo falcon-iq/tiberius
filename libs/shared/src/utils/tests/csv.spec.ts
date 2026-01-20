@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import { toCsv } from '../csv';
 
 describe('toCsv', () => {
