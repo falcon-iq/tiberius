@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Modal } from '@libs/shared/ui/modal/modal';
 import { Plus, Trash2, Sun, Moon, Loader2 } from 'lucide-react';
-import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult } from '@libs/integrations/github/auth';
-import { githubUsername } from '@libs/integrations/github/username';
+import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername } from '@libs/integrations/github';
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useTheme } from '@libs/shared/hooks/use-theme';
 import { useForm } from 'react-hook-form';

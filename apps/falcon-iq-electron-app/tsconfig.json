@@ -35,8 +35,8 @@
       "@libs/shared/*": [
         "../../libs/shared/src/*"
       ],
-      "@libs/integrations/github/*": [
-        "../../libs/integrations/github/src/*"
+      "@libs/integrations/github": [
+        "../../libs/integrations/src/github/index.ts"
       ],
       "@styles/*": [
         "src/renderer/styles/*"

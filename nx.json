@@ -46,7 +46,8 @@
   },
   "projectGlobPatterns": [
     "apps/*",
-    "libs/shared"
+    "libs/shared",
+    "libs/integrations"
   ],
   "targetDefaults": {
     "test": {

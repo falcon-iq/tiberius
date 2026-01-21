@@ -7,7 +7,7 @@
       "path": "./libs/shared"
     },
     {
-      "path": "./libs/integrations/github"
+      "path": "./libs/integrations"
     }
   ]
 }
