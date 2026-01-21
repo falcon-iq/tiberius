@@ -3,7 +3,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/shared/src",
   "projectType": "library",
-  "tags": ["scope:shared"],
+  "tags": [
+    "scope:shared"
+  ],
   "targets": {
     "lint": {
       "executor": "nx:run-commands",
@@ -25,14 +27,6 @@
         "cwd": "libs/shared",
         "command": "tsc --noEmit"
       }
-    },
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "libs/shared",
-        "command": "tsc --build tsconfig.json"
-      },
-      "outputs": ["{workspaceRoot}/dist/libs/shared"]
     }
   }
 }
