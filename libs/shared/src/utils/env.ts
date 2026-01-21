@@ -3,6 +3,16 @@
  */
 
 /**
+ * Type guard for checking if import.meta has Vite env properties
+ */
+interface ViteImportMeta {
+  env: {
+    DEV?: boolean;
+    MODE?: string;
+  };
+}
+
+/**
  * Checks if the application is running in development mode.
  *
  * Works in:
@@ -15,18 +25,21 @@
 export const isDevelopment = (): boolean => {
   // Check Node.js environment variable
   if (typeof process !== 'undefined' && process.env) {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       return true;
     }
     // Electron Forge/Vite dev server indicator
-    if (process.env.VITE_DEV_SERVER_URL) {
+    if (process.env['VITE_DEV_SERVER_URL']) {
       return true;
     }
   }
 
   // Check Vite's import.meta.env (browser/renderer context)
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env.DEV === true || import.meta.env.MODE === 'development';
+  if (typeof import.meta !== 'undefined') {
+    const meta = import.meta as unknown as ViteImportMeta;
+    if (meta.env) {
+      return meta.env.DEV === true || meta.env.MODE === 'development';
+    }
   }
 
   return false;
