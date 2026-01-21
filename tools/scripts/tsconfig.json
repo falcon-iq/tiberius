@@ -7,6 +7,17 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "baseUrl": "../..",
+        "paths": {
+            "@libs/shared/*": [
+                "libs/shared/src/*"
+            ],
+            "@libs/integrations/github": [
+                "libs/integrations/src/github/index.ts"
+            ],
+            "@libs/integrations/github/*": [
+                "libs/integrations/src/github/*"
+            ]
+        },
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,

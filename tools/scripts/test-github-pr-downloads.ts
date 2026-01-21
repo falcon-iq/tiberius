@@ -1,6 +1,6 @@
-import { downloadAuthoredPullRequests, downloadReviewedPullRequests } from '@libs/integrations/github/prs';
-import { FsPrStorage } from '@libs/integrations/github/prs.fs-storage';
-import type { GitHubPrPipelineConfig } from '@libs/integrations/github/types';
+import { downloadAuthoredPullRequests, downloadReviewedPullRequests } from '@libs/integrations/github';
+import { FsPrStorage } from '@libs/integrations/github/prs.fs-storage.js';
+import type { GitHubPrPipelineConfig } from '@libs/integrations/github';
 
 async function main() {
     const token = process.env.GH_PAT ?? ''; // for the test script only
