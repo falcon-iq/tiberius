@@ -1,7 +1,8 @@
 import { app } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'node:path';
-import { getLogger, isDevelopment } from '@libs/shared/utils';
+import { getLogger } from '@libs/shared/utils/logger';
+import { isDevelopment } from '@libs/shared/utils/env';
 
 const log = getLogger({ name: 'database' });
 

@@ -8,11 +8,8 @@
         "moduleResolution": "bundler",
         "baseUrl": "../..",
         "paths": {
-            "@libs/shared/ui": [
-                "libs/shared/ui/src/index.ts"
-            ],
-            "@libs/shared/utils": [
-                "libs/shared/util/src/index.ts"
+            "@libs/shared/*": [
+                "libs/shared/src/*"
             ],
             "@libs/integrations/github": [
                 "libs/integrations/github/src/index.ts"
@@ -34,8 +31,8 @@
         "node_modules"
     ],
     "references": [
-      {
-        "path": "../../libs/integrations/github"
-      }
+        {
+            "path": "../../libs/integrations/github"
+        }
     ]
 }
