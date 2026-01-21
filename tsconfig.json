@@ -4,16 +4,10 @@
   "files": [],
   "references": [
     {
-      "path": "./libs/shared/ui"
+      "path": "./libs/shared"
     },
     {
       "path": "./libs/integrations/github"
-    },
-    {
-      "path": "./libs/shared/validations"
-    },
-    {
-      "path": "./libs/shared/utils"
     }
   ]
 }

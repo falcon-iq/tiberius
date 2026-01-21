@@ -13,10 +13,7 @@
   "include": [],
   "references": [
     {
-      "path": "../../shared/validations/tsconfig.json"
-    },
-    {
-      "path": "../../shared/utils/tsconfig.json"
+      "path": "../../shared"
     },
     {
       "path": "./tsconfig.lib.json"
