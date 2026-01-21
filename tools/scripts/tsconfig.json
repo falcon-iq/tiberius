@@ -12,8 +12,8 @@
                 "libs/shared/src/*"
             ],
             "@libs/integrations/github": [
-                "libs/integrations/github/src/index.ts"
-            ]
+                "libs/integrations/src/github/index.ts"
+            ],
         },
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
@@ -29,10 +29,5 @@
     ],
     "exclude": [
         "node_modules"
-    ],
-    "references": [
-        {
-            "path": "../../libs/integrations/github"
-        }
     ]
 }

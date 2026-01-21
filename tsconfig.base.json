@@ -26,8 +26,8 @@
       "@libs/shared/*": [
         "libs/shared/src/*"
       ],
-      "@libs/integrations/github": [
-        "libs/integrations/github/src/index.ts"
+      "@libs/integrations/github/*": [
+        "libs/integrations/src/github/*"
       ]
     }
   }
