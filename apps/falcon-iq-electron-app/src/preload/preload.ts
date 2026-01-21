@@ -1,2 +1,7 @@
-// See the Electron documentation for details on how to use preload scripts:
-// https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
+import { contextBridge, ipcRenderer } from 'electron';
+
+contextBridge.exposeInMainWorld('api', {
+  getGithubUsers: () => ipcRenderer.invoke('db:getGithubUsers'),
+  addGithubUser: (username: string) => ipcRenderer.invoke('db:addGithubUser', username),
+  deleteGithubUser: (id: number) => ipcRenderer.invoke('db:deleteGithubUser', id),
+});

@@ -35,6 +35,9 @@
       "@libs/shared/*": [
         "../../libs/shared/src/*"
       ],
+      "@libs/shared/utils": [
+        "../../libs/shared/utils/src/index.ts"
+      ],
       "@libs/integrations/github/*": [
         "../../libs/integrations/github/src/*"
       ],
