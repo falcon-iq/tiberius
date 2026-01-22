@@ -19,40 +19,77 @@ export function initDatabase() {
 
   // Create table if it doesn't exist
   db.exec(`
-    CREATE TABLE IF NOT EXISTS github_users (
+    CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE
+      username TEXT NOT NULL UNIQUE,
+      github_suffix TEXT,
+      email_address TEXT UNIQUE CHECK (email_address IS NULL OR email_address LIKE '%_@_%._%'),
+      firstname TEXT,
+      lastname TEXT
     )
   `);
 
   log.info('Database initialized successfully');
 }
 
-export function getGithubUsers() {
+export function getUsers() {
   try {
-    const stmt = db.prepare('SELECT * FROM github_users ORDER BY username');
+    const stmt = db.prepare('SELECT * FROM users ORDER BY username');
     return { success: true, data: stmt.all() };
   } catch {
     return { success: false, error: 'Failed to fetch users' };
   }
 }
 
-export function addGithubUser(username: string) {
+export interface AddUserInput {
+  username: string;
+  github_suffix?: string | null;
+  email_address?: string | null;
+  firstname?: string | null;
+  lastname?: string | null;
+}
+
+export function addUser(user: AddUserInput) {
   try {
-    const stmt = db.prepare('INSERT INTO github_users (username) VALUES (?)');
-    const result = stmt.run(username);
-    return { success: true, data: { id: result.lastInsertRowid, username } };
+    const stmt = db.prepare(`
+      INSERT INTO users (username, github_suffix, email_address, firstname, lastname)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      user.username,
+      user.github_suffix ?? null,
+      user.email_address ?? null,
+      user.firstname ?? null,
+      user.lastname ?? null
+    );
+    return {
+      success: true,
+      data: {
+        id: result.lastInsertRowid,
+        ...user
+      }
+    };
   } catch (error) {
-    if ((error as Error).message.includes('UNIQUE constraint')) {
-      return { success: false, error: 'Username already exists' };
+    const errorMessage = (error as Error).message;
+    if (errorMessage.includes('UNIQUE constraint')) {
+      if (errorMessage.includes('username')) {
+        return { success: false, error: 'Username already exists' };
+      }
+      if (errorMessage.includes('email_address')) {
+        return { success: false, error: 'Email address already exists' };
+      }
+      return { success: false, error: 'Duplicate entry' };
+    }
+    if (errorMessage.includes('CHECK constraint')) {
+      return { success: false, error: 'Invalid email address format' };
     }
     return { success: false, error: 'Failed to add user' };
   }
 }
 
-export function deleteGithubUser(id: number) {
+export function deleteUser(id: number) {
   try {
-    const stmt = db.prepare('DELETE FROM github_users WHERE id = ?');
+    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
     stmt.run(id);
     return { success: true };
   } catch {
