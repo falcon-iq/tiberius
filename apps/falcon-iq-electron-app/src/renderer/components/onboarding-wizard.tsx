@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Modal } from '@libs/shared/ui/modal/modal';
 import { Plus, Trash2, Sun, Moon, Loader2 } from 'lucide-react';
 import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername } from '@libs/integrations/github';
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useTheme } from '@libs/shared/hooks/use-theme';
 import { useForm } from 'react-hook-form';
+import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
 
 
 interface OnboardingWizardProps {
@@ -22,9 +23,27 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
   const [newUser, setNewUser] = useState('');
   const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Use shared theme hook instead of managing theme locally
   const { isDarkMode, toggleTheme } = useTheme();
+
+  // TanStack Query hooks for database operations
+  const { data: existingUsers, isLoading: isLoadingUsers } = useUsers();
+  const addUserMutation = useAddUser();
+  const deleteUserMutation = useDeleteUser();
+
+  // Hydrate existing users from database when moving to Step 2
+  useEffect(() => {
+    if (step === 2 && existingUsers && existingUsers.length > 0) {
+      // Add existing usernames to the local state if not already present
+      const existingUsernames = existingUsers.map(u => u.username);
+      setUsers(prev => {
+        const combined = [...new Set([...prev, ...existingUsernames])];
+        return combined;
+      });
+    }
+  }, [step, existingUsers]);
 
   // React Hook Form for Step 1 (PAT only, suffix is auto-detected)
   const { register, watch } = useForm<Step1FormData>({
@@ -82,9 +101,21 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
     }
   }, [newUser, isUsernameValid, isValidatingUsername, resetUsernameValidation]);
 
-  const handleRemoveUser = useCallback((userToRemove: string) => {
+  const handleRemoveUser = useCallback(async (userToRemove: string) => {
+    // Remove from local state
     setUsers(prev => prev.filter((user) => user !== userToRemove));
-  }, []);
+
+    // If user exists in database, delete from there too
+    const existingUser = existingUsers?.find(u => u.username === userToRemove);
+    if (existingUser) {
+      try {
+        await deleteUserMutation.mutateAsync(existingUser.id);
+      } catch (error) {
+        console.error('Failed to delete user from database:', error);
+        // TODO: Show error notification
+      }
+    }
+  }, [existingUsers, deleteUserMutation]);
 
   const handleNext = useCallback(() => {
     if (step === 1 && isValid && !isValidating) {
@@ -92,15 +123,42 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
     }
   }, [step, isValid, isValidating]);
 
-  const handleComplete = useCallback(() => {
-    if (users.length > 0) {
+  const handleComplete = useCallback(async () => {
+    if (users.length === 0) return;
+
+    setIsSaving(true);
+
+    try {
+      // Get list of existing usernames in database
+      const existingUsernames = existingUsers?.map(u => u.username.toLowerCase()) || [];
+
+      // Only save NEW users (not already in database)
+      const newUsers = users.filter(
+        username => !existingUsernames.includes(username.toLowerCase())
+      );
+
+      // Save each new user to the database
+      for (const username of newUsers) {
+        await addUserMutation.mutateAsync({
+          username,
+          github_suffix: tokenMetadata?.emu_suffix || null,
+        });
+      }
+
+      // Call the original onComplete handler with all users
       onComplete(pat, users);
+
       // Reset state after completion
       setStep(1);
       setUsers([]);
       setNewUser('');
+    } catch (error) {
+      console.error('Failed to save users:', error);
+      // TODO: Show error toast/notification to user
+    } finally {
+      setIsSaving(false);
     }
-  }, [users, pat, onComplete]);
+  }, [users, pat, tokenMetadata, existingUsers, addUserMutation, onComplete]);
 
   const handleClose = useCallback(() => {
     // Onboarding wizard cannot be dismissed - user must complete setup
@@ -292,17 +350,22 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
 
               {/* User List */}
               <div className="space-y-2">
-                {users.length === 0 && (
+                {isLoadingUsers && (
+                  <div className="py-8 flex justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {!isLoadingUsers && users.length === 0 && (
                   <p className="py-8 text-center text-sm text-muted-foreground">No team members added yet</p>
                 )}
-                {users.map((user, index) => (
+                {!isLoadingUsers && users.map((user) => (
                   <div
-                    key={index}
+                    key={user}
                     className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3"
                   >
                     <span className="text-sm text-foreground">{user}</span>
                     <button
-                      onClick={() => handleRemoveUser(user)}
+                      onClick={() => void handleRemoveUser(user)}
                       className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
                       type="button"
                       aria-label={`Remove ${user}`}
@@ -323,12 +386,13 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
                 Back
               </button>
               <button
-                onClick={handleComplete}
-                disabled={users.length === 0}
-                className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => void handleComplete()}
+                disabled={users.length === 0 || isSaving}
+                className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2"
                 type="button"
               >
-                Complete Setup
+                {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isSaving ? 'Saving...' : 'Complete Setup'}
               </button>
             </div>
           </div>

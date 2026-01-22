@@ -59,6 +59,9 @@
       "@hooks/*": [
         "src/renderer/hooks/*"
       ],
+      "@providers/*": [
+        "src/renderer/providers/*"
+      ],
       "@contexts/*": [
         "src/renderer/contexts/*"
       ],
@@ -67,6 +70,9 @@
       ],
       "@assets/*": [
         "src/renderer/assets/*"
+      ],
+      "@types/*": [
+        "src/renderer/types/*"
       ]
     }
   },

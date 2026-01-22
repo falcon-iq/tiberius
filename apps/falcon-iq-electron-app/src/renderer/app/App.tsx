@@ -1,7 +1,7 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { createHashHistory } from '@tanstack/react-router';
 import { useState } from 'react';
-import { ThemeProvider } from '@libs/shared/hooks/use-theme';
+import { AppProviders } from '@providers/index';
 
 // Import the generated route tree
 import { routeTree } from '@generatedtypes/routeTree.gen';
@@ -36,11 +36,11 @@ const App = () => {
   };
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="theme">
+    <AppProviders>
       <RouterProvider router={router} />
       {/* TEMPORARY: Wizard for testing - remove after testing */}
       <OnboardingWizard isOpen={showWizard} onComplete={handleWizardComplete} />
-    </ThemeProvider>
+    </AppProviders>
   );
 };
 
