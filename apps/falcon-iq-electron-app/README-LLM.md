@@ -19,6 +19,7 @@ For specific technology implementations:
 - React 19.x with TypeScript
 - TanStack Router (file-based, hash history)
 - Tailwind CSS v4
+- better-sqlite3 (local database)
 
 **Build Tools:**
 - Electron Forge 7.10.2 (packaging, distribution)
@@ -31,6 +32,7 @@ For specific technology implementations:
 - `@vitejs/plugin-react` - React Fast Refresh
 - `tailwindcss@^4.1.x` - Styling
 - `vite-tsconfig-paths` - Path alias support
+- `better-sqlite3` - SQLite database
 
 ---
 
@@ -40,9 +42,10 @@ For specific technology implementations:
 amista/
 ├── src/
 │   ├── main/
-│   │   └── index.ts           # Main process (Node.js backend)
+│   │   ├── index.ts           # Main process (Node.js backend)
+│   │   └── database.ts        # SQLite database operations
 │   ├── preload/
-│   │   └── preload.ts         # IPC bridge (currently empty)
+│   │   └── preload.ts         # IPC bridge (exposes window.api)
 │   └── renderer/
 │       ├── index.tsx          # React entry point
 │       ├── app/
@@ -72,9 +75,9 @@ amista/
 ### Electron Architecture
 
 **Multi-process:**
-- **Main process** (`src/main/index.ts`) - Node.js, OS integration, window management
+- **Main process** (`src/main/index.ts`) - Node.js, OS integration, window management, database operations
 - **Renderer process** (`src/renderer/`) - Chromium, React UI, sandboxed
-- **Preload script** (`src/preload/preload.ts`) - Secure IPC bridge (empty for now)
+- **Preload script** (`src/preload/preload.ts`) - Secure IPC bridge via `window.api`
 
 **Security:**
 - Context isolation enabled
@@ -163,13 +166,12 @@ export default defineConfig({
 - Security hardening (Fuses)
 - Example routes (/, /about, /settings)
 - Multi-platform distribution ready
+- IPC communication layer (preload bridge + handlers)
+- SQLite database (better-sqlite3) with CRUD operations
 
 **❌ Not Implemented:**
-- IPC communication layer
-- Data persistence/storage
 - Native menus
 - Auto-updates
-- Error handling/logging
 - Testing infrastructure
 
 ---
@@ -200,9 +202,10 @@ export default defineConfig({
 - Avoid relative imports for shared resources
 - `vite-tsconfig-paths` plugin handles resolution
 
-### IPC (when implemented)
+### IPC
+- Database operations via `window.api` (getGithubUsers, addGithubUser, deleteGithubUser)
 - Never expose Node.js APIs directly to renderer
-- Use preload script + `contextBridge`
+- Use preload script + `contextBridge` pattern
 - Main process handles all system operations
 
 ---
@@ -267,19 +270,22 @@ import { Link } from '@tanstack/react-router';
 </div>
 ```
 
-### IPC Pattern (not yet implemented)
+### IPC Pattern (Example: GitHub Users)
 
 ```typescript
 // main/index.ts
-ipcMain.handle('my-action', async (event, arg) => { ... });
+ipcMain.handle('db:getGithubUsers', () => getGithubUsers());
+ipcMain.handle('db:addGithubUser', (_event, username: string) => addGithubUser(username));
 
 // preload/preload.ts
 contextBridge.exposeInMainWorld('api', {
-  myAction: (arg) => ipcRenderer.invoke('my-action', arg)
+  getGithubUsers: () => ipcRenderer.invoke('db:getGithubUsers'),
+  addGithubUser: (username: string) => ipcRenderer.invoke('db:addGithubUser', username),
 });
 
 // renderer component
-await window.api.myAction(arg);
+const users = await window.api.getGithubUsers();
+await window.api.addGithubUser('octocat');
 ```
 
 ---
@@ -328,4 +334,4 @@ await window.api.myAction(arg);
 - `llm-artifacts/ROUTING.md` for routing details
 - `llm-artifacts/TAILWIND.md` for styling details
 
-**Current state:** Infrastructure complete, ready for feature development.
+**Current state:** Infrastructure complete with IPC + SQLite, ready for UI development.
