@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { initDatabase, getGithubUsers, addGithubUser, deleteGithubUser, closeDatabase } from './database';
+import { initDatabase, getUsers, addUser, deleteUser, closeDatabase, type AddUserInput } from './database';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -56,9 +56,9 @@ app.on('activate', () => {
 });
 
 // IPC handlers for database operations
-ipcMain.handle('db:getGithubUsers', () => getGithubUsers());
-ipcMain.handle('db:addGithubUser', (_event, username: string) => addGithubUser(username));
-ipcMain.handle('db:deleteGithubUser', (_event, id: number) => deleteGithubUser(id));
+ipcMain.handle('db:getUsers', () => getUsers());
+ipcMain.handle('db:addUser', (_event, user: AddUserInput) => addUser(user));
+ipcMain.handle('db:deleteUser', (_event, id: number) => deleteUser(id));
 
 // Clean up database on app quit
 app.on('before-quit', () => {
