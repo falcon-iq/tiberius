@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername } from "@libs/integrations/github";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
+import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
 
 interface SettingsFormData {
   pat: string;
@@ -21,6 +22,11 @@ export const Settings = () => {
     defaultValues: { pat: "" },
     mode: "onBlur", // Validate on blur instead of only on submit
   });
+
+  // TanStack Query hooks for database operations
+  const { data: existingUsers, isLoading: isLoadingUsers } = useUsers();
+  const addUserMutation = useAddUser();
+  const deleteUserMutation = useDeleteUser();
 
   // Use the async validation hook for PAT
   const { validate, isValidating, validationError, isValid } = useAsyncValidation({
@@ -51,56 +57,85 @@ export const Settings = () => {
     fallbackErrorMessage: "Failed to validate username. Please try again."
   });
 
+  // Load PAT from localStorage on mount
   useEffect(() => {
     const storedPat = localStorage.getItem("manager_buddy_pat") ?? "";
-    const storedUsers = localStorage.getItem("manager_buddy_users");
-
     setValue("pat", storedPat);
 
     // Validate the stored PAT to get metadata
     if (storedPat) {
       void validate(storedPat);
     }
-
-    if (storedUsers) {
-      try {
-        const parsedUsers = JSON.parse(storedUsers) as string[];
-        setUsers(parsedUsers);
-      } catch {
-        // If parsing fails, start with empty array
-        setUsers([]);
-      }
-    }
   }, [setValue]); // Only setValue is needed - validate is intentionally omitted to run only on mount
+
+  // Hydrate users from database
+  useEffect(() => {
+    if (existingUsers && existingUsers.length > 0) {
+      const usernames = existingUsers.map(u => u.username);
+      setUsers(usernames);
+    }
+  }, [existingUsers]);
 
   const handleClose = useCallback(() => {
     router.history.back();
   }, [router]);
 
-  const handleAddUser = useCallback(() => {
+  const handleAddUser = useCallback(async () => {
     const trimmedUser = newUser.trim();
+
+    if (!trimmedUser || !isUsernameValid || isValidatingUsername) {
+      return;
+    }
+
+    // Check for duplicates in current state and database
     const isDuplicate = users.some(user => user.toLowerCase() === trimmedUser.toLowerCase());
 
-    if (isDuplicate && trimmedUser) {
+    if (isDuplicate) {
       setDuplicateError(`"${trimmedUser}" has already been added`);
       return;
     }
 
-    if (trimmedUser && isUsernameValid && !isValidatingUsername) {
+    try {
+      // Save to database immediately
+      await addUserMutation.mutateAsync({
+        username: trimmedUser,
+        github_suffix: tokenMetadata?.emu_suffix || null,
+      });
+
+      // Update local state
       setUsers([...users, trimmedUser]);
       setNewUser('');
       setDuplicateError(null);
-      resetUsernameValidation(); // Clear validation state for next user
+      resetUsernameValidation();
+    } catch (error) {
+      console.error('Failed to add user:', error);
+      // Check if it's a duplicate error from database
+      if ((error as Error).message.includes('already exists')) {
+        setDuplicateError(`"${trimmedUser}" already exists in database`);
+      }
     }
-  }, [newUser, users, isUsernameValid, isValidatingUsername, resetUsernameValidation]);
+  }, [newUser, users, isUsernameValid, isValidatingUsername, tokenMetadata, addUserMutation, resetUsernameValidation]);
 
-  const handleRemoveUser = useCallback((userToRemove: string) => {
+  const handleRemoveUser = useCallback(async (userToRemove: string) => {
+    // Remove from local state
     setUsers(users.filter((user) => user !== userToRemove));
-  }, [users]);
+
+    // Find user in database and delete
+    const existingUser = existingUsers?.find(u => u.username === userToRemove);
+    if (existingUser) {
+      try {
+        await deleteUserMutation.mutateAsync(existingUser.id);
+      } catch (error) {
+        console.error('Failed to delete user from database:', error);
+        // TODO: Show error notification
+      }
+    }
+  }, [users, existingUsers, deleteUserMutation]);
 
   const onSubmit = (data: SettingsFormData) => {
+    // Save PAT to localStorage
     localStorage.setItem("manager_buddy_pat", data.pat);
-    localStorage.setItem("manager_buddy_users", JSON.stringify(users));
+    // Users are already saved to SQLite database (no need to save here)
     handleClose();
   };
 
@@ -231,12 +266,16 @@ export const Settings = () => {
 
             <button
               type="button"
-              onClick={handleAddUser}
-              disabled={!isUsernameValid || isValidatingUsername || !newUser.trim()}
+              onClick={() => void handleAddUser()}
+              disabled={!isUsernameValid || isValidatingUsername || !newUser.trim() || addUserMutation.isPending}
               className="rounded-lg bg-primary px-3 py-2 text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Add user"
             >
-              <Plus className="h-5 w-5" />
+              {addUserMutation.isPending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Plus className="h-5 w-5" />
+              )}
             </button>
           </div>
 
@@ -254,7 +293,15 @@ export const Settings = () => {
 
           {/* User List */}
           <div className="mt-3 space-y-2 max-h-[200px] overflow-y-auto">
-            {users.map((user) => (
+            {isLoadingUsers && (
+              <div className="py-4 flex justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!isLoadingUsers && users.length === 0 && (
+              <p className="py-4 text-center text-xs text-muted-foreground">No team members added yet</p>
+            )}
+            {!isLoadingUsers && users.map((user) => (
               <div
                 key={user}
                 className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
@@ -262,7 +309,7 @@ export const Settings = () => {
                 <span className="text-sm text-foreground">{user}</span>
                 <button
                   type="button"
-                  onClick={() => handleRemoveUser(user)}
+                  onClick={() => void handleRemoveUser(user)}
                   className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
                   aria-label={`Remove ${user}`}
                 >
@@ -288,7 +335,7 @@ export const Settings = () => {
             disabled={!isValid || isValidating}
             className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save
+            Done
           </button>
         </div>
       </form>
