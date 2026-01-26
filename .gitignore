@@ -75,3 +75,6 @@ test-output
 project-graph.html
 project-graph.json
 nx-graph.html
+
+# Claude
+.claude
