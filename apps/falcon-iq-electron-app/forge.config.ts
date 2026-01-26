@@ -12,8 +12,13 @@ import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-nati
 const config: ForgeConfig = {
   packagerConfig: {
     asar: {
-      unpack: '*.{node,dll}',
+      unpack: '*.{node,dll,py}',
     },
+    extraResource: [
+      'src/python',
+      // Uncomment when bundling Python runtime
+      // 'python-runtime',
+    ],
   },
   rebuildConfig: {},
   makers: [

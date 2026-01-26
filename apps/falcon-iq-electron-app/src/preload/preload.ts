@@ -12,4 +12,8 @@ contextBridge.exposeInMainWorld('api', {
   getUsers: () => ipcRenderer.invoke('db:getUsers'),
   addUser: (user: AddUserInput) => ipcRenderer.invoke('db:addUser', user),
   deleteUser: (id: number) => ipcRenderer.invoke('db:deleteUser', id),
+  pythonServer: {
+    getStatus: () => ipcRenderer.invoke('python:getStatus'),
+    restart: () => ipcRenderer.invoke('python:restart'),
+  },
 });

@@ -1,11 +1,56 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { initDatabase, getUsers, addUser, deleteUser, closeDatabase, type AddUserInput } from './database';
+import { initPythonServer, getPythonServerStatus, restartPythonServer } from './python-server';
+import { getLogger } from '@libs/shared/utils/logger';
+import { isDevelopment } from '@libs/shared/utils/env';
+
+const log = getLogger({ name: 'main' });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
+}
+
+/**
+ * Get Python executable path (bundled in production, system in development)
+ */
+function getPythonExecutable(): string {
+  const isDev = isDevelopment();
+
+  if (isDev) {
+    // Development: use system Python
+    return process.platform === 'win32' ? 'python' : 'python3';
+  }
+
+  // Production: use bundled Python
+  const resourcesPath = process.resourcesPath || path.join(__dirname, '..', '..');
+  const platform = process.platform;
+
+  if (platform === 'darwin' || platform === 'linux') {
+    return path.join(resourcesPath, 'python-runtime', 'bin', 'python3');
+  } else if (platform === 'win32') {
+    return path.join(resourcesPath, 'python-runtime', 'python.exe');
+  }
+
+  throw new Error(`Unsupported platform: ${platform}`);
+}
+
+/**
+ * Get Python server script path (source in dev, bundled in production)
+ */
+function getPythonServerScript(): string {
+  const isDev = isDevelopment();
+
+  if (isDev) {
+    // Development: use source path relative to cwd
+    return path.join(process.cwd(), 'src', 'python', 'server.py');
+  }
+
+  // Production: use bundled path in resources
+  const resourcesPath = process.resourcesPath || path.join(__dirname, '..', '..');
+  return path.join(resourcesPath, 'src', 'python', 'server.py');
 }
 
 const createWindow = () => {
@@ -33,8 +78,36 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', () => {
+app.on('ready', async () => {
   initDatabase();
+
+  // Start Python server (non-blocking)
+  try {
+    const pythonExecutable = getPythonExecutable();
+    const serverScript = getPythonServerScript();
+
+    const result = await initPythonServer({
+      pythonExecutable,
+      serverScript,
+      port: 8765,
+      healthCheckEndpoint: '/health',
+      startupTimeout: 10000,
+    });
+
+    if (!result.success) {
+      log.error({ error: result.error }, 'Python server failed to start');
+      // Show notification but continue
+      dialog.showErrorBox(
+        'Python Server Error',
+        'Background services unavailable. Some features may be limited.'
+      );
+    } else {
+      log.info({ pid: result.data?.pid }, 'Python server started');
+    }
+  } catch (error) {
+    log.error({ error }, 'Python server init error');
+  }
+
   createWindow();
 });
 
@@ -59,6 +132,10 @@ app.on('activate', () => {
 ipcMain.handle('db:getUsers', () => getUsers());
 ipcMain.handle('db:addUser', (_event, user: AddUserInput) => addUser(user));
 ipcMain.handle('db:deleteUser', (_event, id: number) => deleteUser(id));
+
+// IPC handlers for Python server operations
+ipcMain.handle('python:getStatus', () => getPythonServerStatus());
+ipcMain.handle('python:restart', () => restartPythonServer());
 
 // Clean up database on app quit
 app.on('before-quit', () => {
