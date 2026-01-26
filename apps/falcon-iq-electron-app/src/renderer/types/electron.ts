@@ -21,27 +21,19 @@ export interface DatabaseResult<T> {
   error?: string;
 }
 
-export interface PythonServerStatus {
-  isRunning: boolean;
-  pid?: number;
-  port?: number;
-  startedAt?: string;
-  error?: string;
-}
+// Python server types imported from shared location
+import type {
+  PythonServerStatus,
+  PythonServerState,
+  PythonServerResult,
+} from '../../shared/types/python-server';
 
-export interface PythonServerState {
-  pid: number;
-  port: number;
-  startedAt: string;
-  pythonExecutable: string;
-  serverScriptPath: string;
-}
-
-export interface PythonServerResult<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+// Re-export for external consumers
+export type {
+  PythonServerStatus,
+  PythonServerState,
+  PythonServerResult,
+};
 
 export interface ElectronAPI {
   getUsers(): Promise<DatabaseResult<User[]>>;

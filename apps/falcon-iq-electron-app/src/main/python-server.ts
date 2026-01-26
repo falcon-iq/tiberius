@@ -32,7 +32,7 @@ function isProcessRunning(pid: number): boolean {
 /**
  * Kill a process by PID
  */
-function killProcess(pid: number): boolean {
+async function killProcess(pid: number): Promise<boolean> {
   try {
     if (!isProcessRunning(pid)) {
       log.info({ pid }, 'Process already dead');
@@ -42,10 +42,13 @@ function killProcess(pid: number): boolean {
     log.info({ pid }, 'Killing process');
     process.kill(pid, 'SIGTERM');
 
-    // Wait for process to die
+    // Wait for process to die with async polling
     const startTime = Date.now();
-    while (isProcessRunning(pid) && Date.now() - startTime < 5000) {
-      // Wait up to 5 seconds
+    const pollInterval = 100; // Check every 100ms
+    const timeout = 5000; // Wait up to 5 seconds
+
+    while (isProcessRunning(pid) && Date.now() - startTime < timeout) {
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
     // Force kill if still running
@@ -79,7 +82,7 @@ async function killExistingServer(): Promise<PythonServerResult<void>> {
   const { pid } = stateResult.data;
   log.info({ pid }, 'Found existing server PID');
 
-  const killed = killProcess(pid);
+  const killed = await killProcess(pid);
 
   if (!killed) {
     return { success: false, error: `Failed to kill process ${pid}` };
@@ -185,7 +188,7 @@ async function spawnPythonServer(
 
     if (!isReady) {
       if (child.pid) {
-        killProcess(child.pid);
+        await killProcess(child.pid);
       }
       return {
         success: false,
@@ -210,7 +213,7 @@ async function spawnPythonServer(
 
     const saveResult = savePythonServerState(state);
     if (!saveResult.success) {
-      killProcess(child.pid);
+      await killProcess(child.pid);
       return { success: false, error: saveResult.error };
     }
 

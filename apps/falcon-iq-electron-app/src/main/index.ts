@@ -14,14 +14,20 @@ if (started) {
 }
 
 /**
- * Get Python executable path (bundled in production, system in development)
+ * Get Python executable path (virtual env in development, bundled in production)
  */
 function getPythonExecutable(): string {
   const isDev = isDevelopment();
 
   if (isDev) {
-    // Development: use system Python
-    return process.platform === 'win32' ? 'python' : 'python3';
+    // Development: use virtual environment
+    const venvPath = path.join(process.cwd(), '.venv');
+
+    if (process.platform === 'win32') {
+      return path.join(venvPath, 'Scripts', 'python.exe');
+    } else {
+      return path.join(venvPath, 'bin', 'python3');
+    }
   }
 
   // Production: use bundled Python
