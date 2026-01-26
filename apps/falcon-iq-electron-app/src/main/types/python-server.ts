@@ -1,3 +1,8 @@
+/**
+ * Main process-specific Python server configuration.
+ * Shared types are imported from src/shared/types/python-server.ts
+ */
+
 export interface PythonServerConfig {
   pythonExecutable: string;
   serverScript: string;
@@ -6,24 +11,9 @@ export interface PythonServerConfig {
   startupTimeout: number;
 }
 
-export interface PythonServerState {
-  pid: number;
-  port: number;
-  startedAt: string;
-  pythonExecutable: string;
-  serverScriptPath: string;
-}
-
-export interface PythonServerStatus {
-  isRunning: boolean;
-  pid?: number;
-  port?: number;
-  startedAt?: string;
-  error?: string;
-}
-
-export interface PythonServerResult<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+// Re-export shared types for convenience
+export type {
+  PythonServerState,
+  PythonServerStatus,
+  PythonServerResult,
+} from '../../shared/types/python-server';
