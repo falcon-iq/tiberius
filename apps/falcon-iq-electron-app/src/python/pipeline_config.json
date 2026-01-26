@@ -1,0 +1,14 @@
+{
+  "base_dir": "/Users/npurwar/falcon-download-folder",
+  "okr_folder": "okrs",
+  "output_folder": "output",
+  "pr_data_folder": "pr_data",
+  "user_data_folder": "user_data",
+  "settings_folder": "settings",
+  "task_folder": "tasks",
+  "pipeline": {
+    "default_start_step": 1,
+    "timeout_per_step_seconds": 1200,
+    "continue_on_error": false
+  }
+}
