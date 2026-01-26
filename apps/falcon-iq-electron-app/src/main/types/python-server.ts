@@ -9,6 +9,7 @@ export interface PythonServerConfig {
   port: number;
   healthCheckEndpoint: string;
   startupTimeout: number;
+  userDataPath: string;
 }
 
 // Re-export shared types for convenience
