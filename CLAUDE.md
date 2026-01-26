@@ -1,6 +1,6 @@
 # Tiberius Project Context
 
-This file provides essential context for Claude Code when working with the Tiberius repository. For app-specific context, see `apps/*/CLAUDE.md`. For detailed technical docs, see `llm-artifacts/` folder.
+This file provides essential context for Claude Code when working with the Tiberius repository. For app-specific context, see `apps/*/CLAUDE.md` and `libs/CLAUDE.md`.
 
 ---
 
@@ -29,11 +29,9 @@ tiberius/
 ├── apps/
 │   ├── falcon-iq-electron-app/    # Electron desktop app
 │   └── falcon-iq-rest/            # Java REST API
-├── libs/
-│   ├── shared/                    # Shared libraries (UI components, utils, validations)
-│   └── integrations/              # External integrations
-├── llm-artifacts/                 # Detailed LLM documentation
-└── README-LLM.md                  # Comprehensive LLM guide
+└── libs/
+    ├── shared/                    # Shared libraries (UI components, utils, validations)
+    └── integrations/              # External integrations
 ```
 
 ---
@@ -83,8 +81,6 @@ npm run commit           # Use Commitizen for conventional commits (REQUIRED)
   }
 }
 ```
-
-See `llm-artifacts/TYPESCRIPT-PATHS.md` for details.
 
 ### 2. Tailwind v4 Uses `@source` Directives
 **The Problem:** Tailwind v4 doesn't use `tailwind.config.ts` files. Classes in shared libraries won't generate CSS unless explicitly scanned.
@@ -177,23 +173,6 @@ All shared libraries must be:
 
 ---
 
-## When to Reference What
-
-| Task | Read This First |
-|------|----------------|
-| Adding a new shared library | `llm-artifacts/TYPESCRIPT-PATHS.md` |
-| Shared library not importing | `llm-artifacts/TYPESCRIPT-PATHS.md` |
-| Tailwind classes not working | `llm-artifacts/TYPESCRIPT-PATHS.md` |
-| Dark mode issues | `llm-artifacts/TYPESCRIPT-PATHS.md` |
-| Routing/navigation | `apps/falcon-iq-electron-app/llm-artifacts/ROUTING.md` |
-| Styling/theming | `apps/falcon-iq-electron-app/llm-artifacts/TAILWIND.md` |
-| UI patterns | `apps/falcon-iq-electron-app/llm-artifacts/LLM-DESIGN-GUIDE.md` |
-| Electron app context | `apps/falcon-iq-electron-app/CLAUDE.md` |
-| REST API context | `apps/falcon-iq-rest/CLAUDE.md` |
-| Shared libraries | `libs/CLAUDE.md` |
-
----
-
 ## Common Gotchas
 
 1. **TypeScript imports broken?** Check if you duplicated shared library paths in project's `tsconfig.json`
@@ -229,7 +208,6 @@ nx run-many --parallel -t <target1> <target2>
 
 - `tsconfig.base.json` - Root TypeScript configuration with shared library paths
 - `package.json` - Root scripts and dependencies
-- `llm-artifacts/TYPESCRIPT-PATHS.md` - Critical TypeScript and Tailwind configuration patterns
 - `apps/falcon-iq-electron-app/CLAUDE.md` - Electron app context
 - `apps/falcon-iq-rest/CLAUDE.md` - REST API context
 - `libs/CLAUDE.md` - Shared libraries context
@@ -239,11 +217,10 @@ nx run-many --parallel -t <target1> <target2>
 ## Quick Start
 
 1. Read this file for overview
-2. For shared library work, read `libs/CLAUDE.md` and `llm-artifacts/TYPESCRIPT-PATHS.md`
+2. For shared library work, read `libs/CLAUDE.md`
 3. For Electron app work, read `apps/falcon-iq-electron-app/CLAUDE.md`
 4. For REST API work, read `apps/falcon-iq-rest/CLAUDE.md`
-5. Reference specific `llm-artifacts/` files for technology-specific details
-6. Use `npm run commit` for all commits
+5. Use `npm run commit` for all commits
 
 ---
 

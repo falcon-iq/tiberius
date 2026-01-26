@@ -1,6 +1,6 @@
 # Falcon IQ Electron App Context
 
-Essential context for working with the Falcon IQ Electron desktop application. For monorepo-wide context, see `/CLAUDE.md`. For detailed technical docs, see `llm-artifacts/` folder.
+Essential context for working with the Falcon IQ Electron desktop application. For monorepo-wide context, see `/CLAUDE.md`.
 
 ---
 
@@ -35,10 +35,6 @@ falcon-iq-electron-app/
 │       ├── components/        # Reusable components
 │       └── styles/
 │           └── globals.css    # Tailwind + theme config
-├── llm-artifacts/             # Detailed technical docs
-│   ├── TAILWIND.md           # Styling patterns
-│   ├── ROUTING.md            # Navigation patterns
-│   └── LLM-DESIGN-GUIDE.md   # UI/UX principles
 └── forge.config.ts           # Electron packaging config
 ```
 
@@ -145,8 +141,6 @@ import { Link } from '@tanstack/react-router';
 <a href="#/about">About</a>
 ```
 
-**See `llm-artifacts/ROUTING.md` for detailed patterns.**
-
 ---
 
 ## Styling with Tailwind v4
@@ -192,8 +186,6 @@ If using shared UI libraries, add `@source` directive AFTER `@theme`:
   <h1 className="text-2xl font-bold text-primary">Title</h1>
 </div>
 ```
-
-**See `llm-artifacts/TAILWIND.md` for theme system and patterns.**
 
 ---
 
@@ -247,8 +239,6 @@ await window.api.addUser('John');
 ```
 
 **Why?** TypeScript paths don't merge with `extends`.
-
-**See `/llm-artifacts/TYPESCRIPT-PATHS.md` for details.**
 
 ---
 
@@ -344,18 +334,6 @@ Follow monorepo standards (see `/CLAUDE.md`):
 - Tests in `tests/` folder
 - Types in `types/` folder
 - Tests use relative imports
-
----
-
-## Quick Reference
-
-| Task | Read This |
-|------|-----------|
-| Routing patterns | `llm-artifacts/ROUTING.md` |
-| Styling/theming | `llm-artifacts/TAILWIND.md` |
-| UI patterns | `llm-artifacts/LLM-DESIGN-GUIDE.md` |
-| TypeScript paths | `/llm-artifacts/TYPESCRIPT-PATHS.md` |
-| Monorepo context | `/CLAUDE.md` |
 
 ---
 
