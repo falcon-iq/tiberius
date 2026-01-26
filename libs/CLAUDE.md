@@ -64,8 +64,6 @@ nx generate @nx/js:library my-lib --directory=libs/shared/my-lib
 
 **Why?** TypeScript paths don't merge when using `extends`.
 
-**See `/llm-artifacts/TYPESCRIPT-PATHS.md` for details.**
-
 ### 4. Add Tailwind Scanning (If Library Has Styles)
 
 **If the library contains React components with Tailwind classes**, add `@source` directive to consuming app's CSS:
@@ -337,4 +335,4 @@ nx run shared:lint
 
 ---
 
-*For detailed TypeScript paths and Tailwind configuration, see `/llm-artifacts/TYPESCRIPT-PATHS.md`. For monorepo context, see `/CLAUDE.md`.*
+*For monorepo context, see `/CLAUDE.md`.*
