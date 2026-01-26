@@ -21,6 +21,13 @@ tsconfig.tsbuildinfo
 # dependencies
 node_modules
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # IDEs and editors
 /.idea
 .project
