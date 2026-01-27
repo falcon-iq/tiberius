@@ -43,6 +43,7 @@ export interface StepComponentProps {
  * Step 1 props
  */
 export interface Step1Props extends StepComponentProps {
+  userDetails: UserDetails;
   onDataChange: (data: UserDetails) => void;
 }
 
@@ -51,6 +52,7 @@ export interface Step1Props extends StepComponentProps {
  */
 export interface Step2Props extends StepComponentProps {
   userDetails: UserDetails;
+  githubIntegration: GitHubIntegration;
   onDataChange: (data: GitHubIntegration) => void;
 }
 

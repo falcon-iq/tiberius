@@ -5,17 +5,13 @@
 import { useForm } from 'react-hook-form';
 import type { Step1Props, UserDetails } from './types';
 
-export const StepUserDetails = ({ onNext, onDataChange }: Step1Props) => {
+export const StepUserDetails = ({ userDetails, onNext, onDataChange }: Step1Props) => {
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<UserDetails>({
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      ldapUsername: '',
-    },
+    defaultValues: userDetails,
     mode: 'onBlur',
   });
 

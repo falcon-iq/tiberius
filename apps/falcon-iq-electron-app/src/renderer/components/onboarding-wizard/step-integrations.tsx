@@ -14,9 +14,9 @@ interface FormData {
   pat: string;
 }
 
-export const StepIntegrations = ({ userDetails, onNext, onBack, onDataChange }: Step2Props) => {
+export const StepIntegrations = ({ userDetails, githubIntegration, onNext, onBack, onDataChange }: Step2Props) => {
   const { register, watch } = useForm<FormData>({
-    defaultValues: { pat: '' },
+    defaultValues: { pat: githubIntegration.pat },
     mode: 'onBlur',
   });
 
@@ -36,6 +36,14 @@ export const StepIntegrations = ({ userDetails, onNext, onBack, onDataChange }: 
       setValidationResult(null);
     },
   });
+
+  // Validate pre-filled PAT on mount (when navigating back)
+  useEffect(() => {
+    if (githubIntegration.pat) {
+      void validate(githubIntegration.pat);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only validate on mount
+  }, []);
 
   // Update parent state when validation succeeds
   useEffect(() => {
