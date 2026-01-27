@@ -71,8 +71,7 @@ export const Settings = () => {
         void validate(storedPat);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    // validate function identity changes every render, but we only want to run this on settings/setValue change
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- validate function identity changes every render, but we only want to run this on settings/setValue change
   }, [settings, setValue]);
 
   // Hydrate users from database
