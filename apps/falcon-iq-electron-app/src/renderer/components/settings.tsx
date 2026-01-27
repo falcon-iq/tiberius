@@ -18,6 +18,7 @@ export const Settings = () => {
   const [newUser, setNewUser] = useState('');
   const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  const [usernameValidationResult, setUsernameValidationResult] = useState<ValidateUserResult | null>(null);
 
   const { register, handleSubmit, setValue, getValues } = useForm<SettingsFormData>({
     defaultValues: { pat: "" },
@@ -51,13 +52,19 @@ export const Settings = () => {
     validationError: usernameValidationError,
     isValid: isUsernameValid,
     reset: resetUsernameValidation
-  } = useAsyncValidation({
+  } = useAsyncValidation<ValidateUserResult>({
     validator: (username: string) => {
       const currentPat = getValues("pat");
       return validateGitHubUser(currentPat, username);
     },
     extractErrorMessage: (result: ValidateUserResult) => result.error ?? "Invalid GitHub username",
-    fallbackErrorMessage: "Failed to validate username. Please try again."
+    fallbackErrorMessage: "Failed to validate username. Please try again.",
+    onSuccess: (result: ValidateUserResult) => {
+      setUsernameValidationResult(result);
+    },
+    onError: () => {
+      setUsernameValidationResult(null);
+    }
   });
 
   // Load PAT from settings.json on mount
@@ -89,38 +96,42 @@ export const Settings = () => {
   const handleAddUser = useCallback(async () => {
     const trimmedUser = newUser.trim();
 
-    if (!trimmedUser || !isUsernameValid || isValidatingUsername) {
+    if (!trimmedUser || !isUsernameValid || isValidatingUsername || !usernameValidationResult?.user) {
       return;
     }
 
+    // Use the validated GitHub username from the API response
+    const githubUsername = usernameValidationResult.user.login;
+
     // Check for duplicates in current state and database
-    const isDuplicate = users.some(user => user.toLowerCase() === trimmedUser.toLowerCase());
+    const isDuplicate = users.some(user => user.toLowerCase() === githubUsername.toLowerCase());
 
     if (isDuplicate) {
-      setDuplicateError(`"${trimmedUser}" has already been added`);
+      setDuplicateError(`"${githubUsername}" has already been added`);
       return;
     }
 
     try {
       // Save to database immediately
       await addUserMutation.mutateAsync({
-        username: trimmedUser,
+        username: githubUsername,
         github_suffix: tokenMetadata?.emu_suffix || null,
       });
 
-      // Update local state
-      setUsers([...users, trimmedUser]);
+      // Update local state with full GitHub username
+      setUsers([...users, githubUsername]);
       setNewUser('');
       setDuplicateError(null);
+      setUsernameValidationResult(null);
       resetUsernameValidation();
     } catch (error) {
       console.error('Failed to add user:', error);
       // Check if it's a duplicate error from database
       if ((error as Error).message.includes('already exists')) {
-        setDuplicateError(`"${trimmedUser}" already exists in database`);
+        setDuplicateError(`"${githubUsername}" already exists in database`);
       }
     }
-  }, [newUser, users, isUsernameValid, isValidatingUsername, tokenMetadata, addUserMutation, resetUsernameValidation]);
+  }, [newUser, users, isUsernameValid, isValidatingUsername, usernameValidationResult, tokenMetadata, addUserMutation, resetUsernameValidation]);
 
   const handleRemoveUser = useCallback(async (userToRemove: string) => {
     // Remove from local state
@@ -260,19 +271,19 @@ export const Settings = () => {
                 onChange={(e) => {
                   setNewUser(e.target.value);
                   setDuplicateError(null);
+                  setUsernameValidationResult(null);
                 }}
                 onBlur={(e) => {
-                  // Only append EMU suffix if present (non-EMU users use raw username)
-                  const username = tokenMetadata?.emu_suffix
-                    ? githubUsername(e.target.value, tokenMetadata.emu_suffix)
-                    : e.target.value.trim();
-                  if (username !== e.target.value) {
-                    setNewUser(username);
-                  }
-                  void validateUsername(username);
+                  const ldapUsername = e.target.value.trim();
+                  // Build GitHub username for validation (with suffix if EMU user)
+                  const githubUsernameForValidation = tokenMetadata?.emu_suffix
+                    ? githubUsername(ldapUsername, tokenMetadata.emu_suffix)
+                    : ldapUsername;
+                  // Don't update the input field - keep showing just LDAP username
+                  void validateUsername(githubUsernameForValidation);
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddUser())}
-                placeholder="Enter username"
+                placeholder="Enter LDAP username"
                 className={`w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${usernameValidationError || duplicateError
                   ? "border-destructive focus:ring-destructive"
                   : "border-border focus:ring-primary"
