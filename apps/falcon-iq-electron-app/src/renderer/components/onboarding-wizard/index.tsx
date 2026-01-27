@@ -121,7 +121,6 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
           <StepTeamMembers
             userDetails={userDetails}
             githubIntegration={githubIntegration}
-            onNext={onComplete}
             onBack={handleTeamMembersBack}
             onComplete={onComplete}
           />
