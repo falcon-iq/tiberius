@@ -55,10 +55,11 @@ export interface Step2Props extends StepComponentProps {
 }
 
 /**
- * Step 3 props
+ * Step 3 props (final step - uses onComplete instead of onNext)
  */
-export interface Step3Props extends StepComponentProps {
+export interface Step3Props {
   userDetails: UserDetails;
   githubIntegration: GitHubIntegration;
+  onBack: () => void;
   onComplete: () => void;
 }

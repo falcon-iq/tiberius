@@ -111,10 +111,10 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
 
     try {
       // 1. Add current user to team members if not already present
-      const currentUserGitHubUsername = githubUsername(
-        userDetails.ldapUsername,
-        githubIntegration.emuSuffix || ''
-      );
+      // Only append EMU suffix if present (non-EMU users use raw LDAP username)
+      const currentUserGitHubUsername = githubIntegration.emuSuffix
+        ? githubUsername(userDetails.ldapUsername, githubIntegration.emuSuffix)
+        : userDetails.ldapUsername;
 
       const currentUserExists = users.some(
         (u) => u.username.toLowerCase() === currentUserGitHubUsername.toLowerCase()
@@ -184,10 +184,10 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
                   setDuplicateError(null);
                 }}
                 onBlur={(e) => {
-                  const username = githubUsername(
-                    e.target.value,
-                    githubIntegration.emuSuffix || ''
-                  );
+                  // Only append EMU suffix if present (non-EMU users use raw LDAP username)
+                  const username = githubIntegration.emuSuffix
+                    ? githubUsername(e.target.value, githubIntegration.emuSuffix)
+                    : e.target.value.trim();
                   if (username !== e.target.value) {
                     setNewUser(username);
                   }
