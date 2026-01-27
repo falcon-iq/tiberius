@@ -6,5 +6,14 @@
   "tags": [
     "type:integration",
     "scope:integrations"
-  ]
+  ],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/integrations/jest.config.js"
+      }
+    }
+  }
 }
