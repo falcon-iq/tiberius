@@ -120,6 +120,8 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
         (u) => u.username.toLowerCase() === currentUserGitHubUsername.toLowerCase()
       );
 
+      let allUsers = users;
+
       if (!currentUserExists) {
         // Fetch current user's GitHub profile
         const currentUserResult = await validateGitHubUser(
@@ -129,14 +131,15 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
 
         if (currentUserResult.valid && currentUserResult.user) {
           const parsedCurrentUser = parseGitHubUser(currentUserResult);
-          users.push(parsedCurrentUser);
+          // Create new array instead of mutating state
+          allUsers = [...users, parsedCurrentUser];
         }
       }
 
       // 2. Save all new users to database with GitHub profile data
       const existingUsernames = existingUsers?.map((u) => u.username.toLowerCase()) || [];
 
-      const newUsers = users.filter(
+      const newUsers = allUsers.filter(
         (user) => !existingUsernames.includes(user.username.toLowerCase())
       );
 

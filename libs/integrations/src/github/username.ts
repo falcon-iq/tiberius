@@ -45,8 +45,8 @@ export const githubUsername = (username: string, suffix: string): string => {
         );
     }
 
-    // Append suffix
-    return `${trimmedLowercaseUsername}_${trimmedSuffix}`;
+    // Append suffix (suffix should already contain separator like '_' or '-')
+    return `${trimmedLowercaseUsername}${trimmedSuffix}`;
 };
 
 /**
