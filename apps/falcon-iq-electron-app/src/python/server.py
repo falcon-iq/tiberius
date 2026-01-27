@@ -1,9 +1,12 @@
 import sys
 import signal
+import threading
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import uvicorn
+from runPipeline import PipelineRunner
 
 # Global variable to store Electron userData directory path
 BASE_DIR: Optional[str] = None
@@ -34,6 +37,106 @@ def example_endpoint(data: dict):
     return {"received": data}
 
 
+class PipelineRequest(BaseModel):
+    start_from: int = 1
+    specific_steps: Optional[list[int]] = None
+    base_dir: Optional[str] = None
+
+
+# Store pipeline status
+pipeline_status = {
+    "running": False,
+    "success": None,
+    "last_run": None
+}
+
+
+def run_pipeline_task(start_from: int, specific_steps: Optional[list[int]], base_dir: Optional[str]):
+    """Background task to run the pipeline."""
+    global pipeline_status
+    
+    pipeline_status["running"] = True
+    pipeline_status["success"] = None
+    
+    try:
+        runner = PipelineRunner(
+            start_from=start_from,
+            specific_steps=specific_steps,
+            base_dir=base_dir or BASE_DIR
+        )
+        success = runner.run()
+        pipeline_status["success"] = success
+        pipeline_status["last_run"] = {"status": "completed" if success else "failed"}
+    except Exception as e:
+        pipeline_status["success"] = False
+        pipeline_status["last_run"] = {"status": "error", "error": str(e)}
+    finally:
+        pipeline_status["running"] = False
+
+
+@app.post("/api/pipeline/run")
+async def run_pipeline(request: PipelineRequest, background_tasks: BackgroundTasks):
+    """
+    Run the PR data pipeline.
+    
+    Parameters:
+    - start_from: Step number to start from (default: 1)
+    - specific_steps: List of specific steps to run (e.g., [1, 3])
+    - base_dir: Base directory for data (uses Electron userData path if not provided)
+    """
+    if pipeline_status["running"]:
+        return {"error": "Pipeline is already running"}
+    
+    background_tasks.add_task(
+        run_pipeline_task,
+        request.start_from,
+        request.specific_steps,
+        request.base_dir
+    )
+    
+    return {"message": "Pipeline started", "status": "running"}
+
+
+@app.get("/api/pipeline/status")
+def get_pipeline_status():
+    """Get the current status of the pipeline."""
+    return pipeline_status
+
+
+def run_pipeline_on_startup(base_dir: Optional[str]):
+    """Run the pipeline in a background thread on server startup."""
+    global pipeline_status
+    
+    print("\n" + "="*80, file=sys.stderr)
+    print("🚀 Running PR Data Pipeline in background...", file=sys.stderr)
+    print("="*80 + "\n", file=sys.stderr)
+    
+    pipeline_status["running"] = True
+    pipeline_status["success"] = None
+    
+    try:
+        runner = PipelineRunner(
+            start_from=1,
+            specific_steps=None,
+            base_dir=base_dir
+        )
+        success = runner.run()
+        
+        pipeline_status["success"] = success
+        pipeline_status["last_run"] = {"status": "completed" if success else "failed"}
+        
+        if success:
+            print("\n✅ Pipeline completed successfully!", file=sys.stderr)
+        else:
+            print("\n⚠️  Pipeline completed with errors", file=sys.stderr)
+    except Exception as e:
+        pipeline_status["success"] = False
+        pipeline_status["last_run"] = {"status": "error", "error": str(e)}
+        print(f"\n❌ Pipeline failed with error: {e}", file=sys.stderr)
+    finally:
+        pipeline_status["running"] = False
+
+
 def signal_handler(sig, frame):
     print("Graceful shutdown", file=sys.stderr)
     sys.exit(0)
@@ -50,6 +153,19 @@ if __name__ == "__main__":
     print(f"Starting on port {port}", file=sys.stderr)
     if BASE_DIR:
         print(f"User data path: {BASE_DIR}", file=sys.stderr)
+
+    # Start the pipeline in a background thread
+    pipeline_thread = threading.Thread(
+        target=run_pipeline_on_startup,
+        args=(BASE_DIR,),
+        daemon=True  # Thread will terminate when main program exits
+    )
+    pipeline_thread.start()
+    
+    print("\n" + "="*80, file=sys.stderr)
+    print("🌐 Starting FastAPI Server...", file=sys.stderr)
+    print("   (Pipeline running in background - check /api/pipeline/status)", file=sys.stderr)
+    print("="*80 + "\n", file=sys.stderr)
 
     uvicorn.run(
         app,

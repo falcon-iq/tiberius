@@ -1,6 +1,11 @@
 # Falcon Python Backend - Requirements
 # Python 3.10+ required
 
+# FastAPI server dependencies
+fastapi>=0.115.0
+uvicorn>=0.32.0
+pydantic>=2.10.0
+
 # Core dependencies for GitHub API and data processing
 requests>=2.32.0
 pandas>=2.0.0,<3.0.0
