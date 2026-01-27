@@ -20,33 +20,43 @@
  * ```
  */
 export const githubUsername = (username: string, suffix: string): string => {
-    // Validate suffix
+    // Validate suffix (check for null/undefined before calling trim)
+    if (suffix === null || suffix === undefined) {
+        throw new Error('Suffix is required and cannot be empty');
+    }
     const trimmedSuffix = suffix.trim();
     if (!trimmedSuffix) {
         throw new Error('Suffix is required and cannot be empty');
     }
-    const trimmedLowercaseUsername = username.trim().toLowerCase();
 
-    // Validate non empty username
-    if (!trimmedLowercaseUsername) {
+    // Validate username (check for null/undefined before calling trim)
+    if (username === null || username === undefined) {
+        throw new Error('Username is required and cannot be empty');
+    }
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
         throw new Error('Username is required and cannot be empty');
     }
 
-    // If username already ends with suffix, return as-is
-    if (trimmedLowercaseUsername.endsWith(trimmedSuffix.toLowerCase())) {
-        return trimmedLowercaseUsername;
-    }
+    // Check if suffix appears in the middle or multiple times (case-sensitive, likely malformed)
+    const firstIndex = trimmedUsername.indexOf(trimmedSuffix);
+    const lastIndex = trimmedUsername.lastIndexOf(trimmedSuffix);
 
-    // Check if suffix appears in the middle (likely malformed)
-    if (trimmedLowercaseUsername.includes(trimmedSuffix)) {
+    // If suffix appears multiple times or not at the end, it's malformed
+    if (firstIndex !== -1 && (firstIndex !== lastIndex || firstIndex !== trimmedUsername.length - trimmedSuffix.length)) {
         throw new Error(
-            `Username "${trimmedLowercaseUsername}" contains suffix "${trimmedSuffix}" in an incorrect position. ` +
+            `Username "${trimmedUsername}" contains suffix "${trimmedSuffix}" in an incorrect position. ` +
             `Suffix must only appear at the end.`
         );
     }
 
+    // If username already ends with suffix (case-sensitive), return as-is
+    if (trimmedUsername.endsWith(trimmedSuffix)) {
+        return trimmedUsername;
+    }
+
     // Append suffix (suffix should already contain separator like '_' or '-')
-    return `${trimmedLowercaseUsername}${trimmedSuffix}`;
+    return `${trimmedUsername}${trimmedSuffix}`;
 };
 
 /**
