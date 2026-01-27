@@ -1,6 +1,7 @@
 // Only export browser-safe modules (no Node.js fs/os dependencies)
 export * from './auth';
 export * from './username';
+export * from './utils';
 export * from './prs';
 
 // Note: FsPrStorage and MemoryPrStorage are NOT exported here

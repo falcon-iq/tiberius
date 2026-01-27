@@ -21,6 +21,29 @@ export interface DatabaseResult<T> {
   error?: string;
 }
 
+export interface AppSettings {
+  version: string;
+  user: {
+    firstName: string;
+    lastName: string;
+    ldapUsername: string;
+  };
+  integrations: {
+    github: {
+      pat: string;
+      emuSuffix?: string;
+      username?: string;
+    };
+  };
+  onboardingCompleted: boolean;
+}
+
+export interface SettingsResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
 // Python server types imported from shared location
 import type {
   PythonServerStatus,
@@ -42,6 +65,11 @@ export interface ElectronAPI {
   pythonServer: {
     getStatus(): Promise<PythonServerStatus>;
     restart(): Promise<PythonServerResult<PythonServerState>>;
+  };
+  settings: {
+    get(): Promise<SettingsResult<AppSettings>>;
+    save(settings: AppSettings): Promise<SettingsResult<void>>;
+    update(partial: Partial<AppSettings>): Promise<SettingsResult<void>>;
   };
 }
 

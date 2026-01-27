@@ -6,6 +6,7 @@ import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
+import { useSettings, useUpdateSettings } from '@hooks/use-settings';
 
 interface SettingsFormData {
   pat: string;
@@ -20,13 +21,15 @@ export const Settings = () => {
 
   const { register, handleSubmit, setValue, getValues } = useForm<SettingsFormData>({
     defaultValues: { pat: "" },
-    mode: "onBlur", // Validate on blur instead of only on submit
+    mode: "onBlur",
   });
 
-  // TanStack Query hooks for database operations
+  // TanStack Query hooks for database and settings operations
+  const { data: settings } = useSettings();
   const { data: existingUsers, isLoading: isLoadingUsers } = useUsers();
   const addUserMutation = useAddUser();
   const deleteUserMutation = useDeleteUser();
+  const updateSettingsMutation = useUpdateSettings();
 
   // Use the async validation hook for PAT
   const { validate, isValidating, validationError, isValid } = useAsyncValidation({
@@ -57,16 +60,18 @@ export const Settings = () => {
     fallbackErrorMessage: "Failed to validate username. Please try again."
   });
 
-  // Load PAT from localStorage on mount
+  // Load PAT from settings.json on mount
   useEffect(() => {
-    const storedPat = localStorage.getItem("manager_buddy_pat") ?? "";
-    setValue("pat", storedPat);
+    if (settings) {
+      const storedPat = settings.integrations.github.pat || "";
+      setValue("pat", storedPat);
 
-    // Validate the stored PAT to get metadata
-    if (storedPat) {
-      void validate(storedPat);
+      // Validate the stored PAT to get metadata
+      if (storedPat) {
+        void validate(storedPat);
+      }
     }
-  }, [setValue]); // Only setValue is needed - validate is intentionally omitted to run only on mount
+  }, [settings, setValue, validate]);
 
   // Hydrate users from database
   useEffect(() => {
@@ -132,11 +137,24 @@ export const Settings = () => {
     }
   }, [users, existingUsers, deleteUserMutation]);
 
-  const onSubmit = (data: SettingsFormData) => {
-    // Save PAT to localStorage
-    localStorage.setItem("manager_buddy_pat", data.pat);
-    // Users are already saved to SQLite database (no need to save here)
-    handleClose();
+  const onSubmit = async (data: SettingsFormData) => {
+    try {
+      // Save PAT to settings.json
+      await updateSettingsMutation.mutateAsync({
+        integrations: {
+          github: {
+            pat: data.pat,
+            emuSuffix: tokenMetadata?.emu_suffix,
+            username: tokenMetadata?.username,
+          },
+        },
+      });
+      // Users are already saved to SQLite database (no need to save here)
+      handleClose();
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      // TODO: Show error notification to user
+    }
   };
 
   const patField = register("pat");
