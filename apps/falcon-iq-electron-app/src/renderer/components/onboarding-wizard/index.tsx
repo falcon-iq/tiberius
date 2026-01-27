@@ -103,6 +103,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
         {/* Step Components */}
         {step === 1 && (
           <StepUserDetails
+            userDetails={userDetails}
             onNext={handleUserDetailsNext}
             onDataChange={handleUserDetailsChange}
           />
@@ -111,6 +112,7 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
         {step === 2 && (
           <StepIntegrations
             userDetails={userDetails}
+            githubIntegration={githubIntegration}
             onNext={handleIntegrationsNext}
             onBack={handleIntegrationsBack}
             onDataChange={setGithubIntegration}
