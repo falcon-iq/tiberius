@@ -47,7 +47,8 @@ const AppContent = () => {
   return (
     <>
       <RouterProvider router={router} />
-      <OnboardingWizard isOpen={showWizard} onComplete={handleWizardComplete} />
+      {/* Key prop helps with HMR by forcing remount when wizard state changes */}
+      <OnboardingWizard key="onboarding" isOpen={showWizard} onComplete={handleWizardComplete} />
     </>
   );
 };
