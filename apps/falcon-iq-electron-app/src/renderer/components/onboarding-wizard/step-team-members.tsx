@@ -184,14 +184,13 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
                   setDuplicateError(null);
                 }}
                 onBlur={(e) => {
-                  // Only append EMU suffix if present (non-EMU users use raw LDAP username)
-                  const username = githubIntegration.emuSuffix
-                    ? githubUsername(e.target.value, githubIntegration.emuSuffix)
-                    : e.target.value.trim();
-                  if (username !== e.target.value) {
-                    setNewUser(username);
-                  }
-                  void validateUsername(username);
+                  const ldapUsername = e.target.value.trim();
+                  // Build GitHub username for validation (with suffix if EMU user)
+                  const githubUsernameForValidation = githubIntegration.emuSuffix
+                    ? githubUsername(ldapUsername, githubIntegration.emuSuffix)
+                    : ldapUsername;
+                  // Don't update the input field - keep showing just LDAP username
+                  void validateUsername(githubUsernameForValidation);
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
                 placeholder="Enter LDAP username"
