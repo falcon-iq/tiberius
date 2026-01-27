@@ -3,8 +3,10 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { initDatabase, getUsers, addUser, deleteUser, closeDatabase, type AddUserInput } from './database';
 import { initPythonServer, getPythonServerStatus, restartPythonServer } from './python-server';
+import { getSettings, saveSettings, updateSettings } from './settings';
 import { getLogger } from '@libs/shared/utils/logger';
 import { isDevelopment } from '@libs/shared/utils/env';
+import type { AppSettings } from './types/settings';
 
 const log = getLogger({ name: 'main' });
 
@@ -143,6 +145,11 @@ ipcMain.handle('db:deleteUser', (_event, id: number) => deleteUser(id));
 // IPC handlers for Python server operations
 ipcMain.handle('python:getStatus', () => getPythonServerStatus());
 ipcMain.handle('python:restart', () => restartPythonServer());
+
+// IPC handlers for settings operations
+ipcMain.handle('settings:get', () => getSettings());
+ipcMain.handle('settings:save', (_event, settings: AppSettings) => saveSettings(settings));
+ipcMain.handle('settings:update', (_event, partial: Partial<AppSettings>) => updateSettings(partial));
 
 // Clean up database on app quit
 app.on('before-quit', () => {

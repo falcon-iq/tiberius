@@ -1,11 +1,11 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { createHashHistory } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppProviders } from '@providers/index';
+import { useSettings } from '@hooks/use-settings';
 
 // Import the generated route tree
 import { routeTree } from '@generatedtypes/routeTree.gen';
-// TEMPORARY: Import wizard for testing
 import { OnboardingWizard } from '@components/onboarding-wizard';
 
 // Create hash history for Electron
@@ -24,22 +24,38 @@ declare module '@tanstack/react-router' {
   }
 }
 
-const App = () => {
-  // TEMPORARY: State for testing the onboarding wizard
-  const [showWizard, setShowWizard] = useState(true);
+const AppContent = () => {
+  const { data: settings, isLoading } = useSettings();
+  const [showWizard, setShowWizard] = useState(false);
 
-  const handleWizardComplete = (pat: string, users: string[]) => {
+  useEffect(() => {
+    if (!isLoading && settings) {
+      // Show wizard if onboarding not completed
+      setShowWizard(!settings.onboardingCompleted);
+    }
+  }, [settings, isLoading]);
+
+  const handleWizardComplete = () => {
     console.log('Wizard completed!');
-    console.log('PAT:', pat);
-    console.log('Users:', users);
     setShowWizard(false);
   };
 
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
+
+  return (
+    <>
+      <RouterProvider router={router} />
+      <OnboardingWizard isOpen={showWizard} onComplete={handleWizardComplete} />
+    </>
+  );
+};
+
+const App = () => {
   return (
     <AppProviders>
-      <RouterProvider router={router} />
-      {/* TEMPORARY: Wizard for testing - remove after testing */}
-      <OnboardingWizard isOpen={showWizard} onComplete={handleWizardComplete} />
+      <AppContent />
     </AppProviders>
   );
 };
