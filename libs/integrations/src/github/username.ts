@@ -1,22 +1,22 @@
 /**
  * Appends a suffix to a GitHub username if not already present.
- * 
+ *
  * This function ensures usernames follow a consistent format by adding
- * a required suffix (e.g., "_LinkedIn") if it's not already there.
- * 
- * @param username - The base GitHub username to process
- * @param suffix - The required suffix to append (e.g., "_LinkedIn")
- * @returns The username with the suffix appended
- * 
+ * a required suffix with underscore separator if it's not already there.
+ *
+ * @param username - The base GitHub username to process (e.g., "octocat" or "octocat_LinkedIn")
+ * @param suffix - The required suffix WITHOUT underscore (e.g., "LinkedIn")
+ * @returns The username with _suffix appended (e.g., "octocat_LinkedIn")
+ *
  * @throws {Error} If suffix is empty or whitespace
  * @throws {Error} If username is empty or whitespace
- * @throws {Error} If username contains suffix in the middle (malformed)
- * 
+ * @throws {Error} If username contains _suffix in the middle (malformed)
+ *
  * @example
  * ```typescript
- * githubUsername("octocat", "_LinkedIn") // "octocat_LinkedIn"
- * githubUsername("octocat_LinkedIn", "_LinkedIn") // "octocat_LinkedIn" (already has suffix)
- * githubUsername("octo_LinkedIn_cat", "_LinkedIn") // throws (suffix in middle)
+ * githubUsername("octocat", "LinkedIn") // "octocat_LinkedIn"
+ * githubUsername("octocat_LinkedIn", "LinkedIn") // "octocat_LinkedIn" (already has suffix)
+ * githubUsername("octo_LinkedIn_cat", "LinkedIn") // throws (suffix in middle)
  * ```
  */
 export const githubUsername = (username: string, suffix: string): string => {
@@ -38,25 +38,28 @@ export const githubUsername = (username: string, suffix: string): string => {
         throw new Error('Username is required and cannot be empty');
     }
 
-    // Check if suffix appears in the middle or multiple times (case-sensitive, likely malformed)
-    const firstIndex = trimmedUsername.indexOf(trimmedSuffix);
-    const lastIndex = trimmedUsername.lastIndexOf(trimmedSuffix);
+    // Full suffix with underscore separator (e.g., "_LinkedIn")
+    const fullSuffix = `_${trimmedSuffix}`;
 
-    // If suffix appears multiple times or not at the end, it's malformed
-    if (firstIndex !== -1 && (firstIndex !== lastIndex || firstIndex !== trimmedUsername.length - trimmedSuffix.length)) {
+    // Check if _suffix appears in the middle or multiple times (case-sensitive, likely malformed)
+    const firstIndex = trimmedUsername.indexOf(fullSuffix);
+    const lastIndex = trimmedUsername.lastIndexOf(fullSuffix);
+
+    // If _suffix appears multiple times or not at the end, it's malformed
+    if (firstIndex !== -1 && (firstIndex !== lastIndex || firstIndex !== trimmedUsername.length - fullSuffix.length)) {
         throw new Error(
             `Username "${trimmedUsername}" contains suffix "${trimmedSuffix}" in an incorrect position. ` +
             `Suffix must only appear at the end.`
         );
     }
 
-    // If username already ends with suffix (case-sensitive), return as-is
-    if (trimmedUsername.endsWith(trimmedSuffix)) {
+    // If username already ends with _suffix (case-sensitive), return as-is
+    if (trimmedUsername.endsWith(fullSuffix)) {
         return trimmedUsername;
     }
 
-    // Append suffix (suffix should already contain separator like '_' or '-')
-    return `${trimmedUsername}${trimmedSuffix}`;
+    // Append suffix with underscore separator
+    return `${trimmedUsername}${fullSuffix}`;
 };
 
 /**

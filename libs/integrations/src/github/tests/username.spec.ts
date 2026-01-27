@@ -1,7 +1,7 @@
 import { githubUsername } from '../username';
 
 describe('githubUsername', () => {
-  const suffix = '_LinkedIn';
+  const suffix = 'LinkedIn';
 
   describe('successful username formatting', () => {
     it('should append suffix to username without suffix', () => {
@@ -29,7 +29,7 @@ describe('githubUsername', () => {
     });
 
     it('should trim whitespace from suffix', () => {
-      expect(githubUsername('octocat', '  _LinkedIn  ')).toBe('octocat_LinkedIn');
+      expect(githubUsername('octocat', '  LinkedIn  ')).toBe('octocat_LinkedIn');
     });
 
     it('should handle complex usernames', () => {
@@ -92,21 +92,21 @@ describe('githubUsername', () => {
   describe('error handling - malformed username', () => {
     it('should throw error if suffix appears in the middle of username', () => {
       expect(() => githubUsername('octo_LinkedIn_cat', suffix)).toThrow(
-        'Username "octo_LinkedIn_cat" contains suffix "_LinkedIn" in an incorrect position. ' +
+        'Username "octo_LinkedIn_cat" contains suffix "LinkedIn" in an incorrect position. ' +
         'Suffix must only appear at the end.'
       );
     });
 
     it('should throw error if suffix appears at the beginning', () => {
       expect(() => githubUsername('_LinkedIn_octocat', suffix)).toThrow(
-        'Username "_LinkedIn_octocat" contains suffix "_LinkedIn" in an incorrect position. ' +
+        'Username "_LinkedIn_octocat" contains suffix "LinkedIn" in an incorrect position. ' +
         'Suffix must only appear at the end.'
       );
     });
 
     it('should throw error if username has multiple occurrences of suffix', () => {
       expect(() => githubUsername('_LinkedIn_test_LinkedIn', suffix)).toThrow(
-        'Username "_LinkedIn_test_LinkedIn" contains suffix "_LinkedIn" in an incorrect position. ' +
+        'Username "_LinkedIn_test_LinkedIn" contains suffix "LinkedIn" in an incorrect position. ' +
         'Suffix must only appear at the end.'
       );
     });
@@ -122,15 +122,14 @@ describe('githubUsername', () => {
       expect(githubUsername(longUsername, suffix)).toBe(`${longUsername}_LinkedIn`);
     });
 
-    it('should handle different suffix formats', () => {
-      expect(githubUsername('octocat', '-suffix')).toBe('octocat-suffix');
-      expect(githubUsername('octocat', '_company')).toBe('octocat_company');
-      expect(githubUsername('octocat', 'Suffix')).toBe('octocatSuffix');
+    it('should always use underscore separator', () => {
+      expect(githubUsername('octocat', 'company')).toBe('octocat_company');
+      expect(githubUsername('octocat', 'Suffix')).toBe('octocat_Suffix');
     });
 
     it('should be case-sensitive', () => {
-      expect(githubUsername('octocat_linkedin', '_LinkedIn')).toBe('octocat_linkedin_LinkedIn');
-      expect(githubUsername('octocat_LinkedIn', '_linkedin')).toBe('octocat_LinkedIn_linkedin');
+      expect(githubUsername('octocat_linkedin', 'LinkedIn')).toBe('octocat_linkedin_LinkedIn');
+      expect(githubUsername('octocat_LinkedIn', 'linkedin')).toBe('octocat_LinkedIn_linkedin');
     });
   });
 });
