@@ -2,11 +2,24 @@ import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { Modal } from "@libs/shared/ui/modal/modal";
 import { useForm } from "react-hook-form";
-import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername } from "@libs/integrations/github";
+import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername, parseEmuSuffix } from "@libs/integrations/github";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
 import { useSettings, useUpdateSettings } from '@hooks/use-settings';
+
+/**
+ * Strip EMU suffix from username for display purposes
+ * @param username - Full GitHub username (e.g., "bsteyn_LinkedIn")
+ * @returns LDAP username without suffix (e.g., "bsteyn")
+ */
+const getDisplayUsername = (username: string): string => {
+  const suffix = parseEmuSuffix(username);
+  if (suffix) {
+    return username.slice(0, username.lastIndexOf('_'));
+  }
+  return username;
+};
 
 interface SettingsFormData {
   pat: string;
@@ -339,7 +352,7 @@ export const Settings = () => {
                 key={user}
                 className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
               >
-                <span className="text-sm text-foreground">{user}</span>
+                <span className="text-sm text-foreground">{getDisplayUsername(user)}</span>
                 <button
                   type="button"
                   onClick={() => void handleRemoveUser(user)}
