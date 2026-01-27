@@ -128,18 +128,37 @@ export async function updateSettings(
       return result;
     }
 
-    // Deep merge partial settings
-    const updated: AppSettings = {
+    // Normalize current settings against defaults to handle missing nested objects
+    // (protects against schema drift or manual edits)
+    const normalized: AppSettings = {
+      ...DEFAULT_SETTINGS,
       ...result.data,
+      user: {
+        ...DEFAULT_SETTINGS.user,
+        ...(result.data.user || {}),
+      },
+      integrations: {
+        ...DEFAULT_SETTINGS.integrations,
+        ...(result.data.integrations || {}),
+        github: {
+          ...DEFAULT_SETTINGS.integrations.github,
+          ...(result.data.integrations?.github || {}),
+        },
+      },
+    };
+
+    // Deep merge partial settings with normalized base
+    const updated: AppSettings = {
+      ...normalized,
       ...partial,
       user: {
-        ...result.data.user,
+        ...normalized.user,
         ...(partial.user || {}),
       },
       integrations: {
-        ...result.data.integrations,
+        ...normalized.integrations,
         github: {
-          ...result.data.integrations.github,
+          ...normalized.integrations.github,
           ...(partial.integrations?.github || {}),
         },
       },

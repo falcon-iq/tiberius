@@ -71,7 +71,9 @@ export const Settings = () => {
         void validate(storedPat);
       }
     }
-  }, [settings, setValue, validate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // validate function identity changes every render, but we only want to run this on settings/setValue change
+  }, [settings, setValue]);
 
   // Hydrate users from database
   useEffect(() => {
@@ -261,7 +263,10 @@ export const Settings = () => {
                   setDuplicateError(null);
                 }}
                 onBlur={(e) => {
-                  const username = githubUsername(e.target.value, tokenMetadata?.emu_suffix || '');
+                  // Only append EMU suffix if present (non-EMU users use raw username)
+                  const username = tokenMetadata?.emu_suffix
+                    ? githubUsername(e.target.value, tokenMetadata.emu_suffix)
+                    : e.target.value.trim();
                   if (username !== e.target.value) {
                     setNewUser(username);
                   }
