@@ -46,7 +46,7 @@ const AgentSidebar = ({
 
   return (
     <aside
-      className={`relative flex flex-col border-l border-border bg-card ${
+      className={`relative flex flex-col border-l border-sidebar-border bg-sidebar ${
         !isResizing ? 'transition-[width] duration-300 ease-in-out' : ''
       }`}
       style={{ width: isCollapsed ? `${collapsedWidth}px` : `${width}px` }}
@@ -54,14 +54,14 @@ const AgentSidebar = ({
       {/* Drag Handle */}
       {!isCollapsed && (
         <div
-          className="absolute left-0 top-0 h-full cursor-col-resize border-r border-border hover:bg-primary/10 active:bg-primary/20"
+          className="absolute left-0 top-0 h-full cursor-col-resize border-r border-sidebar-border hover:bg-primary/10 active:bg-primary/20"
           style={{ width: '4px', marginLeft: '-2px' }}
           onMouseDown={handleMouseDown}
         />
       )}
 
       {/* Header with toggle */}
-      <div className="flex h-16 items-center gap-2 border-b border-border px-4">
+      <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4">
         <button
           onClick={onToggleCollapse}
           className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted"
@@ -107,7 +107,7 @@ const AgentSidebar = ({
           </div>
 
           {/* Input Area */}
-          <div className="border-t border-border p-4">
+          <div className="border-t border-sidebar-border p-4">
             <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2">
               <input
                 type="text"
