@@ -2,49 +2,11 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useUsers } from '@hooks/use-users';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
+import { getDisplayName, getInitials } from '@libs/shared/ui/card/card';
 
 export const Route = createFileRoute('/users/$id')({
   component: UserDetail,
 });
-
-// Helper functions (duplicated from TeamMemberCard for now)
-function getDisplayName(user: {
-  firstname?: string | null;
-  lastname?: string | null;
-  username: string;
-}): string {
-  if (user.firstname && user.lastname) {
-    return `${user.firstname} ${user.lastname}`;
-  }
-  if (user.firstname) return user.firstname;
-  if (user.lastname) return user.lastname;
-
-  if (user.username.includes('_')) {
-    return user.username.slice(0, user.username.lastIndexOf('_'));
-  }
-  return user.username;
-}
-
-function getInitials(user: {
-  firstname?: string | null;
-  lastname?: string | null;
-  username: string;
-}): string {
-  if (user.firstname && user.lastname) {
-    return (user.firstname[0] + user.lastname[0]).toUpperCase();
-  }
-  if (user.firstname && user.firstname.length >= 2) {
-    return user.firstname.slice(0, 2).toUpperCase();
-  }
-  if (user.lastname && user.lastname.length >= 2) {
-    return user.lastname.slice(0, 2).toUpperCase();
-  }
-
-  const usernameWithoutSuffix = user.username.includes('_')
-    ? user.username.slice(0, user.username.lastIndexOf('_'))
-    : user.username;
-  return usernameWithoutSuffix.slice(0, 2).toUpperCase();
-}
 
 function UserDetail() {
   const { id } = Route.useParams();
