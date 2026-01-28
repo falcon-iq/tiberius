@@ -3,6 +3,8 @@ import { useState, useMemo } from 'react';
 import { Plus, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
 import { useGoals, useAddGoal, useUpdateGoal, useDeleteGoal } from '@hooks/use-goals';
 import { formatDate, getCurrentTimestamp } from '@utils/date-utils';
+import { Modal } from '@libs/shared/ui/modal';
+import { Tooltip } from '@libs/shared/ui/tooltip';
 
 export const Route = createFileRoute('/goals/')({
   component: GoalsPage,
@@ -15,6 +17,8 @@ function GoalsPage() {
   const [filter, setFilter] = useState<FilterType>('current');
   const [newGoal, setNewGoal] = useState('');
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState<{ id: number; name: string } | null>(null);
 
   // Hooks
   const { data: goals = [], isLoading, error } = useGoals();
@@ -68,9 +72,22 @@ function GoalsPage() {
     }
   };
 
-  const handleDeleteGoal = async (goalId: number) => {
+  const openDeleteModal = (goalId: number, goalName: string) => {
+    setGoalToDelete({ id: goalId, name: goalName });
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setGoalToDelete(null);
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!goalToDelete) return;
+
     try {
-      await deleteGoalMutation.mutateAsync(goalId);
+      await deleteGoalMutation.mutateAsync(goalToDelete.id);
+      closeDeleteModal();
     } catch (error) {
       console.error('Failed to delete goal:', error);
     }
@@ -194,17 +211,18 @@ function GoalsPage() {
                   </div>
                   <div className="flex gap-2">
                     {!goal.end_date && (
-                      <button
-                        onClick={() => handleEndGoal(goal.id)}
-                        disabled={updateGoalMutation.isPending}
-                        className="rounded p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-                        title="End goal"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                      </button>
+                      <Tooltip content="Mark goal as completed" position="top">
+                        <button
+                          onClick={() => handleEndGoal(goal.id)}
+                          disabled={updateGoalMutation.isPending}
+                          className="rounded p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </button>
+                      </Tooltip>
                     )}
                     <button
-                      onClick={() => handleDeleteGoal(goal.id)}
+                      onClick={() => openDeleteModal(goal.id, goal.goal)}
                       disabled={deleteGoalMutation.isPending}
                       className="rounded p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive disabled:opacity-50"
                       title="Delete goal"
@@ -218,6 +236,52 @@ function GoalsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={closeDeleteModal}
+        title="Delete Goal"
+        size="sm"
+        closeOnBackdrop={false}
+        closeOnEscape={true}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-foreground">
+            Are you sure you want to delete <strong>"{goalToDelete?.name}"</strong>?
+          </p>
+          <p className="text-sm text-muted-foreground">
+            This action cannot be undone.
+          </p>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={closeDeleteModal}
+              disabled={deleteGoalMutation.isPending}
+              className="flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeleteGoal}
+              disabled={deleteGoalMutation.isPending}
+              className="flex-1 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleteGoalMutation.isPending ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Deleting...
+                </span>
+              ) : (
+                'Delete'
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
