@@ -489,24 +489,12 @@ def main():
                 mapped_count = okr_status.get('mapped_count', 0)
                 skipped_count = okr_status.get('skipped_count', 0)
                 
-                # Check if OKR mapping is complete (skip unless force recalculate)
-                if okr_status.get('status') == 'completed' and not force_recalculate:
+                # Check if OKR mapping is complete (always honor completed status)
+                if okr_status.get('status') == 'completed':
                     print(f"      ✅ OKR mapping already completed - skipping")
                     total_mapped += mapped_count
                     total_skipped += skipped_count
                     continue
-                
-                # Reset status if force recalculating
-                if force_recalculate and okr_status.get('status') == 'completed':
-                    print(f"      🔄 Force recalculating (resetting status)")
-                    okr_status['status'] = 'in_progress'
-                    okr_status['current_row'] = 0
-                    okr_status['mapped_count'] = 0
-                    okr_status['skipped_count'] = 0
-                    current_row = 0
-                    mapped_count = 0
-                    skipped_count = 0
-                    save_status(okr_status_filepath, okr_status)
                 
                 # Read CSV file
                 try:
