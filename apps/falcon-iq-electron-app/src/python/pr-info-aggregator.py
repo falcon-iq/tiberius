@@ -11,7 +11,9 @@ Aggregates PR information for each user combining:
 Prerequisites:
 - OKR mapping must be completed (Step 5: prOKRMapper.py)
 
-Output: pr_data_folder/pr-stats/pr_{username}_{start_date}_{end_date}.csv
+Output:
+- CSV: pr_data_folder/pr-stats/pr_{username}_{start_date}_{end_date}.csv
+- Status files: task_folder/pr_{authored|reviewer}_{username}_pr-aggregator_status.json
 
 Columns:
 - username: User's username
@@ -230,6 +232,28 @@ def process_pr_file(pr_file: Path, file_type: str, username: str,
     return pd.DataFrame(results)
 
 
+def load_status(task_folder: Path, username: str, task_type: str) -> Dict:
+    """Load status from JSON file"""
+    status_file = task_folder / f"pr_{task_type}_{username}_pr-aggregator_status.json"
+    if status_file.exists():
+        try:
+            with open(status_file, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def save_status(task_folder: Path, username: str, task_type: str, status_data: Dict):
+    """Save status to JSON file"""
+    status_file = task_folder / f"pr_{task_type}_{username}_pr-aggregator_status.json"
+    try:
+        with open(status_file, 'w') as f:
+            json.dump(status_data, f, indent=2)
+    except Exception as e:
+        print(f"      ⚠️  Error saving status: {e}")
+
+
 def generate_stats_for_user(username: str, base_dir: Path, pr_data_folder: Path, 
                             task_folder: Path, stats_folder: Path, 
                             ai_reviewer_prefixes: List[str]) -> bool:
@@ -258,11 +282,41 @@ def generate_stats_for_user(username: str, base_dir: Path, pr_data_folder: Path,
     
     print(f"   ✅ OKR mapping completed")
     
-    # Read task files to get date ranges
+    # Check if aggregation is already completed
     task_types = ["authored", "reviewer"]
+    all_completed = True
+    for task_type in task_types:
+        status = load_status(task_folder, username, task_type)
+        if not status or status.get('status') != 'completed':
+            all_completed = False
+            break
+    
+    if all_completed:
+        print(f"   ℹ️  PR aggregation already completed for {username}")
+        print(f"   💡 Delete status files to re-run:")
+        for task_type in task_types:
+            status_file = task_folder / f"pr_{task_type}_{username}_pr-aggregator_status.json"
+            print(f"      - {status_file.name}")
+        return True
+    
+    # Initialize status for both task types
+    for task_type in task_types:
+        status = load_status(task_folder, username, task_type)
+        if not status or status.get('status') != 'completed':
+            status = {
+                'status': 'in_progress',
+                'username': username,
+                'task_type': task_type,
+                'total_prs': 0,
+                'processed_prs': 0
+            }
+            save_status(task_folder, username, task_type, status)
+    
+    # Read task files to get date ranges
     all_stats = []
     start_date = None
     end_date = None
+    task_type_stats = {}
     
     for task_type in task_types:
         task_file = task_folder / f"pr_{task_type}_{username}.json"
@@ -309,12 +363,19 @@ def generate_stats_for_user(username: str, base_dir: Path, pr_data_folder: Path,
             
             if len(stats_df) > 0:
                 all_stats.append(stats_df)
+                task_type_stats[task_type] = len(stats_df)
                 print(f"   ✅ Processed {len(stats_df)} PRs from {pr_filename}")
             else:
+                task_type_stats[task_type] = 0
                 print(f"   ℹ️  No PRs found in {pr_filename}")
         
         except Exception as e:
             print(f"   ❌ Error processing {task_file.name}: {e}")
+            # Update status to reflect error
+            status = load_status(task_folder, username, task_type)
+            status['status'] = 'error'
+            status['error'] = str(e)
+            save_status(task_folder, username, task_type, status)
             continue
     
     # Combine all stats
@@ -341,6 +402,16 @@ def generate_stats_for_user(username: str, base_dir: Path, pr_data_folder: Path,
     print(f"      With OKRs: {len(combined_stats[combined_stats['okr'] != ''])}")
     print(f"   💾 Saved to: {output_file.name}")
     
+    # Update status files to completed for both task types
+    for task_type in task_types:
+        status = load_status(task_folder, username, task_type)
+        status['status'] = 'completed'
+        status['total_prs'] = task_type_stats.get(task_type, 0)
+        status['processed_prs'] = task_type_stats.get(task_type, 0)
+        status['output_file'] = str(output_file)
+        save_status(task_folder, username, task_type, status)
+        print(f"   ✅ Status updated: pr_{task_type}_{username}_pr-aggregator_status.json")
+    
     return True
 
 
@@ -366,7 +437,7 @@ def main():
     stats_folder = pr_data_folder / "pr-stats"
     
     # Get AI reviewer prefixes from settings
-    ai_reviewer_prefixes = settings.get('ai_reviewer_prefixes', ["github-actions", "svc-gha"])
+    ai_reviewer_prefixes = settings.get('ai_reviewer_prefixes', ["github-actions", "svc-"])
     
     print(f"📁 Base directory: {base_dir}")
     print(f"📂 PR data folder: {pr_data_folder}")

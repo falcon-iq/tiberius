@@ -648,7 +648,7 @@ def main():
         return
     
     # Get AI reviewer prefixes from settings
-    ai_reviewer_prefixes = settings.get('ai_reviewer_prefixes', ["github-actions", "svc-gha"])
+    ai_reviewer_prefixes = settings.get('ai_reviewer_prefixes', ["github-actions", "svc-"])
     
     # Get batch size from settings
     batch_size = settings.get('comment_classification_batch_size', DEFAULT_BATCH_SIZE)
