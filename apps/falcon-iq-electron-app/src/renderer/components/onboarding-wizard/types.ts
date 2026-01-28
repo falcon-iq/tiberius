@@ -32,6 +32,16 @@ export interface TeamMember {
 }
 
 /**
+ * Goal with start and end dates
+ */
+export interface Goal {
+  id: number;
+  goal: string;
+  start_date: string;
+  end_date: string | null;
+}
+
+/**
  * Step component props
  */
 export interface StepComponentProps {
@@ -57,9 +67,17 @@ export interface Step2Props extends StepComponentProps {
 }
 
 /**
- * Step 3 props (final step - uses onComplete instead of onNext)
+ * Step 3 props (Goals)
  */
-export interface Step3Props {
+export interface Step3Props extends StepComponentProps {
+  userDetails: UserDetails;
+  githubIntegration: GitHubIntegration;
+}
+
+/**
+ * Step 4 props (final step - uses onComplete instead of onNext)
+ */
+export interface Step4Props {
   userDetails: UserDetails;
   githubIntegration: GitHubIntegration;
   onBack: () => void;
