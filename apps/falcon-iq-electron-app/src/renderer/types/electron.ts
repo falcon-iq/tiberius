@@ -27,6 +27,11 @@ export interface AddGoalInput {
   end_date?: string | null;
 }
 
+export interface UpdateGoalInput {
+  id: number;
+  end_date?: string | null;
+}
+
 export interface DatabaseResult<T> {
   success: boolean;
   data?: T;
@@ -77,6 +82,7 @@ export interface ElectronAPI {
   getGoals(): Promise<DatabaseResult<Goal[]>>;
   addGoal(goal: AddGoalInput): Promise<DatabaseResult<Goal>>;
   deleteGoal(id: number): Promise<DatabaseResult<void>>;
+  updateGoal(goal: UpdateGoalInput): Promise<DatabaseResult<void>>;
   pythonServer: {
     getStatus(): Promise<PythonServerStatus>;
     restart(): Promise<PythonServerResult<PythonServerState>>;

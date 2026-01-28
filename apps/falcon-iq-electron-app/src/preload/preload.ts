@@ -13,6 +13,11 @@ export interface AddGoalInput {
   end_date?: string | null;
 }
 
+export interface UpdateGoalInput {
+  id: number;
+  end_date?: string | null;
+}
+
 export interface Goal {
   id: number;
   goal: string;
@@ -44,6 +49,7 @@ contextBridge.exposeInMainWorld('api', {
   getGoals: () => ipcRenderer.invoke('db:getGoals'),
   addGoal: (goal: AddGoalInput) => ipcRenderer.invoke('db:addGoal', goal),
   deleteGoal: (id: number) => ipcRenderer.invoke('db:deleteGoal', id),
+  updateGoal: (goal: UpdateGoalInput) => ipcRenderer.invoke('db:updateGoal', goal),
   pythonServer: {
     getStatus: () => ipcRenderer.invoke('python:getStatus'),
     restart: () => ipcRenderer.invoke('python:restart'),

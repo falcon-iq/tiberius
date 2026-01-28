@@ -182,6 +182,11 @@ export interface AddGoalInput {
   end_date?: string | null;
 }
 
+export interface UpdateGoalInput {
+  id: number;
+  end_date?: string | null;
+}
+
 export interface Goal {
   id: number;
   goal: string;
@@ -227,6 +232,20 @@ export function deleteGoal(id: number) {
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to delete goal' };
+  }
+}
+
+export function updateGoal(input: UpdateGoalInput) {
+  try {
+    const stmt = db.prepare(`
+      UPDATE goals
+      SET end_date = ?
+      WHERE id = ?
+    `);
+    stmt.run(input.end_date ?? null, input.id);
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to update goal' };
   }
 }
 

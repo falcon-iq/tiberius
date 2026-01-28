@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { initDatabase, getUsers, addUser, deleteUser, getGoals, addGoal, deleteGoal, closeDatabase, type AddUserInput, type AddGoalInput } from './database';
+import { initDatabase, getUsers, addUser, deleteUser, getGoals, addGoal, deleteGoal, updateGoal, closeDatabase, type AddUserInput, type AddGoalInput, type UpdateGoalInput } from './database';
 import { initPythonServer, getPythonServerStatus, restartPythonServer } from './python-server';
 import { getSettings, saveSettings, updateSettings } from './settings';
 import { getLogger } from '@libs/shared/utils/logger';
@@ -145,6 +145,7 @@ ipcMain.handle('db:deleteUser', (_event, id: number) => deleteUser(id));
 ipcMain.handle('db:getGoals', () => getGoals());
 ipcMain.handle('db:addGoal', (_event, goal: AddGoalInput) => addGoal(goal));
 ipcMain.handle('db:deleteGoal', (_event, id: number) => deleteGoal(id));
+ipcMain.handle('db:updateGoal', (_event, goal: UpdateGoalInput) => updateGoal(goal));
 
 // IPC handlers for Python server operations
 ipcMain.handle('python:getStatus', () => getPythonServerStatus());

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings, Sun, Moon } from "lucide-react"
+import { Users, Goal, Settings, Sun, Moon } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
 interface NavigationSidebarProps {
@@ -23,20 +23,20 @@ const NavigationSidebar = ({ theme, onToggleTheme }: NavigationSidebarProps) => 
             }}
             title="Dashboard"
         >
-            <LayoutDashboard className="h-5 w-5" />
+            <Users className="h-5 w-5" />
             <span className="sr-only">Dashboard</span>
         </Link>
 
         <Link
-            to="/about"
+            to="/goals"
             className="group relative flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             activeProps={{
               className: "group relative flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors"
             }}
-            title="Team"
+            title="Goals"
         >
-            <Users className="h-5 w-5" />
-            <span className="sr-only">Team</span>
+            <Goal className="h-5 w-5" />
+            <span className="sr-only">Goals</span>
         </Link>
 
         <Link
