@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { TeamMemberCard } from '@libs/shared/ui/card/card';
+import { TeamMemberCard } from '@libs/shared/ui/card';
 import { useUsers } from '@hooks/use-users';
 import { Loader2 } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Modal } from "@libs/shared/ui/modal/modal";
+import { Modal } from "@libs/shared/ui/modal";
 import { useForm } from "react-hook-form";
 import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername, parseGitHubUser } from "@libs/integrations/github";
 import { Loader2, Plus, Trash2 } from "lucide-react";
