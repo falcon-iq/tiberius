@@ -59,3 +59,23 @@ export function useDeleteGoal() {
     },
   });
 }
+
+/**
+ * Hook to update a goal (typically to set end_date)
+ */
+export function useUpdateGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (goal: { id: number; end_date?: string | null }) => {
+      const result = await window.api.updateGoal(goal);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update goal');
+      }
+    },
+    onSuccess: () => {
+      // Invalidate and refetch goals query
+      void queryClient.invalidateQueries({ queryKey: GOALS_QUERY_KEY });
+    },
+  });
+}
