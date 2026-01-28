@@ -41,6 +41,15 @@ export function initDatabase() {
     )
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS goals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      goal TEXT NOT NULL,
+      start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      end_date TIMESTAMP NULL
+    )
+  `);
+
   log.info('Database initialized successfully');
 }
 
@@ -165,6 +174,59 @@ export function clearPythonServerState() {
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to clear Python server state' };
+  }
+}
+
+export interface AddGoalInput {
+  goal: string;
+  end_date?: string | null;
+}
+
+export interface Goal {
+  id: number;
+  goal: string;
+  start_date: string;
+  end_date: string | null;
+}
+
+export function getGoals() {
+  try {
+    const stmt = db.prepare('SELECT * FROM goals ORDER BY start_date DESC');
+    return { success: true, data: stmt.all() };
+  } catch {
+    return { success: false, error: 'Failed to fetch goals' };
+  }
+}
+
+export function addGoal(input: AddGoalInput) {
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO goals (goal, end_date)
+      VALUES (?, ?)
+    `);
+    const result = stmt.run(
+      input.goal,
+      input.end_date ?? null
+    );
+    return {
+      success: true,
+      data: {
+        id: result.lastInsertRowid,
+        ...input
+      }
+    };
+  } catch {
+    return { success: false, error: 'Failed to add goal' };
+  }
+}
+
+export function deleteGoal(id: number) {
+  try {
+    const stmt = db.prepare('DELETE FROM goals WHERE id = ?');
+    stmt.run(id);
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to delete goal' };
   }
 }
 

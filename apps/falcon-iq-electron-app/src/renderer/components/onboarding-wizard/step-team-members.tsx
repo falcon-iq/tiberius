@@ -1,5 +1,5 @@
 /**
- * Step 3: Team Members
+ * Step 4: Team Members
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -8,10 +8,10 @@ import { validateGitHubUser, githubUsername, parseGitHubUser, type ValidateUserR
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
 import { useUpdateSettings } from '@hooks/use-settings';
-import type { Step3Props, TeamMember } from './types';
+import type { Step4Props, TeamMember } from './types';
 import { stripEmuSuffix } from '@libs/shared/utils/user-display';
 
-export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComplete }: Step3Props) => {
+export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComplete }: Step4Props) => {
   const [users, setUsers] = useState<TeamMember[]>([]);
   const [newUser, setNewUser] = useState('');
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
@@ -171,7 +171,7 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
     <div className="space-y-6">
       <div>
         <h2 className="mb-4 text-lg font-semibold text-foreground">
-          Step 3: Add Team Members
+          Step 4: Add Team Members
         </h2>
         <div className="mb-4">
           <div className="relative flex gap-2">

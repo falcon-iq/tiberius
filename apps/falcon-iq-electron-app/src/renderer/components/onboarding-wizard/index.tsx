@@ -8,6 +8,7 @@ import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@libs/shared/hooks/use-theme';
 import { StepUserDetails } from './step-user-details';
 import { StepIntegrations } from './step-integrations';
+import { StepGoals } from './step-goals';
 import { StepTeamMembers } from './step-team-members';
 import type { UserDetails, GitHubIntegration } from './types';
 
@@ -49,8 +50,16 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
     setStep(1);
   }, []);
 
-  const handleTeamMembersBack = useCallback(() => {
+  const handleGoalsNext = useCallback(() => {
+    setStep(4);
+  }, []);
+
+  const handleGoalsBack = useCallback(() => {
     setStep(2);
+  }, []);
+
+  const handleTeamMembersBack = useCallback(() => {
+    setStep(3);
   }, []);
 
   return (
@@ -98,6 +107,11 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
               step >= 3 ? 'bg-primary' : 'bg-muted'
             }`}
           />
+          <div
+            className={`h-2 w-24 rounded-full transition-colors ${
+              step >= 4 ? 'bg-primary' : 'bg-muted'
+            }`}
+          />
         </div>
 
         {/* Step Components */}
@@ -120,6 +134,15 @@ export const OnboardingWizard = ({ isOpen, onComplete }: OnboardingWizardProps) 
         )}
 
         {step === 3 && (
+          <StepGoals
+            userDetails={userDetails}
+            githubIntegration={githubIntegration}
+            onNext={handleGoalsNext}
+            onBack={handleGoalsBack}
+          />
+        )}
+
+        {step === 4 && (
           <StepTeamMembers
             userDetails={userDetails}
             githubIntegration={githubIntegration}

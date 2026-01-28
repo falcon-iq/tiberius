@@ -8,6 +8,18 @@ export interface AddUserInput {
   lastname?: string | null;
 }
 
+export interface AddGoalInput {
+  goal: string;
+  end_date?: string | null;
+}
+
+export interface Goal {
+  id: number;
+  goal: string;
+  start_date: string;
+  end_date: string | null;
+}
+
 export interface AppSettings {
   version: string;
   user: {
@@ -29,6 +41,9 @@ contextBridge.exposeInMainWorld('api', {
   getUsers: () => ipcRenderer.invoke('db:getUsers'),
   addUser: (user: AddUserInput) => ipcRenderer.invoke('db:addUser', user),
   deleteUser: (id: number) => ipcRenderer.invoke('db:deleteUser', id),
+  getGoals: () => ipcRenderer.invoke('db:getGoals'),
+  addGoal: (goal: AddGoalInput) => ipcRenderer.invoke('db:addGoal', goal),
+  deleteGoal: (id: number) => ipcRenderer.invoke('db:deleteGoal', id),
   pythonServer: {
     getStatus: () => ipcRenderer.invoke('python:getStatus'),
     restart: () => ipcRenderer.invoke('python:restart'),
