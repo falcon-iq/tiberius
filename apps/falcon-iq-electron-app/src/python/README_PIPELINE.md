@@ -4,11 +4,15 @@ A comprehensive orchestration tool for managing the PR data collection pipeline.
 
 ## Overview
 
-The pipeline consists of three sequential steps:
+The pipeline consists of seven sequential steps:
 
 1. **Task Generation** (`prTaskGenerator.py`) - Creates PR tasks for each user based on configured date ranges
 2. **PR Search** (`prSearchTaskExecutor.py`) - Downloads PR lists from GitHub using the search API
 3. **PR Details Download** (`prDownloadExecutor.py`) - Downloads full PR details including metadata, comments, and files
+4. **OKR Parsing** (`okrParser.py`) - Parses OKR files from okrs/input to okrs/parsed format
+5. **OKR Mapping** (`prOKRMapper.py`) - Maps OKRs to PRs with intelligent classification and fallback
+6. **Comment Generation** (`prCommentFileGenerator.py`) - Extracts and organizes PR comments (authored/reviewed)
+7. **Comment Classification** (`prCommentClassification.py`) - Classifies PR comments using OpenAI into feedback categories
 
 ## Quick Start
 
@@ -61,8 +65,8 @@ python runPipeline.py --list
 | Option | Description | Example |
 |--------|-------------|---------|
 | `--base-dir PATH`<br>`--base_dir PATH` | Override base directory<br>(case-insensitive) | `--base-dir /custom/path`<br>`--BASE_DIR /custom/path` |
-| `--start-from N` | Start from step N (1-3) | `--start-from 2` |
-| `--steps X,Y,Z` | Run only specific steps | `--steps 1,3` |
+| `--start-from N` | Start from step N (1-7) | `--start-from 4` |
+| `--steps X,Y,Z` | Run only specific steps | `--steps 1,3,5` |
 | `--list` | List all available steps | `--list` |
 | `-h, --help` | Show help message | `-h` |
 
@@ -84,8 +88,8 @@ python runPipeline.py --base-dir /mnt/staging-data
 
 **How it works:**
 - The `--base-dir` option sets a global variable in `common.py`
-- All scripts (`prTaskGenerator.py`, `prSearchTaskExecutor.py`, `prDownloadExecutor.py`) use this global override
-- This affects all paths: `task_folder`, `pr_data_folder`, `settings_folder`, etc.
+- All scripts use this global override
+- This affects all paths: `task_folder`, `pr_data_folder`, `settings_folder`, `okr_folder`, `comments_folder`, etc.
 - The override only lasts for the current pipeline run
 
 ## Pipeline Steps Detail
@@ -111,6 +115,57 @@ python runPipeline.py --base-dir /mnt/staging-data
 - **Batch Processing**: Downloads 10 PRs at a time with progress tracking
 - **Status**: Updates status to `pr-details-downloaded`
 
+### Step 4: OKR Parsing
+- **Script**: `okrParser.py`
+- **Purpose**: Parse and structure OKR files for each user
+- **Input**: Raw OKR files in `okrs/input/{username}_okrs.csv`
+- **Output**: Parsed OKR files in `okrs/parsed/{username}_okrs_parsed.csv`
+- **Features**: Extracts objective, key result, and metadata; handles multiple formats
+- **Skip Logic**: Skips if parsed file already exists
+
+### Step 5: OKR Mapping
+- **Script**: `prOKRMapper.py`
+- **Purpose**: Intelligently map OKRs to PRs with AI-powered classification
+- **Input**: Parsed OKRs (Step 4) and PR data (Step 3)
+- **Output**: `okrs_{username}.csv` with mapped PRs and classifications
+- **Features**:
+  - OpenAI embeddings for semantic matching
+  - Hybrid scoring (embeddings + lexical + acronyms)
+  - Fallback classification (cleanup, refactoring, dependency-updates)
+  - Cost tracking and configurable thresholds
+  - Force recalculation option via `user-settings.json`
+
+### Step 6: Comment Generation
+- **Script**: `prCommentFileGenerator.py`
+- **Purpose**: Extract and organize PR comments for each user
+- **Input**: PR data (Step 3) and task files
+- **Output**: Two CSV files per user:
+  - `{username}_comments_on_authored_prs_{date}.csv` - ALL comments on user's PRs
+  - `{username}_comments_on_reviewed_prs_{date}.csv` - User's comments on others' PRs
+- **Features**:
+  - Configurable PR username mapping via `prUserName` in `users.json`
+  - Includes comment metadata (type, author, PR details)
+  - Skips if files already exist
+
+### Step 7: Comment Classification
+- **Script**: `prCommentClassification.py`
+- **Purpose**: Classify PR comments using OpenAI into engineering feedback categories
+- **Input**: Comment files from Step 6
+- **Output**: Same CSV files with added classification columns
+- **Categories**: 17 types (NITPICK_STYLE, BUG_CORRECTNESS, DESIGN_ARCHITECTURE, AI_GENERATED, etc.)
+- **Features**:
+  - Batch processing (configurable batch size, default 50)
+  - Single batch mode for incremental processing
+  - AI comment detection (skips OpenAI for bots - no cost)
+  - Empty comment handling (classified as PRAISE_ACK)
+  - Status tracking and automatic resume
+  - Detailed cost tracking per batch and total
+  - Caching to avoid duplicate classifications
+- **Configuration**: Via `user-settings.json`:
+  - `comment_classification_batch_size`: Comments per batch
+  - `comment_classification_single_batch_mode`: Process one batch per run
+  - `ai_reviewer_prefixes`: AI reviewer username prefixes
+
 ## Configuration
 
 Pipeline configuration is stored in `pipeline_config.json`:
@@ -130,7 +185,7 @@ Pipeline configuration is stored in `pipeline_config.json`:
 
 ### Pipeline Settings
 
-- `default_start_step`: Default step to start from (1-3)
+- `default_start_step`: Default step to start from (1-7)
 - `timeout_per_step_seconds`: Maximum time allowed per step (default: 600s)
 - `continue_on_error`: Whether to continue if a step fails (default: false)
 
