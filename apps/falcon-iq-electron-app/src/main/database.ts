@@ -205,20 +205,22 @@ export function getGoals() {
 
 export function addGoal(input: AddGoalInput) {
   try {
-    const stmt = db.prepare(`
+    const insertStmt = db.prepare(`
       INSERT INTO goals (goal, end_date)
       VALUES (?, ?)
     `);
-    const result = stmt.run(
+    const result = insertStmt.run(
       input.goal,
       input.end_date ?? null
     );
+
+    // Fetch the complete record including auto-generated start_date
+    const selectStmt = db.prepare('SELECT * FROM goals WHERE id = ?');
+    const goal = selectStmt.get(result.lastInsertRowid) as Goal;
+
     return {
       success: true,
-      data: {
-        id: result.lastInsertRowid,
-        ...input
-      }
+      data: goal
     };
   } catch {
     return { success: false, error: 'Failed to add goal' };
