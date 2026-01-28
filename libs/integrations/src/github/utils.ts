@@ -4,12 +4,13 @@
 
 import { parseEmuSuffix } from './username';
 import type { ValidateUserResult } from './auth';
+import { stripEmuSuffix } from '@libs/shared/utils/user-display';
 
 /**
  * Parsed GitHub user data ready for database storage
  */
 export interface ParsedGitHubUser {
-  /** GitHub username (login) */
+  /** LDAP username (GitHub username with suffix stripped) */
   username: string;
   /** First name parsed from display name */
   firstname: string;
@@ -36,7 +37,7 @@ export interface ParsedGitHubUser {
  * if (result.valid && result.user) {
  *   const parsedUser = parseGitHubUser(result);
  *   // {
- *   //   username: "jdoe_LinkedIn",
+ *   //   username: "jdoe",  // LDAP username without suffix
  *   //   firstname: "John",
  *   //   lastname: "Doe",
  *   //   email_address: "john.doe@company.com",
@@ -68,8 +69,13 @@ export function parseGitHubUser(validateResult: ValidateUserResult): ParsedGitHu
   // Extract EMU suffix from username
   const github_suffix = parseEmuSuffix(user.login) || null;
 
+  // Strip suffix from username to store only LDAP username
+  const ldapUsername = github_suffix
+    ? stripEmuSuffix(user.login, github_suffix)
+    : user.login;
+
   return {
-    username: user.login,
+    username: ldapUsername,  // LDAP username without suffix
     firstname,
     lastname,
     email_address: user.email || '',

@@ -20,7 +20,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'jdoe_LinkedIn',
+        username: 'jdoe',  // LDAP username without suffix
         firstname: 'John',
         lastname: 'Doe',
         email_address: 'john.doe@company.com',
@@ -70,7 +70,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'jsmith_Company',
+        username: 'jsmith',  // LDAP username without suffix
         firstname: 'Jane',
         lastname: 'Smith-Johnson',
         email_address: 'jane@company.com',
@@ -95,7 +95,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'user_Org',
+        username: 'user',  // LDAP username without suffix
         firstname: 'Mary',
         lastname: "O'Brien",
         email_address: 'mary@org.com',
@@ -122,7 +122,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'mononym_LinkedIn',
+        username: 'mononym',  // LDAP username without suffix
         firstname: 'Madonna',
         lastname: '',
         email_address: 'madonna@example.com',
@@ -147,7 +147,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'jvd_Company',
+        username: 'jvd',  // LDAP username without suffix
         firstname: 'Jean-Claude',
         lastname: 'Van Damme',
         email_address: 'jcvd@company.com',
@@ -172,7 +172,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'user_Org',
+        username: 'user',  // LDAP username without suffix
         firstname: 'John',
         lastname: 'Doe',
         email_address: 'john@org.com',
@@ -197,7 +197,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'user123_LinkedIn',
+        username: 'user123',  // LDAP username without suffix
         firstname: '',
         lastname: '',
         email_address: 'user@company.com',
@@ -222,7 +222,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'nullname_Company',
+        username: 'nullname',  // LDAP username without suffix
         firstname: '',
         lastname: '',
         email_address: 'user@company.com',
@@ -247,7 +247,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'spacename_Org',
+        username: 'spacename',  // LDAP username without suffix
         firstname: '',
         lastname: '',
         email_address: 'user@org.com',
@@ -274,7 +274,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'noemail_LinkedIn',
+        username: 'noemail',  // LDAP username without suffix
         firstname: 'John',
         lastname: 'Doe',
         email_address: '',
@@ -299,7 +299,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'nullemail_Company',
+        username: 'nullemail',  // LDAP username without suffix
         firstname: 'Jane',
         lastname: 'Smith',
         email_address: '',
@@ -386,6 +386,7 @@ describe('parseGitHubUser', () => {
       // parseEmuSuffix extracts anything after last underscore that matches pattern
       // "name" matches /^[a-z0-9-]{2,20}$/i, so it's considered a valid suffix
       expect(parsed.github_suffix).toBe('name');
+      expect(parsed.username).toBe('user');  // LDAP username without suffix
     });
   });
 
@@ -443,7 +444,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'jdoe_Acme',
+        username: 'jdoe',  // LDAP username without suffix
         firstname: 'John',
         lastname: 'David Doe',
         email_address: 'john.doe@acme.com',
@@ -468,7 +469,7 @@ describe('parseGitHubUser', () => {
       const parsed = parseGitHubUser(result);
 
       expect(parsed).toEqual({
-        username: 'minimal_Company',
+        username: 'minimal',  // LDAP username without suffix
         firstname: '',
         lastname: '',
         email_address: '',
