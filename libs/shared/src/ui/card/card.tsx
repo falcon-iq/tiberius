@@ -76,9 +76,13 @@ export function getInitials(user: { firstname?: string | null; lastname?: string
   }
 
   // Priority 4: Fallback to username (take first two letters, strip EMU suffix if present)
-  const usernameWithoutSuffix = user.github_suffix
-    ? user.username.slice(0, user.username.lastIndexOf('_'))
-    : user.username;
+  let usernameWithoutSuffix = user.username;
+  if (user.github_suffix) {
+    const suffixWithUnderscore = `_${user.github_suffix}`;
+    if (user.username.endsWith(suffixWithUnderscore)) {
+      usernameWithoutSuffix = user.username.slice(0, -suffixWithUnderscore.length);
+    }
+  }
 
   return usernameWithoutSuffix.slice(0, 2).toUpperCase();
 }
@@ -105,7 +109,10 @@ export function getDisplayName(user: { firstname?: string | null; lastname?: str
 
   // Priority 4: Fallback to username (stripped of EMU suffix if present)
   if (user.github_suffix) {
-    return user.username.slice(0, user.username.lastIndexOf('_'));
+    const suffixWithUnderscore = `_${user.github_suffix}`;
+    if (user.username.endsWith(suffixWithUnderscore)) {
+      return user.username.slice(0, -suffixWithUnderscore.length);
+    }
   }
 
   return user.username;
