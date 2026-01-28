@@ -28,6 +28,7 @@ export interface TeamMemberCardProps {
     username: string;
     firstname?: string | null;
     lastname?: string | null;
+    github_suffix?: string | null;
   };
   onClick?: () => void;
 }
@@ -54,8 +55,11 @@ export function TeamMemberCard({ user, onClick }: TeamMemberCardProps) {
   );
 }
 
-// Helper function to generate initials
-function getInitials(user: { firstname?: string | null; lastname?: string | null; username: string }): string {
+/**
+ * Generate initials from user data
+ * Priority: firstname+lastname initials -> firstname first 2 chars -> lastname first 2 chars -> username first 2 chars (with EMU suffix stripped if present)
+ */
+export function getInitials(user: { firstname?: string | null; lastname?: string | null; username: string; github_suffix?: string | null }): string {
   // Priority 1: Use firstname + lastname
   if (user.firstname && user.lastname) {
     return (user.firstname[0] + user.lastname[0]).toUpperCase();
@@ -71,16 +75,19 @@ function getInitials(user: { firstname?: string | null; lastname?: string | null
     return user.lastname.slice(0, 2).toUpperCase();
   }
 
-  // Priority 4: Fallback to username (take first two letters, strip EMU suffix)
-  const usernameWithoutSuffix = user.username.includes('_')
+  // Priority 4: Fallback to username (take first two letters, strip EMU suffix if present)
+  const usernameWithoutSuffix = user.github_suffix
     ? user.username.slice(0, user.username.lastIndexOf('_'))
     : user.username;
 
   return usernameWithoutSuffix.slice(0, 2).toUpperCase();
 }
 
-// Helper function to generate display name
-function getDisplayName(user: { firstname?: string | null; lastname?: string | null; username: string }): string {
+/**
+ * Generate display name from user data
+ * Priority: "firstname lastname" -> firstname -> lastname -> username (with EMU suffix stripped if present)
+ */
+export function getDisplayName(user: { firstname?: string | null; lastname?: string | null; username: string; github_suffix?: string | null }): string {
   // Priority 1: "Firstname Lastname"
   if (user.firstname && user.lastname) {
     return `${user.firstname} ${user.lastname}`;
@@ -96,8 +103,8 @@ function getDisplayName(user: { firstname?: string | null; lastname?: string | n
     return user.lastname;
   }
 
-  // Priority 4: Fallback to username (stripped of EMU suffix)
-  if (user.username.includes('_')) {
+  // Priority 4: Fallback to username (stripped of EMU suffix if present)
+  if (user.github_suffix) {
     return user.username.slice(0, user.username.lastIndexOf('_'));
   }
 
