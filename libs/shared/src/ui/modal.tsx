@@ -116,7 +116,7 @@ export function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-white/10 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 dark:bg-white/10 backdrop-blur-sm p-4 overflow-y-auto"
       onMouseDown={(e) => {
         if (!closeOnBackdrop) return;
         if (e.target === e.currentTarget) onClose();
@@ -131,11 +131,14 @@ export function Modal({
         className={[
           'w-full',
           SIZE_CLASS[size],
-          'rounded-lg bg-card p-6 shadow-lg outline-none',
+          'my-8',
+          'rounded-lg bg-card shadow-lg outline-none',
+          'flex flex-col',
+          'max-h-[calc(100vh-4rem)]',
         ].filter(Boolean).join(' ')}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
           {title ? (
             <h2 id={titleId} className="text-xl font-semibold text-foreground">
               {title}
@@ -156,7 +159,9 @@ export function Modal({
           )}
         </div>
 
-        {children}
+        <div className="px-6 pb-6 overflow-y-auto flex-1">
+          {children}
+        </div>
       </div>
     </div>
   );
