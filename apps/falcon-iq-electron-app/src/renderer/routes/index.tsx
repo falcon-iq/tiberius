@@ -1,6 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { TeamMemberCard } from '@libs/shared/ui/card/card';
+import { useUsers } from '@hooks/use-users';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
+  const { data: users, isLoading, error } = useUsers();
+  const navigate = useNavigate();
+
   return (
     <>
       {/* Header */}
@@ -11,25 +17,49 @@ const Index = () => {
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-7xl space-y-6">
-          {/* Placeholder content */}
-          <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-2 text-lg font-medium text-foreground">Welcome to Manager Buddy</h2>
-            <p className="text-sm text-muted-foreground">
-              Your main work area will be displayed here. This is where dashboards, team views, and detailed information
-              will appear.
-            </p>
-          </div>
+          {/* Team Members Section */}
+          <div>
+            <h2 className="mb-4 text-lg font-medium text-foreground">Team Members</h2>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="mb-2 font-medium text-foreground">Component Area 1</h3>
-              <p className="text-sm text-muted-foreground">Content will be displayed here</p>
-            </div>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            )}
 
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="mb-2 font-medium text-foreground">Component Area 2</h3>
-              <p className="text-sm text-muted-foreground">Content will be displayed here</p>
-            </div>
+            {/* Error State */}
+            {error && (
+              <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+                <p className="text-sm text-destructive">
+                  Failed to load team members. Please try again.
+                </p>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && !error && (!users || users.length === 0) && (
+              <div className="rounded-lg border border-border bg-card p-12 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No team members added yet. Add team members in Settings.
+                </p>
+              </div>
+            )}
+
+            {/* Team Member Cards Grid */}
+            {!isLoading && !error && users && users.length > 0 && (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {users.map((user) => (
+                  <TeamMemberCard
+                    key={user.id}
+                    user={user}
+                    onClick={() => {
+                      void navigate({ to: '/users/$id', params: { id: String(user.id) } });
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
