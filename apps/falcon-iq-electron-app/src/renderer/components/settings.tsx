@@ -2,7 +2,7 @@ import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { Modal } from "@libs/shared/ui/modal/modal";
 import { useForm } from "react-hook-form";
-import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername, parseEmuSuffix } from "@libs/integrations/github";
+import { validateGitHubToken, validateGitHubUser, type ValidateTokenResult, type ValidateUserResult, githubUsername, parseEmuSuffix, parseGitHubUser } from "@libs/integrations/github";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
@@ -22,19 +22,35 @@ const getDisplayUsername = (username: string): string => {
 };
 
 interface SettingsFormData {
+  firstName: string;
+  lastName: string;
+  ldapUsername: string;
   pat: string;
+}
+
+interface TeamMember {
+  username: string;
+  firstname?: string;
+  lastname?: string;
+  email_address?: string;
+  github_suffix?: string | null;
 }
 
 export const Settings = () => {
   const router = useRouter();
-  const [users, setUsers] = useState<string[]>([]);
+  const [users, setUsers] = useState<TeamMember[]>([]);
   const [newUser, setNewUser] = useState('');
   const [tokenMetadata, setTokenMetadata] = useState<ValidateTokenResult | null>(null);
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const [usernameValidationResult, setUsernameValidationResult] = useState<ValidateUserResult | null>(null);
 
-  const { register, handleSubmit, setValue, getValues } = useForm<SettingsFormData>({
-    defaultValues: { pat: "" },
+  const { register, handleSubmit, setValue, getValues, formState: { errors, isValid: isFormValid } } = useForm<SettingsFormData>({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      ldapUsername: "",
+      pat: "",
+    },
     mode: "onBlur",
   });
 
@@ -80,9 +96,15 @@ export const Settings = () => {
     }
   });
 
-  // Load PAT from settings.json on mount
+  // Load settings from settings.json on mount
   useEffect(() => {
     if (settings) {
+      // Load user profile
+      setValue("firstName", settings.user.firstName || "");
+      setValue("lastName", settings.user.lastName || "");
+      setValue("ldapUsername", settings.user.ldapUsername || "");
+
+      // Load GitHub PAT
       const storedPat = settings.integrations.github.pat || "";
       setValue("pat", storedPat);
 
@@ -97,8 +119,14 @@ export const Settings = () => {
   // Hydrate users from database
   useEffect(() => {
     if (existingUsers && existingUsers.length > 0) {
-      const usernames = existingUsers.map(u => u.username);
-      setUsers(usernames);
+      const teamMembers: TeamMember[] = existingUsers.map(u => ({
+        username: u.username,
+        firstname: u.firstname || undefined,
+        lastname: u.lastname || undefined,
+        email_address: u.email_address || undefined,
+        github_suffix: u.github_suffix || undefined,
+      }));
+      setUsers(teamMembers);
     }
   }, [existingUsers]);
 
@@ -109,30 +137,33 @@ export const Settings = () => {
   const handleAddUser = useCallback(async () => {
     const trimmedUser = newUser.trim();
 
-    if (!trimmedUser || !isUsernameValid || isValidatingUsername || !usernameValidationResult?.user) {
+    if (!trimmedUser || !isUsernameValid || isValidatingUsername || !usernameValidationResult) {
       return;
     }
 
-    // Use the validated GitHub username from the API response
-    const githubUsername = usernameValidationResult.user.login;
+    // Parse GitHub user data (includes firstname, lastname, email, etc.)
+    const parsedUser = parseGitHubUser(usernameValidationResult);
 
     // Check for duplicates in current state and database
-    const isDuplicate = users.some(user => user.toLowerCase() === githubUsername.toLowerCase());
+    const isDuplicate = users.some(user => user.username.toLowerCase() === parsedUser.username.toLowerCase());
 
     if (isDuplicate) {
-      setDuplicateError(`"${githubUsername}" has already been added`);
+      setDuplicateError(`"${parsedUser.username}" has already been added`);
       return;
     }
 
     try {
-      // Save to database immediately
+      // Save to database immediately with full user data
       await addUserMutation.mutateAsync({
-        username: githubUsername,
-        github_suffix: tokenMetadata?.emu_suffix || null,
+        username: parsedUser.username,
+        github_suffix: parsedUser.github_suffix || null,
+        firstname: parsedUser.firstname || null,
+        lastname: parsedUser.lastname || null,
+        email_address: parsedUser.email_address || null,
       });
 
-      // Update local state with full GitHub username
-      setUsers([...users, githubUsername]);
+      // Update local state with parsed user object
+      setUsers([...users, parsedUser]);
       setNewUser('');
       setDuplicateError(null);
       setUsernameValidationResult(null);
@@ -141,14 +172,14 @@ export const Settings = () => {
       console.error('Failed to add user:', error);
       // Check if it's a duplicate error from database
       if ((error as Error).message.includes('already exists')) {
-        setDuplicateError(`"${githubUsername}" already exists in database`);
+        setDuplicateError(`"${parsedUser.username}" already exists in database`);
       }
     }
-  }, [newUser, users, isUsernameValid, isValidatingUsername, usernameValidationResult, tokenMetadata, addUserMutation, resetUsernameValidation]);
+  }, [newUser, users, isUsernameValid, isValidatingUsername, usernameValidationResult, addUserMutation, resetUsernameValidation]);
 
   const handleRemoveUser = useCallback(async (userToRemove: string) => {
     // Remove from local state
-    setUsers(users.filter((user) => user !== userToRemove));
+    setUsers(users.filter((user) => user.username !== userToRemove));
 
     // Find user in database and delete
     const existingUser = existingUsers?.find(u => u.username === userToRemove);
@@ -164,8 +195,13 @@ export const Settings = () => {
 
   const onSubmit = async (data: SettingsFormData) => {
     try {
-      // Save PAT to settings.json
+      // Save user profile and PAT to settings.json
       await updateSettingsMutation.mutateAsync({
+        user: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          ldapUsername: data.ldapUsername,
+        },
         integrations: {
           github: {
             pat: data.pat,
@@ -190,11 +226,90 @@ export const Settings = () => {
       onClose={handleClose}
       title="Settings"
       size="xl"
-      initialFocusId="pat"
+      initialFocusId="firstName"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Personal Access Token */}
+        {/* User Profile Section */}
         <div>
+          <h3 className="mb-3 text-base font-semibold text-foreground">
+            User Profile
+          </h3>
+
+          {/* First Name */}
+          <div className="mb-4">
+            <label
+              htmlFor="firstName"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              First Name
+            </label>
+            <input
+              id="firstName"
+              type="text"
+              {...register("firstName", { required: "First name is required" })}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {errors.firstName && (
+              <p className="mt-1 text-xs text-destructive">
+                {errors.firstName.message}
+              </p>
+            )}
+          </div>
+
+          {/* Last Name */}
+          <div className="mb-4">
+            <label
+              htmlFor="lastName"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Last Name
+            </label>
+            <input
+              id="lastName"
+              type="text"
+              {...register("lastName", { required: "Last name is required" })}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {errors.lastName && (
+              <p className="mt-1 text-xs text-destructive">
+                {errors.lastName.message}
+              </p>
+            )}
+          </div>
+
+          {/* LDAP Username (read-only) */}
+          <div className="mb-4">
+            <label
+              htmlFor="ldapUsername"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              LDAP Username
+            </label>
+            <input
+              id="ldapUsername"
+              type="text"
+              {...register("ldapUsername")}
+              readOnly
+              disabled
+              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground cursor-not-allowed"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              LDAP username cannot be changed after setup
+            </p>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="my-6 border-t border-border" />
+
+        {/* GitHub Integration Section */}
+        <div>
+          <h3 className="mb-3 text-base font-semibold text-foreground">
+            GitHub Integration
+          </h3>
+
+          {/* Personal Access Token */}
+          <div>
           <label
             htmlFor="pat"
             className="mb-2 block text-sm font-medium text-foreground"
@@ -238,33 +353,37 @@ export const Settings = () => {
           </div>
         </div>
 
-        {/* EMU Status Display */}
-        {isValid && tokenMetadata && (
-          <div>
-            <label className="mb-2 block text-sm font-medium text-foreground">
-              Enterprise Managed User (EMU) Status
-            </label>
-            <div className={`px-4 py-3 rounded-lg border ${tokenMetadata.emu
-              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-              : 'bg-muted border-border'
-              }`}>
-              {tokenMetadata.emu && tokenMetadata.emu_suffix ? (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                    ✓ EMU User Detected
+          {/* EMU Status Display */}
+          {isValid && tokenMetadata && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                Enterprise Managed User (EMU) Status
+              </label>
+              <div className={`px-4 py-3 rounded-lg border ${tokenMetadata.emu
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                : 'bg-muted border-border'
+                }`}>
+                {tokenMetadata.emu && tokenMetadata.emu_suffix ? (
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      ✓ EMU User Detected
+                    </p>
+                    <p className="text-sm text-foreground">
+                      Company Suffix: <span className="font-mono font-semibold">{tokenMetadata.emu_suffix}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Not an EMU user
                   </p>
-                  <p className="text-sm text-foreground">
-                    Company Suffix: <span className="font-mono font-semibold">{tokenMetadata.emu_suffix}</span>
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Not an EMU user
-                </p>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="my-6 border-t border-border" />
 
         {/* Team Members */}
         <div>
@@ -349,15 +468,22 @@ export const Settings = () => {
             )}
             {!isLoadingUsers && users.map((user) => (
               <div
-                key={user}
+                key={user.username}
                 className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2"
               >
-                <span className="text-sm text-foreground">{getDisplayUsername(user)}</span>
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-foreground">{getDisplayUsername(user.username)}</span>
+                  {user.firstname && user.lastname && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({user.firstname} {user.lastname})
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
-                  onClick={() => void handleRemoveUser(user)}
+                  onClick={() => void handleRemoveUser(user.username)}
                   className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
-                  aria-label={`Remove ${user}`}
+                  aria-label={`Remove ${user.username}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -378,7 +504,7 @@ export const Settings = () => {
 
           <button
             type="submit"
-            disabled={!isValid || isValidating}
+            disabled={!isFormValid || !isValid || isValidating}
             className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Done

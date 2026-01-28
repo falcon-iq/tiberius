@@ -12,12 +12,12 @@ const __dirname = dirname(__filename);
 // https://vitejs.dev/config
 export default defineConfig({
   plugins: [
+    react(),
     tailwindcss(),
     tanstackRouter({
       routesDirectory: './src/renderer/routes',
       generatedRouteTree: './src/renderer/types/routeTree.gen.ts',
     }),
-    react(),
     tsconfigPaths(),
   ],
   resolve: {
