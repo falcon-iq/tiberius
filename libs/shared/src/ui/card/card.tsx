@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { getDisplayName, getInitials } from '@libs/shared/lib/user-display';
+import { getDisplayName, getInitials } from '../../utils/user-display';
 
 // Generic Card Component
 export interface CardProps {
@@ -55,6 +55,3 @@ export function TeamMemberCard({ user, onClick }: TeamMemberCardProps) {
     </Card>
   );
 }
-
-// Re-export user display utilities for backward compatibility
-export { getDisplayName, getInitials } from '@libs/shared/lib/user-display';

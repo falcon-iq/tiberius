@@ -7,7 +7,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
 import { useSettings, useUpdateSettings } from '@hooks/use-settings';
-import { stripEmuSuffix } from '@libs/shared/lib/user-display';
+import { stripEmuSuffix } from '@libs/shared/utils/user-display';
 
 interface SettingsFormData {
   firstName: string;

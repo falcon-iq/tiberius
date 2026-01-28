@@ -9,7 +9,7 @@ import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
 import { useUpdateSettings } from '@hooks/use-settings';
 import type { Step3Props, TeamMember } from './types';
-import { stripEmuSuffix } from '@libs/shared/lib/user-display';
+import { stripEmuSuffix } from '@libs/shared/utils/user-display';
 
 export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComplete }: Step3Props) => {
   const [users, setUsers] = useState<TeamMember[]>([]);
