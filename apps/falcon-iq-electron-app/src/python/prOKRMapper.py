@@ -40,7 +40,8 @@ def check_pr_downloaded(pr_data_folder: Path, owner: str, repo: str, pr_number: 
     return meta_file.exists() and comments_file.exists() and files_file.exists()
 
 
-def check_okrs_exist(pr_data_folder: Path, owner: str, repo: str, pr_number: int, username: str) -> bool:
+def check_okrs_exist(pr_data_folder: Path, owner: str, repo: str, pr_number: int, username: str, 
+                     force_recalculate: bool = False) -> bool:
     """
     Check if okrs_{username}.csv already exists for this PR.
     
@@ -50,10 +51,14 @@ def check_okrs_exist(pr_data_folder: Path, owner: str, repo: str, pr_number: int
         repo: Repository name
         pr_number: PR number
         username: Username for user-specific OKR file
+        force_recalculate: If True, always return False to force recalculation
     
     Returns:
-        True if okrs_{username}.csv exists, False otherwise
+        True if okrs_{username}.csv exists and not forcing recalculation, False otherwise
     """
+    if force_recalculate:
+        return False
+    
     pr_dir = pr_data_folder / owner / repo / f"pr_{pr_number}"
     okrs_file = pr_dir / f"okrs_{username}.csv"
     
@@ -400,8 +405,13 @@ def main():
         search_folder = pr_data_folder / 'search'
         okr_folder = paths['okr_folder']
         
-        # Get OpenAI API key from settings (optional)
+        # Get settings
         openai_api_key = settings.get('openai_api_key')
+        force_recalculate = settings.get('force_recalculate_okrs', False)
+        
+        if force_recalculate:
+            print("⚠️  Force recalculate mode: Will overwrite existing OKR files")
+            print()
         
         print(f"✅ Configuration loaded")
         print(f"   Task folder: {task_folder}")
@@ -410,6 +420,7 @@ def main():
         print(f"   OKR folder: {okr_folder}")
         print(f"   Users: {len(users)}")
         print(f"   OpenAI API key: {'✅ Available' if openai_api_key else '❌ Not available (using TF-IDF)'}")
+        print(f"   Force recalculate: {'✅ Enabled' if force_recalculate else '❌ Disabled'}")
         
         # Iterate through users
         print("\n" + "=" * 80)
@@ -541,7 +552,7 @@ def main():
                             continue
                         
                         # Check if okrs_{username}.csv already exists
-                        if check_okrs_exist(pr_data_folder, owner, repo, pr_number, username):
+                        if check_okrs_exist(pr_data_folder, owner, repo, pr_number, username, force_recalculate):
                             batch_skipped += 1
                             total_skipped += 1
                             print(f"         ({idx + 1}/{total_prs}) {owner}/{repo} #{pr_number} [ALREADY HAS OKRs FOR {username} - SKIPPED]")
