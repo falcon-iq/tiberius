@@ -4,24 +4,12 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
-import { validateGitHubUser, githubUsername, parseGitHubUser, parseEmuSuffix, type ValidateUserResult } from '@libs/integrations/github';
+import { validateGitHubUser, githubUsername, parseGitHubUser, type ValidateUserResult } from '@libs/integrations/github';
 import { useAsyncValidation } from '@libs/shared/hooks/use-async-validation';
 import { useUsers, useAddUser, useDeleteUser } from '@hooks/use-users';
 import { useUpdateSettings } from '@hooks/use-settings';
 import type { Step3Props, TeamMember } from './types';
-
-/**
- * Strip EMU suffix from username for display purposes
- * @param username - Full GitHub username (e.g., "bsteyn_LinkedIn")
- * @returns LDAP username without suffix (e.g., "bsteyn")
- */
-const getDisplayUsername = (username: string): string => {
-  const suffix = parseEmuSuffix(username);
-  if (suffix) {
-    return username.slice(0, username.lastIndexOf('_'));
-  }
-  return username;
-};
+import { stripEmuSuffix } from '@libs/shared/lib/user-display';
 
 export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComplete }: Step3Props) => {
   const [users, setUsers] = useState<TeamMember[]>([]);
@@ -260,7 +248,7 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
                 className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3"
               >
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-foreground">{getDisplayUsername(user.username)}</span>
+                  <span className="text-sm font-medium text-foreground">{stripEmuSuffix(user.username, user.github_suffix)}</span>
                   {user.firstname && user.lastname && (
                     <span className="ml-2 text-xs text-muted-foreground">
                       ({user.firstname} {user.lastname})

@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useUsers } from '@hooks/use-users';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
-import { getDisplayName, getInitials } from '@libs/shared/ui/card/card';
+import { getDisplayName, getInitials } from '@libs/shared/lib/user-display';
 
 export const Route = createFileRoute('/users/$id')({
   component: UserDetail,
