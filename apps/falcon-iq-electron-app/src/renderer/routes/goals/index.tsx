@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
-import { Plus, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
+import { Plus, CheckCircle2, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { useGoals, useAddGoal, useUpdateGoal, useDeleteGoal } from '@hooks/use-goals';
 import { formatDate, getCurrentTimestamp } from '@utils/date-utils';
 import { Modal } from '@libs/shared/ui/modal';
@@ -69,6 +69,17 @@ function GoalsPage() {
       });
     } catch (error) {
       console.error('Failed to end goal:', error);
+    }
+  };
+
+  const handleReactivateGoal = async (goalId: number) => {
+    try {
+      await updateGoalMutation.mutateAsync({
+        id: goalId,
+        end_date: null,
+      });
+    } catch (error) {
+      console.error('Failed to reactivate goal:', error);
     }
   };
 
@@ -218,6 +229,17 @@ function GoalsPage() {
                           className="rounded p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                         >
                           <CheckCircle2 className="h-4 w-4" />
+                        </button>
+                      </Tooltip>
+                    )}
+                    {goal.end_date && (
+                      <Tooltip content="Reactivate goal" position="top">
+                        <button
+                          onClick={() => handleReactivateGoal(goal.id)}
+                          disabled={updateGoalMutation.isPending}
+                          className="rounded p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                        >
+                          <RotateCcw className="h-4 w-4" />
                         </button>
                       </Tooltip>
                     )}
