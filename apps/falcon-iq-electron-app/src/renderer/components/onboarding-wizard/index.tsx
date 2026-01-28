@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Modal } from '@libs/shared/ui/modal/modal';
+import { Modal } from '@libs/shared/ui/modal';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@libs/shared/hooks/use-theme';
 import { StepUserDetails } from './step-user-details';
