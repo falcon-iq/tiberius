@@ -1,5 +1,6 @@
 import { Users, Goal, Settings, Sun, Moon } from "lucide-react"
 import { Link } from "@tanstack/react-router"
+import { Tooltip } from "@libs/shared/ui/tooltip"
 
 interface NavigationSidebarProps {
   theme: "light" | "dark"
@@ -15,52 +16,59 @@ const NavigationSidebar = ({ theme, onToggleTheme }: NavigationSidebarProps) => 
 
         {/* Navigation Items */}
         <nav className="flex flex-1 flex-col gap-2">
-        <Link
-            to="/"
-            className="group relative flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            activeProps={{
-              className: "group relative flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors"
-            }}
-            title="Dashboard"
-        >
-            <Users className="h-5 w-5" />
-            <span className="sr-only">Dashboard</span>
-        </Link>
+        <Tooltip content="Dashboard" position="right">
+          <Link
+              to="/"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              activeProps={{
+                className: "group relative flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors"
+              }}
+          >
+              <Users className="h-5 w-5" />
+              <span className="sr-only">Dashboard</span>
+          </Link>
+        </Tooltip>
 
-        <Link
-            to="/goals"
-            className="group relative flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            activeProps={{
-              className: "group relative flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors"
-            }}
-            title="Goals"
-        >
-            <Goal className="h-5 w-5" />
-            <span className="sr-only">Goals</span>
-        </Link>
+        <Tooltip content="Goals" position="right">
+          <Link
+              to="/goals"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              activeProps={{
+                className: "group relative flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors"
+              }}
+          >
+              <Goal className="h-5 w-5" />
+              <span className="sr-only">Goals</span>
+          </Link>
+        </Tooltip>
 
-        <Link
-            to="/settings"
-            className="group relative flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            activeProps={{
-              className: "group relative flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors"
-            }}
-            title="Settings"
-        >
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Settings</span>
-        </Link>
+        <Tooltip content="Settings" position="right">
+          <Link
+              to="/settings"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              activeProps={{
+                className: "group relative flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors"
+              }}
+          >
+              <Settings className="h-5 w-5" />
+              <span className="sr-only">Settings</span>
+          </Link>
+        </Tooltip>
         </nav>
 
         {/* Theme Toggle */}
-        <button
-        onClick={onToggleTheme}
-        className="flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-        title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        <Tooltip
+          content={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          position="right"
         >
-        {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        <span className="sr-only">Toggle theme</span>
-        </button>
+          <button
+          onClick={onToggleTheme}
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          >
+          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          <span className="sr-only">Toggle theme</span>
+          </button>
+        </Tooltip>
     </div>
 );
 
