@@ -245,12 +245,10 @@ class PipelineRunner:
                 elif 'return_code' in result:
                     print(f"   Return code: {result['return_code']}")
                 
-                # Ask user if they want to continue
+                # Log failure and stop pipeline
                 print()
-                response = input("Continue with next step? (y/n): ").strip().lower()
-                if response != 'y':
-                    print("⏹️  Pipeline stopped by user")
-                    break
+                print(f"⏹️  Pipeline stopped due to failure in step {step_num}")
+                break
         
         total_duration = (datetime.now() - total_start_time).total_seconds()
         
@@ -361,11 +359,9 @@ Pipeline Steps:
     if args.base_dir:
         base_dir_path = Path(args.base_dir).expanduser()
         if not base_dir_path.exists():
-            print(f"⚠️  Warning: Base directory does not exist: {base_dir_path}")
-            response = input("Continue anyway? (y/n): ").strip().lower()
-            if response != 'y':
-                print("❌ Aborted by user")
-                return 1
+            print(f"❌ Error: Base directory does not exist: {base_dir_path}")
+            print("   Please create the directory or provide a valid path.")
+            return 1
     
     # Parse specific steps if provided
     specific_steps = None
