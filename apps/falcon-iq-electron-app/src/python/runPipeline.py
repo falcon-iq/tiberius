@@ -6,10 +6,11 @@ This script orchestrates the execution of the complete PR data pipeline:
 1. Task Generation (prTaskGenerator.py) - Generate PR tasks for users
 2. PR Search (prSearchTaskExecutor.py) - Download PR lists from GitHub
 3. PR Details Download (prDownloadExecutor.py) - Download full PR details
-4. OKR Parsing (okrParser.py) - Parse OKR files for users
-5. OKR Mapping (prOKRMapper.py) - Map OKRs to PRs with intelligent classification
-6. Comment Generation (prCommentFileGenerator.py) - Extract PR comments
-7. Comment Classification (prCommentClassification.py) - Classify comments using AI
+4. OKR Mapping (prOKRMapper.py) - Map OKRs to PRs with intelligent classification
+5. Comment Generation (prCommentFileGenerator.py) - Extract PR comments
+6. Comment Classification (prCommentClassification.py) - Classify comments using AI
+7. PR Stats Aggregation (prStatsAggregator.py) - Aggregate PR stats into CSV files
+8. Write Stats to DB (prStatsWriteToDB.py) - Write PR stats to SQLite database
 
 Usage:
     python runPipeline.py                                      # Run full pipeline from step 1
@@ -48,24 +49,29 @@ class PipelineRunner:
             "description": "Download full PR details (meta, comments, files)"
         },
         4: {
-            "name": "OKR Parsing",
-            "script": "okrParser.py",
-            "description": "Parse OKR files from okrs/input to okrs/parsed"
-        },
-        5: {
             "name": "OKR Mapping",
             "script": "prOKRMapper.py",
             "description": "Map OKRs to PRs with intelligent classification and fallback"
         },
-        6: {
+        5: {
             "name": "Comment Generation",
             "script": "prCommentFileGenerator.py",
             "description": "Extract and organize PR comments (authored/reviewed)"
         },
-        7: {
+        6: {
             "name": "Comment Classification",
             "script": "prCommentClassification.py",
             "description": "Classify PR comments using OpenAI into feedback categories"
+        },
+        7: {
+            "name": "PR Stats Aggregation",
+            "script": "prStatsAggregator.py",
+            "description": "Aggregate PR statistics for each user into CSV files"
+        },
+        8: {
+            "name": "Write Stats to DB",
+            "script": "prStatsWriteToDB.py",
+            "description": "Import PR statistics from CSV files into SQLite database"
         }
     }
     
@@ -74,7 +80,7 @@ class PipelineRunner:
         Initialize pipeline runner.
         
         Args:
-            start_from: Step number to start from (1-7)
+            start_from: Step number to start from (1-8)
             specific_steps: List of specific step numbers to run (overrides start_from)
             base_dir: Override base directory (optional)
         """
@@ -286,10 +292,11 @@ Pipeline Steps:
   1. Task Generation - Generate PR tasks for users
   2. PR Search - Download PR lists from GitHub
   3. PR Details Download - Download full PR details
-  4. OKR Parsing - Parse OKR files for users
-  5. OKR Mapping - Map OKRs to PRs with intelligent classification
-  6. Comment Generation - Extract PR comments
-  7. Comment Classification - Classify comments using AI
+  4. OKR Mapping - Map OKRs to PRs with intelligent classification
+  5. Comment Generation - Extract PR comments
+  6. Comment Classification - Classify comments using AI
+  7. PR Stats Aggregation - Aggregate PR statistics into CSV files
+  8. Write Stats to DB - Write PR stats to SQLite database
         """
     )
     
@@ -305,7 +312,7 @@ Pipeline Steps:
     parser.add_argument(
         '--start-from',
         type=int,
-        choices=[1, 2, 3, 4, 5, 6, 7],
+        choices=[1, 2, 3, 4, 5, 6, 7, 8],
         default=1,
         help='Step number to start from (default: 1)'
     )
