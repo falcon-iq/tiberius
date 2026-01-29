@@ -4,7 +4,7 @@
  */
 
 /**
- * Python server runtime state (persisted in SQLite).
+ * Python server runtime state (persisted in .falcon/python-server.json).
  */
 export interface PythonServerState {
   pid: number;
