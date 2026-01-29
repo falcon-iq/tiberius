@@ -225,6 +225,7 @@ export function clearPythonServerState() {
 
 export interface AddGoalInput {
   goal: string;
+  start_date?: string | null;
   end_date?: string | null;
 }
 
@@ -252,15 +253,16 @@ export function getGoals() {
 export function addGoal(input: AddGoalInput) {
   try {
     const insertStmt = db.prepare(`
-      INSERT INTO goals (goal, end_date)
-      VALUES (?, ?)
+      INSERT INTO goals (goal, start_date, end_date)
+      VALUES (?, ?, ?)
     `);
     const result = insertStmt.run(
       input.goal,
+      input.start_date ?? null,
       input.end_date ?? null
     );
 
-    // Fetch the complete record including auto-generated start_date
+    // Fetch the complete record including start_date
     const selectStmt = db.prepare('SELECT * FROM goals WHERE id = ?');
     const goal = selectStmt.get(result.lastInsertRowid) as Goal;
 

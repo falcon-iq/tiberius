@@ -125,6 +125,52 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ensure native date picker controls are visible */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 1 !important;
+    display: inline-block !important;
+    width: 20px;
+    height: 20px;
+    border: none;
+    padding: 0;
+    margin-left: 8px;
+    margin-right: auto;
+    position: relative;
+    z-index: 10;
+    filter: invert(0.5);
+    flex-shrink: 0;
+  }
+
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-clear-button {
+    display: none;
+  }
+
+  /* Ensure the date input doesn't have appearance: none */
+  input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  input[type="date"]::-webkit-datetime-edit {
+    padding: 0;
+    flex: 0 0 auto;
+  }
+
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+    flex: 0 0 auto;
+  }
 }
 
 /* Scan shared UI library for Tailwind classes - must be AFTER @theme */
