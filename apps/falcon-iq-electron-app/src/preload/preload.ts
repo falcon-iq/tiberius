@@ -10,6 +10,7 @@ export interface AddUserInput {
 
 export interface AddGoalInput {
   goal: string;
+  start_date?: string | null;
   end_date?: string | null;
 }
 

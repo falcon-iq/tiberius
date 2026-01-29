@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
 import { Plus, CheckCircle2, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import { useGoals, useAddGoal, useUpdateGoal, useDeleteGoal } from '@hooks/use-goals';
-import { formatDate, getCurrentTimestamp } from '@utils/date-utils';
+import { formatDate, getCurrentTimestamp, getTodayDateInputValue, dateInputToISO } from '@libs/shared/utils/date';
 import { Modal } from '@libs/shared/ui/modal';
 import { Tooltip } from '@libs/shared/ui/tooltip';
 
@@ -16,6 +16,11 @@ function GoalsPage() {
   // State
   const [filter, setFilter] = useState<FilterType>('current');
   const [newGoal, setNewGoal] = useState('');
+  const [newGoalStartDate, setNewGoalStartDate] = useState(() => {
+    const today = getTodayDateInputValue();
+    console.log('Initial date value:', today);
+    return today;
+  });
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<{ id: number; name: string } | null>(null);
@@ -53,8 +58,12 @@ function GoalsPage() {
     }
 
     try {
-      await addGoalMutation.mutateAsync({ goal: trimmedGoal });
+      await addGoalMutation.mutateAsync({
+        goal: trimmedGoal,
+        start_date: dateInputToISO(newGoalStartDate),
+      });
       setNewGoal('');
+      setNewGoalStartDate(getTodayDateInputValue());
       setDuplicateError(null);
     } catch (error) {
       console.error('Failed to add goal:', error);
@@ -118,7 +127,7 @@ function GoalsPage() {
           {/* Add Goal Section */}
           <div className="rounded-lg border border-border bg-card p-4">
             <h2 className="mb-3 text-sm font-medium text-foreground">Add New Goal</h2>
-            <div className="flex gap-2">
+            <div className="space-y-3">
               <input
                 type="text"
                 value={newGoal}
@@ -128,19 +137,30 @@ function GoalsPage() {
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddGoal()}
                 placeholder="Enter a goal"
-                className="flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <button
-                onClick={handleAddGoal}
-                disabled={!newGoal.trim() || addGoalMutation.isPending}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {addGoalMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-              </button>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="date"
+                    value={newGoalStartDate}
+                    onChange={(e) => setNewGoalStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    style={{ colorScheme: 'dark light' }}
+                  />
+                </div>
+                <button
+                  onClick={handleAddGoal}
+                  disabled={!newGoal.trim() || addGoalMutation.isPending}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {addGoalMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             {duplicateError && (
               <p className="mt-2 text-xs text-destructive">{duplicateError}</p>
