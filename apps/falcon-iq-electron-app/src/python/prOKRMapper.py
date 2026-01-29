@@ -19,7 +19,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, Optional, List, Set, Tuple
-from common import load_all_config
+from common import load_all_config, getDBPath
 from readOKRs import get_okrs_from_database
 
 # Global zero-shot classifier (lazy loaded)
@@ -213,7 +213,7 @@ def load_okrs_for_user(username: str, okr_folder: Path) -> Optional[pd.DataFrame
     try:
         # Get base_dir from okr_folder (okr_folder is base_dir/okrs)
         base_dir = okr_folder.parent
-        db_path = base_dir / "database.dev.db"
+        db_path = getDBPath(base_dir)
         
         if not db_path.exists():
             print(f"         ⚠️  Database not found at: {db_path}")

@@ -6,7 +6,7 @@ Reads goals from the Falcon IQ SQLite database and transforms them into
 a structured format.
 
 Usage:
-    python readOKRs.py [--db-path PATH] [--output PATH]
+    python readOKRs.py [--output PATH]
 """
 
 import sqlite3
@@ -14,6 +14,7 @@ import json
 import argparse
 from pathlib import Path
 from typing import List, Dict, Optional
+from common import get_base_dir, getDBPath
 
 
 def connect_to_database(db_path: Path, quiet: bool = False) -> Optional[sqlite3.Connection]:
@@ -150,12 +151,6 @@ def main():
         description='Read OKRs/goals from SQLite database and transform to JSON format'
     )
     parser.add_argument(
-        '--db-path',
-        type=str,
-        default=str(Path.home() / "Library" / "Application Support" / "Falcon IQ" / "database.dev.db"),
-        help='Path to the SQLite database file (default: ~/Library/Application Support/Falcon IQ/database.dev.db)'
-    )
-    parser.add_argument(
         '--output',
         type=str,
         help='Optional: Path to save the output JSON file'
@@ -167,8 +162,9 @@ def main():
     print("=" * 80)
     print()
     
-    # Connect to database
-    db_path = Path(args.db_path)
+    # Connect to database (always use default path)
+    base_dir = get_base_dir()
+    db_path = getDBPath(base_dir)
     conn = connect_to_database(db_path)
     if not conn:
         return

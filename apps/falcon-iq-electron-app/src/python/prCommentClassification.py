@@ -37,7 +37,7 @@ import pandas as pd
 from openai import OpenAI
 from tqdm import tqdm
 import textwrap
-from common import load_all_config
+from common import load_all_config, getDBPath
 
 # ============================================================================
 # Configuration
@@ -792,7 +792,7 @@ def main():
     print()
     
     # Connect to database
-    db_path = base_dir / "database.dev.db"
+    db_path = getDBPath(base_dir)
     db_conn = connect_to_database(db_path, quiet=False)
     if not db_conn:
         print("⚠️  Warning: Database connection failed. Comments will be classified but not inserted into database.")

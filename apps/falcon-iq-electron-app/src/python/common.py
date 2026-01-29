@@ -215,8 +215,7 @@ def load_users(base_dir: Path, user_data_folder: str = "user_data") -> List[Dict
     from readUsers import get_users_from_database
     
     # Database path: base_dir/database[.dev].db
-    database_file = "database.dev.db" if IS_DEV else "database.db"
-    db_path = base_dir / database_file
+    db_path = getDBPath(base_dir)
     
     if not db_path.exists():
         raise FileNotFoundError(f"Database file not found: {db_path}")
@@ -253,6 +252,38 @@ def get_user_by_username(users: List[Dict], username: str) -> Optional[Dict]:
         if user.get('userName') == username:
             return user
     return None
+
+
+def get_base_dir() -> Path:
+    """
+    Get the base directory for Falcon IQ.
+    Uses global base_dir override if set, otherwise uses config['base_dir'] from pipeline_config.json.
+    
+    Returns:
+        Path to the base directory
+    """
+    # Use global override if set, otherwise use config
+    if _OVERRIDE_BASE_DIR is not None:
+        base_dir = Path(_OVERRIDE_BASE_DIR).expanduser()
+    else:
+        config = load_pipeline_config()
+        base_dir = Path(config['base_dir']).expanduser()
+    
+    return base_dir
+
+
+def getDBPath(base_dir: Path) -> Path:
+    """
+    Get the database file path based on the environment.
+    
+    Args:
+        base_dir: Base directory path
+    
+    Returns:
+        Path to the database file (database.dev.db in development, database.db in production)
+    """
+    database_file = "database.dev.db" if IS_DEV else "database.db"
+    return base_dir / database_file
 
 
 def initialize_paths(config: Dict) -> Dict[str, Path]:
