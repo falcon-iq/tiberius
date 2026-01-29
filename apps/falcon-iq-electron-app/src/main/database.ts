@@ -50,6 +50,52 @@ export function initDatabase() {
     )
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pr_stats (
+      username TEXT NOT NULL,
+      pr_id INTEGER NOT NULL,
+      reviewed_authored TEXT NOT NULL CHECK(reviewed_authored IN ('authored', 'reviewed')),
+      goal_id INTEGER,
+      category TEXT,
+      created_time TIMESTAMP,
+      confidence REAL,
+      author_of_pr TEXT,
+      repo TEXT,
+      is_ai_author INTEGER CHECK(is_ai_author IN (0, 1)),
+      PRIMARY KEY (username, pr_id, reviewed_authored),
+      FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE SET NULL
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pr_comment_details (
+      pr_number INTEGER NOT NULL,
+      comment_id INTEGER NOT NULL,
+      username TEXT NOT NULL,
+      comment_type TEXT,
+      created_at TIMESTAMP,
+      is_reviewer INTEGER CHECK(is_reviewer IN (0, 1)),
+      line INTEGER,
+      side TEXT,
+      pr_author TEXT,
+      primary_category TEXT,
+      secondary_categories TEXT,
+      severity TEXT,
+      confidence REAL,
+      actionability TEXT,
+      rationale TEXT,
+      is_ai_reviewer INTEGER CHECK(is_ai_reviewer IN (0, 1)),
+      is_nitpick INTEGER CHECK(is_nitpick IN (0, 1)),
+      mentions_tests INTEGER CHECK(mentions_tests IN (0, 1)),
+      mentions_bug INTEGER CHECK(mentions_bug IN (0, 1)),
+      mentions_design INTEGER CHECK(mentions_design IN (0, 1)),
+      mentions_performance INTEGER CHECK(mentions_performance IN (0, 1)),
+      mentions_reliability INTEGER CHECK(mentions_reliability IN (0, 1)),
+      mentions_security INTEGER CHECK(mentions_security IN (0, 1)),
+      PRIMARY KEY (pr_number, comment_id, username)
+    )
+  `);
+
   log.info('Database initialized successfully');
 }
 

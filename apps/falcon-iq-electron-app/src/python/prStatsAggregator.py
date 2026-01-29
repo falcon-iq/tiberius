@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PR Information Aggregator
+PR Stats Aggregator
 
 Aggregates PR information for each user combining:
 - PR authored data
@@ -18,7 +18,8 @@ Output:
 Columns:
 - username: User's username
 - pr_id: PR number
-- okr: Mapped OKR (if available)
+- okr: Mapped OKR ID from database (if available)
+- category: Fallback category (when okr is empty)
 - created_time: PR creation timestamp
 - confidence: OKR mapping confidence score
 - reviewed_authored: "authored" or "reviewed"
@@ -27,7 +28,7 @@ Columns:
 - is-ai-author: Boolean indicating if PR author is an AI/bot
 
 Usage:
-    python pr-info-aggregator.py
+    python prStatsAggregator.py
 """
 
 import json
@@ -118,7 +119,7 @@ def load_pr_author(pr_data_folder: Path, owner: str, repo: str, pr_number: int) 
     return ''
 
 
-def load_pr_okr(pr_data_folder: Path, owner: str, repo: str, pr_number: int, username: str) -> tuple[str, str]:
+def load_pr_okr(pr_data_folder: Path, owner: str, repo: str, pr_number: int, username: str) -> tuple[str, str, str]:
     """
     Load OKR data from PR folder.
     
@@ -130,12 +131,12 @@ def load_pr_okr(pr_data_folder: Path, owner: str, repo: str, pr_number: int, use
         username: User's username
     
     Returns:
-        Tuple of (okr, confidence) - okr is okr_text or category, confidence is float
+        Tuple of (okr_id, category, confidence) - okr_id from database, category as fallback, confidence is float
     """
     okr_file = pr_data_folder / owner / repo / f"pr_{pr_number}" / f"okrs_{username}.csv"
     
     if not okr_file.exists():
-        return '', ''
+        return '', '', ''
     
     try:
         okr_df = pd.read_csv(okr_file)
@@ -143,12 +144,19 @@ def load_pr_okr(pr_data_folder: Path, owner: str, repo: str, pr_number: int, use
             # Get first row (highest confidence match)
             row = okr_df.iloc[0]
             
-            # Try to get okr_text first, fallback to category
-            okr = row.get('okr_text', '')
-            if not okr or pd.isna(okr) or okr == '':
-                category = row.get('category', '')
-                if category and not pd.isna(category):
-                    okr = f"[{category}]"
+            # Get okr_id (empty string for fallback categories)
+            okr_id = row.get('okr_id', '')
+            if okr_id and not pd.isna(okr_id):
+                okr_id = str(int(okr_id)) if isinstance(okr_id, float) else str(okr_id)
+            else:
+                okr_id = ''
+            
+            # Get category (only for fallback cases)
+            category = row.get('category', '')
+            if category and not pd.isna(category):
+                category = str(category)
+            else:
+                category = ''
             
             # Get confidence
             confidence = row.get('confidence', '')
@@ -157,11 +165,11 @@ def load_pr_okr(pr_data_folder: Path, owner: str, repo: str, pr_number: int, use
             else:
                 confidence = ''
             
-            return okr, confidence
+            return okr_id, category, confidence
     except Exception as e:
         pass
     
-    return '', ''
+    return '', '', ''
 
 
 def process_pr_file(pr_file: Path, file_type: str, username: str, 
@@ -206,10 +214,11 @@ def process_pr_file(pr_file: Path, file_type: str, username: str,
             author = load_pr_author(pr_data_folder, owner, repo, pr_number)
         
         # Load OKR from PR folder
-        okr = ''
+        okr_id = ''
+        category = ''
         confidence = ''
         if pr_number and owner and repo:
-            okr, confidence = load_pr_okr(pr_data_folder, owner, repo, pr_number, username)
+            okr_id, category, confidence = load_pr_okr(pr_data_folder, owner, repo, pr_number, username)
         
         # Check if author is AI
         is_ai = is_ai_author(author, ai_reviewer_prefixes) if author else False
@@ -218,7 +227,8 @@ def process_pr_file(pr_file: Path, file_type: str, username: str,
         result = {
             'username': username,
             'pr_id': pr_number,
-            'okr': okr if okr and not pd.isna(okr) else '',
+            'okr': okr_id if okr_id and not pd.isna(okr_id) else '',
+            'category': category if category and not pd.isna(category) else '',
             'created_time': created_at,
             'confidence': confidence if confidence and not pd.isna(confidence) else '',
             'reviewed_authored': file_type,
@@ -418,7 +428,7 @@ def generate_stats_for_user(username: str, base_dir: Path, pr_data_folder: Path,
 def main():
     """Main function"""
     print("=" * 80)
-    print("PR Information Aggregator")
+    print("PR Stats Aggregator")
     print("=" * 80)
     print()
     print("⚠️  Prerequisites: OKR mapping must be completed (Step 5)")
