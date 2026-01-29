@@ -22,7 +22,7 @@ import os
 import json
 from pathlib import Path
 from typing import List, Dict, Optional
-from common import load_all_config
+from common import load_all_config, getDBPath
 
 
 def connect_to_database(db_path: Path, quiet: bool = False) -> Optional[sqlite3.Connection]:
@@ -492,7 +492,7 @@ def main():
     if args.db_path:
         db_path = Path(args.db_path)
     else:
-        db_path = base_dir / "database.dev.db"
+        db_path = getDBPath(base_dir)
     
     print(f"📁 Database: {db_path}")
     print(f"📂 Base directory: {base_dir}")
