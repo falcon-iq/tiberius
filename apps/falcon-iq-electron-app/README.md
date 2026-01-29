@@ -172,8 +172,40 @@ ipcMain.handle('python:getStatus', () => getPythonServerStatus())
 **Python server management:**
 - Automatic startup with health checks
 - Graceful shutdown on app quit
-- State persistence in SQLite
+- State persistence in `.falcon/python-server.json`
 - Restart capability via IPC
+
+### Python Server State
+
+The Python server's runtime state (PID, port, startup time) is stored in a JSON file:
+
+**Location:**
+- Development: `~/.config/FalconIQ/userData/.falcon/python-server.dev.json`
+- Production: `~/.config/FalconIQ/userData/.falcon/python-server.json`
+
+**Why file-based storage?**
+- **Singleton data** - Server state is a single object, not relational data
+- **Human-readable** - JSON files are easy to inspect for debugging
+- **Lightweight** - No database overhead for simple state
+- **Atomic writes** - Uses temp file + rename for data safety
+
+**Example state file:**
+```json
+{
+  "pid": 12345,
+  "port": 8765,
+  "startedAt": "2024-01-15T10:30:00.000Z",
+  "pythonExecutable": "/path/to/.venv/bin/python3",
+  "serverScriptPath": "/path/to/src/python/server.py"
+}
+```
+
+**Error handling:**
+- Corrupt files are automatically backed up with timestamp
+- Missing file treated as first run (server starts cleanly)
+- State regenerated on every app startup
+
+**Note:** The `.falcon/` directory is gitignored as it contains machine-specific runtime data.
 
 ---
 
@@ -260,6 +292,7 @@ apps/falcon-iq-electron-app/
 │   │   ├── index.ts              # Main process entry
 │   │   ├── database.ts           # SQLite operations
 │   │   ├── python-server.ts      # Python subprocess manager
+│   │   ├── python-state.ts       # Python state file management
 │   │   └── types/
 │   │       └── python-server.ts  # Python types
 │   ├── preload/
@@ -277,6 +310,10 @@ apps/falcon-iq-electron-app/
 ├── vite.main.config.ts           # Main process build
 ├── vite.renderer.config.ts       # Renderer build
 └── .venv/                        # Python virtual environment (gitignored)
+
+User data directory (gitignored):
+└── .falcon/
+    └── python-server.json        # Python server runtime state
 ```
 
 ---
@@ -334,6 +371,30 @@ Use the correct activation script:
 .venv\Scripts\activate.bat  # Command Prompt
 .venv\Scripts\Activate.ps1  # PowerShell
 ```
+
+### Python server state is corrupt
+
+If the state file becomes corrupted, it's automatically backed up and the server restarts cleanly. To manually inspect or delete:
+
+**macOS/Linux:**
+```bash
+# View current state
+cat ~/.config/FalconIQ/userData/.falcon/python-server.dev.json
+
+# Delete state (server will restart cleanly)
+rm ~/.config/FalconIQ/userData/.falcon/python-server.dev.json
+```
+
+**Windows:**
+```cmd
+# View current state
+type %APPDATA%\FalconIQ\userData\.falcon\python-server.dev.json
+
+# Delete state
+del %APPDATA%\FalconIQ\userData\.falcon\python-server.dev.json
+```
+
+Corrupt files are automatically backed up to `python-server.json.backup-{timestamp}`.
 
 ---
 

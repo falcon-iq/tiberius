@@ -5,7 +5,7 @@ import {
   savePythonServerState,
   getPythonServerState,
   clearPythonServerState,
-} from './database';
+} from './python-state';
 import type {
   PythonServerConfig,
   PythonServerState,
