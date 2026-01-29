@@ -147,6 +147,25 @@ def get_github_emu_suffix(settings: Dict) -> Optional[str]:
         return None
 
 
+def get_batch_size(config: Optional[Dict] = None) -> int:
+    """
+    Get batch size from pipeline configuration.
+    
+    Args:
+        config: Pipeline config dictionary. If None, loads from pipeline_config.json
+    
+    Returns:
+        Batch size for processing (default: 50 if not found in config)
+    """
+    if config is None:
+        try:
+            config = load_pipeline_config()
+        except (FileNotFoundError, json.JSONDecodeError):
+            return 50  # Fallback default
+    
+    return config.get('batch_size', 50)
+
+
 def get_org(settings: Dict) -> Optional[str]:
     """
     Get organization from settings.
