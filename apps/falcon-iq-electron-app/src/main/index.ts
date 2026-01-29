@@ -100,7 +100,8 @@ app.on('ready', async () => {
       port: 8765,
       healthCheckEndpoint: '/health',
       startupTimeout: 10000,
-      userDataPath: app.getPath('userData'),
+      userDataBaseDirectory: app.getPath('userData'),
+      isDevelopment: isDevelopment(),
     });
 
     if (!result.success) {

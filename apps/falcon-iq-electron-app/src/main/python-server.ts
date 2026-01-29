@@ -152,7 +152,12 @@ async function spawnPythonServer(
   try {
     const child = spawn(
       config.pythonExecutable,
-      [config.serverScript, config.port.toString(), config.userDataPath],
+      [
+        config.serverScript,
+        config.port.toString(),
+        config.userDataBaseDirectory,
+        config.isDevelopment.toString(),
+      ],
       {
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe'],

@@ -25,7 +25,6 @@ import subprocess
 import sys
 from pathlib import Path
 from datetime import datetime
-import json
 import common
 
 
@@ -75,7 +74,7 @@ class PipelineRunner:
         }
     }
     
-    def __init__(self, start_from: int = 1, specific_steps: list = None, base_dir: str = None):
+    def __init__(self, start_from: int = 1, specific_steps: list = None, base_dir: str = None, is_dev: bool = True):
         """
         Initialize pipeline runner.
         
@@ -83,16 +82,20 @@ class PipelineRunner:
             start_from: Step number to start from (1-8)
             specific_steps: List of specific step numbers to run (overrides start_from)
             base_dir: Override base directory (optional)
+            is_dev: Flag indicating if running in development mode
         """
         self.start_from = start_from
         self.specific_steps = specific_steps
         self.base_dir = base_dir
+        self.is_dev = is_dev
         self.script_dir = Path(__file__).parent
         self.results = {}
         
         # Set global base_dir if provided
         if base_dir:
             common.set_base_dir(base_dir)
+
+        common.set_env(is_dev)
         
     def print_header(self):
         """Print pipeline header."""
