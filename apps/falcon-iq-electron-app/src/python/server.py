@@ -1,4 +1,14 @@
 import sys
+import os
+
+# CRITICAL: Set environment variables BEFORE any imports that use common.py
+# Parse command-line arguments and set environment variables at module load time
+# This ensures all modules (including subprocesses) use the correct base_dir
+if len(sys.argv) > 2:
+    os.environ['FALCON_BASE_DIR'] = sys.argv[2]
+if len(sys.argv) > 3:
+    os.environ['FALCON_IS_DEV'] = '1' if sys.argv[3].lower() == 'true' else '0'
+
 import signal
 import threading
 from typing import Optional
