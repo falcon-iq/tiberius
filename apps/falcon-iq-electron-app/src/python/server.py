@@ -8,8 +8,9 @@ from pydantic import BaseModel
 import uvicorn
 from runPipeline import PipelineRunner
 
-# Global variable to store Electron userData directory path
+# Global variables to store Electron configuration
 BASE_DIR: Optional[str] = None
+IS_DEV: bool = False
 
 app = FastAPI()
 
@@ -51,18 +52,19 @@ pipeline_status = {
 }
 
 
-def run_pipeline_task(start_from: int, specific_steps: Optional[list[int]], base_dir: Optional[str]):
+def run_pipeline_task(start_from: int, specific_steps: Optional[list[int]], base_dir: Optional[str], is_dev: bool):
     """Background task to run the pipeline."""
     global pipeline_status
-    
+
     pipeline_status["running"] = True
     pipeline_status["success"] = None
-    
+
     try:
         runner = PipelineRunner(
             start_from=start_from,
             specific_steps=specific_steps,
-            base_dir=base_dir or BASE_DIR
+            base_dir=base_dir or BASE_DIR,
+            is_dev=is_dev
         )
         success = runner.run()
         pipeline_status["success"] = success
@@ -91,7 +93,8 @@ async def run_pipeline(request: PipelineRequest, background_tasks: BackgroundTas
         run_pipeline_task,
         request.start_from,
         request.specific_steps,
-        request.base_dir
+        request.base_dir,
+        IS_DEV
     )
     
     return {"message": "Pipeline started", "status": "running"}
@@ -103,22 +106,23 @@ def get_pipeline_status():
     return pipeline_status
 
 
-def run_pipeline_on_startup(base_dir: Optional[str]):
+def run_pipeline_on_startup(base_dir: Optional[str], is_dev: bool):
     """Run the pipeline in a background thread on server startup."""
     global pipeline_status
-    
+
     print("\n" + "="*80, file=sys.stderr)
     print("🚀 Running PR Data Pipeline in background...", file=sys.stderr)
     print("="*80 + "\n", file=sys.stderr)
-    
+
     pipeline_status["running"] = True
     pipeline_status["success"] = None
-    
+
     try:
         runner = PipelineRunner(
             start_from=1,
             specific_steps=None,
-            base_dir=base_dir
+            base_dir=base_dir,
+            is_dev=is_dev
         )
         success = runner.run()
         
@@ -149,15 +153,17 @@ if __name__ == "__main__":
     # Parse command line arguments
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
     BASE_DIR = sys.argv[2] if len(sys.argv) > 2 else None
+    IS_DEV = (sys.argv[3].lower() == 'true') if len(sys.argv) > 3 else False
 
     print(f"Starting on port {port}", file=sys.stderr)
     if BASE_DIR:
         print(f"User data path: {BASE_DIR}", file=sys.stderr)
 
+    print(f"Development mode: {IS_DEV}", file=sys.stderr)
     # Start the pipeline in a background thread
     pipeline_thread = threading.Thread(
         target=run_pipeline_on_startup,
-        args=(BASE_DIR,),
+        args=(BASE_DIR, IS_DEV),
         daemon=True  # Thread will terminate when main program exits
     )
     pipeline_thread.start()

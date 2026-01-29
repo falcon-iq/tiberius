@@ -8,9 +8,9 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
-
 # Global variable to override base_dir from config
 _OVERRIDE_BASE_DIR: Optional[str] = None
+IS_DEV: bool = True
 
 
 def set_base_dir(base_dir: str):
@@ -24,6 +24,17 @@ def set_base_dir(base_dir: str):
     global _OVERRIDE_BASE_DIR
     _OVERRIDE_BASE_DIR = base_dir
     print(f"✅ Global base_dir set to: {base_dir}")
+
+def set_env(is_dev: bool):
+    """
+    Set the global IS_DEV variable.
+    
+    Args:
+        is_dev: Boolean indicating if in development mode
+        """
+    global IS_DEV
+    IS_DEV = is_dev
+    print(f"✅ Global IS_DEV set to: {IS_DEV}")
 
 
 def get_base_dir() -> Optional[str]:
@@ -67,19 +78,21 @@ def load_pipeline_config(config_path: Optional[str] = None) -> Dict:
 def load_user_settings(base_dir: Path, settings_folder: str = "settings") -> Dict:
     """
     Load user settings from base directory.
-    
+
     Args:
         base_dir: Base directory path
         settings_folder: Deprecated, kept for compatibility
-    
+
     Returns:
         Dictionary with user settings
     """
-    settings_path = base_dir / "settings.dev.json"
-    
+
+    settings_file = "settings.dev.json" if IS_DEV else "settings.json"
+    settings_path = base_dir / settings_file
+
     if not settings_path.exists():
         raise FileNotFoundError(f"User settings file not found: {settings_path}")
-    
+
     with open(settings_path, 'r') as f:
         return json.load(f)
 
@@ -201,8 +214,9 @@ def load_users(base_dir: Path, user_data_folder: str = "user_data") -> List[Dict
     # Import here to avoid circular imports
     from readUsers import get_users_from_database
     
-    # Database path: base_dir/database.dev.db
-    db_path = base_dir / "database.dev.db"
+    # Database path: base_dir/database[.dev].db
+    database_file = "database.dev.db" if IS_DEV else "database.db"
+    db_path = base_dir / database_file
     
     if not db_path.exists():
         raise FileNotFoundError(f"Database file not found: {db_path}")
