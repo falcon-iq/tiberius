@@ -161,7 +161,7 @@ class PipelineRunner:
                 cwd=self.script_dir,
                 capture_output=True,
                 text=True,
-                timeout=600,  # 10 minute timeout per script
+                timeout=18000,  # 5 hour timeout per script
                 env=env  # Pass environment variables
             )
             
@@ -186,7 +186,7 @@ class PipelineRunner:
             duration = (datetime.now() - start_time).total_seconds()
             return {
                 "success": False,
-                "error": "Script execution timed out (10 minutes)",
+                "error": "Script execution timed out (5 hours)",
                 "duration": duration
             }
         except Exception as e:
