@@ -3,6 +3,7 @@
   "okr_folder": "okrs",
   "pr_data_folder": "pr_data",
   "task_folder": "tasks",
+  "batch_size": 1000,
   "pipeline": {
     "default_start_step": 1,
     "timeout_per_step_seconds": 1200,

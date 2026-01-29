@@ -37,14 +37,14 @@ import pandas as pd
 from openai import OpenAI
 from tqdm import tqdm
 import textwrap
-from common import load_all_config, getDBPath
+from common import load_all_config, getDBPath, get_batch_size
 
 # ============================================================================
 # Configuration
 # ============================================================================
 
 OPENAI_MODEL = "gpt-4o-mini"
-DEFAULT_BATCH_SIZE = 50  # Default: Process 50 comments at a time
+DEFAULT_BATCH_SIZE = 50  # Fallback default (actual value from pipeline_config.json via get_batch_size())
 TEXT_COL = "body"
 
 # OpenAI pricing for gpt-4o-mini (per 1M tokens)
@@ -776,8 +776,8 @@ def main():
     # Get AI reviewer prefixes from settings
     ai_reviewer_prefixes = settings.get('ai_reviewer_prefixes', ["github-actions", "svc-"])
     
-    # Get batch size from settings
-    batch_size = settings.get('comment_classification_batch_size', DEFAULT_BATCH_SIZE)
+    # Get batch size from pipeline config
+    batch_size = get_batch_size(config)
     
     # Get single batch mode from settings
     single_batch_mode = settings.get('comment_classification_single_batch_mode', True)

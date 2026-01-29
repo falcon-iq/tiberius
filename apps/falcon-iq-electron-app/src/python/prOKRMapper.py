@@ -19,7 +19,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, Optional, List, Set, Tuple
-from common import load_all_config, getDBPath
+from common import load_all_config, getDBPath, get_batch_size
 from readOKRs import get_okrs_from_database
 
 # Global zero-shot classifier (lazy loaded)
@@ -920,6 +920,10 @@ def main():
         print(f"   Fallback classification: {'✅ Enabled' if use_fallback else '❌ Disabled'}")
         print(f"   Force recalculate: {'✅ Yes' if force_recalculate else '❌ No'}")
         
+        # Get batch size for PR classification limit
+        mapping_limit_per_user = get_batch_size(config)
+        print(f"   Mapping limit per user: {mapping_limit_per_user} PRs")
+        
         # Iterate through users
         print("\n" + "=" * 80)
         print("🔄 CLASSIFYING PRs (OKR Mapping + Fallback)")
@@ -931,7 +935,6 @@ def main():
         total_skipped = 0
         total_tokens = 0
         total_cost = 0.0
-        MAPPING_LIMIT_PER_USER = 10  # Classify 10 PRs per user (excluding skipped)
         
         # Track fallback category counts
         fallback_stats = {label: 0 for label in FALLBACK_LABELS}
@@ -958,8 +961,8 @@ def main():
             user_classified = 0
             
             for task_type in task_types:
-                if user_classified >= MAPPING_LIMIT_PER_USER:
-                    print(f"\n   ✅ Reached classification limit of {MAPPING_LIMIT_PER_USER} PRs for {username} - moving to next user")
+                if user_classified >= mapping_limit_per_user:
+                    print(f"\n   ✅ Reached classification limit of {mapping_limit_per_user} PRs for {username} - moving to next user")
                     break
                 
                 task_filename = f"pr_{task_type}_{username}.json"
@@ -1045,8 +1048,8 @@ def main():
                     
                     for idx in range(current_row, total_prs):
                         # Stop if we've reached the per-user classification limit
-                        if user_classified >= MAPPING_LIMIT_PER_USER:
-                            print(f"      🛑 Reached classification limit of {MAPPING_LIMIT_PER_USER} PRs for this user")
+                        if user_classified >= mapping_limit_per_user:
+                            print(f"      🛑 Reached classification limit of {mapping_limit_per_user} PRs for this user")
                             break
                         
                         row = df.iloc[idx]

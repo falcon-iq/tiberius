@@ -7,7 +7,7 @@ Downloads full PR details (metadata, comments, files) for PRs listed in search C
 import json
 import pandas as pd
 from pathlib import Path
-from common import load_all_config, get_github_token, get_org
+from common import load_all_config, get_github_token, get_org, get_batch_size
 from githubCommonFunctions import extract_pr_full
 
 
@@ -39,12 +39,16 @@ def main():
             print("❌ Error: No GitHub token found in settings. Cannot download PRs.")
             return
         
+        # Get batch size from config
+        batch_size = get_batch_size(config)
+        
         print(f"✅ Configuration loaded")
         print(f"   Task folder: {task_folder}")
         print(f"   PR data folder: {pr_data_folder}")
         print(f"   Search folder: {search_folder}")
         print(f"   Organization: {org}")
         print(f"   Users: {len(users)}")
+        print(f"   Batch size: {batch_size} PRs per run")
         
         # Iterate through users
         print("\n" + "=" * 80)
@@ -157,9 +161,8 @@ def main():
                             json.dump(status_data, f, indent=2)
                         continue
                     
-                    # Process only next 10 PRs
-                    BATCH_SIZE = 10
-                    end_row = min(current_row + BATCH_SIZE, total_prs)
+                    # Process PRs in batches from config
+                    end_row = min(current_row + batch_size, total_prs)
                     prs_to_process = df.iloc[current_row:end_row]
                     
                     downloaded_count = 0
