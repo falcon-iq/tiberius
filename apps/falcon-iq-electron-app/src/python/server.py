@@ -11,6 +11,7 @@ if len(sys.argv) > 3:
 
 import signal
 import threading
+import time
 from typing import Optional
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -116,39 +117,58 @@ def get_pipeline_status():
     return pipeline_status
 
 
-def run_pipeline_on_startup(base_dir: Optional[str], is_dev: bool):
-    """Run the pipeline in a background thread on server startup."""
+def run_pipeline_continuously(base_dir: Optional[str], is_dev: bool):
+    """Run the pipeline continuously in a loop with 1-minute sleep between runs."""
     global pipeline_status
+    
+    run_count = 0
 
     print("\n" + "="*80, file=sys.stderr)
-    print("🚀 Running PR Data Pipeline in background...", file=sys.stderr)
+    print("🔄 Starting continuous pipeline execution (1-minute interval)...", file=sys.stderr)
     print("="*80 + "\n", file=sys.stderr)
 
-    pipeline_status["running"] = True
-    pipeline_status["success"] = None
+    while True:
+        run_count += 1
+        print("\n" + "="*80, file=sys.stderr)
+        print(f"🚀 Pipeline Run #{run_count}", file=sys.stderr)
+        print("="*80 + "\n", file=sys.stderr)
 
-    try:
-        runner = PipelineRunner(
-            start_from=1,
-            specific_steps=None,
-            base_dir=base_dir,
-            is_dev=is_dev
-        )
-        success = runner.run()
+        pipeline_status["running"] = True
+        pipeline_status["success"] = None
+
+        try:
+            runner = PipelineRunner(
+                start_from=1,
+                specific_steps=None,
+                base_dir=base_dir,
+                is_dev=is_dev
+            )
+            success = runner.run()
+            
+            pipeline_status["success"] = success
+            pipeline_status["last_run"] = {
+                "status": "completed" if success else "failed",
+                "run_number": run_count
+            }
+            
+            if success:
+                print(f"\n✅ Pipeline run #{run_count} completed successfully!", file=sys.stderr)
+            else:
+                print(f"\n⚠️  Pipeline run #{run_count} completed with errors", file=sys.stderr)
+        except Exception as e:
+            pipeline_status["success"] = False
+            pipeline_status["last_run"] = {
+                "status": "error",
+                "error": str(e),
+                "run_number": run_count
+            }
+            print(f"\n❌ Pipeline run #{run_count} failed with error: {e}", file=sys.stderr)
+        finally:
+            pipeline_status["running"] = False
         
-        pipeline_status["success"] = success
-        pipeline_status["last_run"] = {"status": "completed" if success else "failed"}
-        
-        if success:
-            print("\n✅ Pipeline completed successfully!", file=sys.stderr)
-        else:
-            print("\n⚠️  Pipeline completed with errors", file=sys.stderr)
-    except Exception as e:
-        pipeline_status["success"] = False
-        pipeline_status["last_run"] = {"status": "error", "error": str(e)}
-        print(f"\n❌ Pipeline failed with error: {e}", file=sys.stderr)
-    finally:
-        pipeline_status["running"] = False
+        # Sleep for 1 minute before next run
+        print(f"\n⏳ Sleeping for 60 seconds before next run...", file=sys.stderr)
+        time.sleep(60)
 
 
 def signal_handler(sig, frame):
@@ -170,9 +190,9 @@ if __name__ == "__main__":
         print(f"User data path: {BASE_DIR}", file=sys.stderr)
 
     print(f"Development mode: {IS_DEV}", file=sys.stderr)
-    # Start the pipeline in a background thread
+    # Start the pipeline in a background thread (runs continuously)
     pipeline_thread = threading.Thread(
-        target=run_pipeline_on_startup,
+        target=run_pipeline_continuously,
         args=(BASE_DIR, IS_DEV),
         daemon=True  # Thread will terminate when main program exits
     )
@@ -180,7 +200,7 @@ if __name__ == "__main__":
     
     print("\n" + "="*80, file=sys.stderr)
     print("🌐 Starting FastAPI Server...", file=sys.stderr)
-    print("   (Pipeline running in background - check /api/pipeline/status)", file=sys.stderr)
+    print("   (Pipeline running continuously in background - check /api/pipeline/status)", file=sys.stderr)
     print("="*80 + "\n", file=sys.stderr)
 
     uvicorn.run(
