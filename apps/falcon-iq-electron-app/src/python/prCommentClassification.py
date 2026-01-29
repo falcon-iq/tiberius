@@ -30,6 +30,7 @@ Usage:
 import json
 import time
 import random
+import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
@@ -83,6 +84,118 @@ TAXONOMY_KEYS = list(TAXONOMY.keys())
 
 # Context fields to include in classification prompt
 CONTEXT_FIELDS = ["repo", "pr_number", "pr_title", "pr_author", "comment_type", "path", "line", "side", "state", "created_at", "user"]
+
+
+# ============================================================================
+# Database Functions
+# ============================================================================
+
+def connect_to_database(db_path: Path, quiet: bool = False) -> Optional[sqlite3.Connection]:
+    """Connect to the SQLite database"""
+    try:
+        conn = sqlite3.connect(db_path)
+        if not quiet:
+            print(f"✅ Connected to database: {db_path}")
+        return conn
+    except Exception as e:
+        if not quiet:
+            print(f"❌ Database connection error: {e}")
+        return None
+
+
+def insert_classified_comments_to_db(conn: sqlite3.Connection, df: pd.DataFrame, 
+                                    classified_results: List[Dict], start_idx: int, 
+                                    quiet: bool = False) -> Dict:
+    """
+    Insert classified comments into pr_comment_details table.
+    
+    Args:
+        conn: Database connection
+        df: Original DataFrame with comment data
+        classified_results: List of classification results
+        start_idx: Starting index in the DataFrame
+        quiet: If True, suppress print statements
+    
+    Returns:
+        Dictionary with insertion statistics
+    """
+    inserted = 0
+    updated = 0
+    errors = 0
+    
+    cursor = conn.cursor()
+    
+    for i, result in enumerate(classified_results):
+        idx = start_idx + i
+        if idx >= len(df):
+            break
+        
+        row = df.iloc[idx]
+        
+        try:
+            # Extract data from row
+            pr_number = int(row.get("pr_number", 0))
+            comment_id = int(row.get("comment_id", 0))
+            username = str(row.get("user", ""))
+            comment_type = str(row.get("comment_type", ""))
+            created_at = str(row.get("created_at", ""))
+            is_reviewer = 1 if row.get("is_reviewer", False) else 0
+            line = int(row.get("line", 0)) if pd.notna(row.get("line")) else None
+            side = str(row.get("side", "")) if pd.notna(row.get("side")) else None
+            pr_author = str(row.get("pr_author", ""))
+            
+            # Extract classification data
+            primary_category = result.get("primary_category", "OTHER")
+            secondary_categories = ",".join(result.get("secondary_categories", []))
+            severity = result.get("severity", "TRIVIAL")
+            confidence = float(result.get("confidence", 0.0))
+            actionability = result.get("actionability", "NON_ACTIONABLE")
+            rationale = result.get("rationale", "")
+            is_ai_reviewer = 1 if result.get("is_ai_reviewer", False) else 0
+            
+            # Extract signals
+            signals = result.get("signals", {})
+            is_nitpick = 1 if signals.get("is_nitpick", False) else 0
+            mentions_tests = 1 if signals.get("mentions_tests", False) else 0
+            mentions_bug = 1 if signals.get("mentions_bug", False) else 0
+            mentions_design = 1 if signals.get("mentions_design", False) else 0
+            mentions_performance = 1 if signals.get("mentions_performance", False) else 0
+            mentions_reliability = 1 if signals.get("mentions_reliability", False) else 0
+            mentions_security = 1 if signals.get("mentions_security", False) else 0
+            
+            # Insert or replace into database
+            cursor.execute("""
+                INSERT OR REPLACE INTO pr_comment_details (
+                    pr_number, comment_type, comment_id, username, created_at,
+                    is_reviewer, line, side, pr_author,
+                    primary_category, secondary_categories, severity, confidence,
+                    actionability, rationale, is_ai_reviewer,
+                    is_nitpick, mentions_tests, mentions_bug, mentions_design,
+                    mentions_performance, mentions_reliability, mentions_security
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                pr_number, comment_type, comment_id, username, created_at,
+                is_reviewer, line, side, pr_author,
+                primary_category, secondary_categories, severity, confidence,
+                actionability, rationale, is_ai_reviewer,
+                is_nitpick, mentions_tests, mentions_bug, mentions_design,
+                mentions_performance, mentions_reliability, mentions_security
+            ))
+            
+            inserted += 1
+            
+        except Exception as e:
+            errors += 1
+            if not quiet:
+                print(f"            ⚠️  Error inserting comment {idx}: {e}")
+    
+    # Commit the transaction
+    conn.commit()
+    
+    if not quiet and inserted > 0:
+        print(f"         💾 Database: Inserted {inserted} comments")
+    
+    return {'inserted': inserted, 'updated': updated, 'errors': errors}
 
 
 # ============================================================================
@@ -391,12 +504,18 @@ def classify_comments_batch(client: OpenAI, df: pd.DataFrame, start_idx: int,
 
 
 def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path, 
-                        ai_reviewer_prefixes: List[str], batch_size: int = DEFAULT_BATCH_SIZE,
-                        single_batch_mode: bool = False) -> bool:
+                        ai_reviewer_prefixes: List[str], db_conn: Optional[sqlite3.Connection] = None,
+                        batch_size: int = DEFAULT_BATCH_SIZE, single_batch_mode: bool = False) -> bool:
     """
     Process a single comment file with batching and status tracking
     
     Args:
+        client: OpenAI client
+        csv_path: Path to the CSV file to process
+        status_file: Path to the status file
+        ai_reviewer_prefixes: List of AI reviewer username prefixes
+        db_conn: Optional database connection for inserting classified comments
+        batch_size: Number of comments to process per batch
         single_batch_mode: If True, process only one batch per run and exit
     """
     
@@ -477,6 +596,12 @@ def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path,
             total_cost += batch_cost
             batches_processed += 1
             
+            # Insert batch results into database if connection provided
+            if db_conn is not None:
+                db_result = insert_classified_comments_to_db(db_conn, df, results, batch_start, quiet=False)
+                if db_result['errors'] > 0:
+                    print(f"         ⚠️  Database insertion had {db_result['errors']} error(s)")
+            
             # Update status
             status["last_processed_index"] = batch_end - 1
             status["classified_comments"] = batch_end
@@ -556,8 +681,9 @@ def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path,
 
 def classify_user_comments(username: str, comments_folder: Path, task_folder: Path, 
                           openai_client: OpenAI, ai_reviewer_prefixes: List[str],
+                          db_conn: Optional[sqlite3.Connection] = None,
                           batch_size: int = DEFAULT_BATCH_SIZE, single_batch_mode: bool = False) -> Dict[str, bool]:
-    """Classify comments for a single user"""
+    """Classify comments for a single user and insert into database"""
     
     results = {}
     
@@ -607,7 +733,7 @@ def classify_user_comments(username: str, comments_folder: Path, task_folder: Pa
             
             print(f"\n   📝 Processing: {comment_file.name}")
             success = process_comment_file(openai_client, comment_file, status_file, ai_reviewer_prefixes, 
-                                          batch_size, single_batch_mode)
+                                          db_conn, batch_size, single_batch_mode)
             results[f"{file_type}_{start_date}_{end_date}"] = success
         
         except Exception as e:
@@ -665,6 +791,13 @@ def main():
     print(f"🤖 AI reviewer prefixes: {ai_reviewer_prefixes}")
     print()
     
+    # Connect to database
+    db_path = base_dir / "database.dev.db"
+    db_conn = connect_to_database(db_path, quiet=False)
+    if not db_conn:
+        print("⚠️  Warning: Database connection failed. Comments will be classified but not inserted into database.")
+    print()
+    
     # Create folders if they don't exist
     task_folder.mkdir(parents=True, exist_ok=True)
     comments_folder.mkdir(parents=True, exist_ok=True)
@@ -690,7 +823,7 @@ def main():
         
         try:
             results = classify_user_comments(username, comments_folder, task_folder, openai_client, 
-                                            ai_reviewer_prefixes, batch_size, single_batch_mode)
+                                            ai_reviewer_prefixes, db_conn, batch_size, single_batch_mode)
             
             # Accumulate costs from status files
             for file_key in results.keys():
@@ -717,6 +850,11 @@ def main():
         except Exception as e:
             failed += 1
             print(f"\n   ❌ Error processing {username}: {e}")
+    
+    # Close database connection
+    if db_conn:
+        db_conn.close()
+        print(f"\n✅ Database connection closed")
     
     # Final summary
     print(f"\n{'='*80}")
