@@ -392,10 +392,12 @@ def map_okr_openai(pr_text: str, okr_texts: list, openai_api_key: str) -> tuple:
         total_tokens = pr_tokens + okr_tokens
         
         # Get embeddings
+        print(f"         🌐 OpenAI API call: embeddings for PR ({pr_tokens} tokens)")
         pr_response = client.embeddings.create(input=[pr_text_truncated], model=model)
         pr_embedding = np.array(pr_response.data[0].embedding)
         
         # Batch embed OKRs (only once per user, cached in memory)
+        print(f"         🌐 OpenAI API call: embeddings for {len(okr_texts)} OKRs ({okr_tokens} tokens)")
         okr_response = client.embeddings.create(input=okr_texts, model=model)
         okr_embeddings = np.array([data.embedding for data in okr_response.data])
         
@@ -420,42 +422,50 @@ def map_okr_openai(pr_text: str, okr_texts: list, openai_api_key: str) -> tuple:
 # ENHANCED OKR MATCHING WITH PRECOMPUTATION
 # ============================================================================
 
-def precompute_okr_data(okrs_df: pd.DataFrame, openai_api_key: Optional[str]) -> Dict:
+def precompute_okr_data(okrs_df: pd.DataFrame, openai_api_key: Optional[str], lazy_embeddings: bool = True) -> Dict:
     """
-    Precompute embeddings, acronyms, and keywords for ALL OKRs once.
-    This avoids redundant computation for every PR.
+    Precompute acronyms and keywords for ALL OKRs once.
+    Optionally create embeddings lazily (only when actually needed for PR mapping).
     
     Args:
         okrs_df: DataFrame with OKR texts
         openai_api_key: Optional OpenAI API key
+        lazy_embeddings: If True (default), embeddings are NOT precomputed (created on-demand)
     
     Returns:
         Dictionary with precomputed data:
         {
             "okr_texts": list,
-            "okr_embeddings": np.array,
+            "okr_embeddings": np.array or None,
             "okr_acronyms": list[set],
-            "okr_keywords": list[set]
+            "okr_keywords": list[set],
+            "embeddings_computed": bool,
+            "openai_api_key": str (needed for lazy loading)
         }
     """
     okr_texts = okrs_df["okr_text"].tolist()
     okr_acronyms = [extract_acronyms(text) for text in okr_texts]
     okr_keywords = [tokenize_words(text) for text in okr_texts]
     
-    # Precompute OKR embeddings
-    if openai_api_key:
+    # Precompute OKR embeddings only if not lazy loading
+    okr_embeddings = None
+    embeddings_computed = False
+    
+    if openai_api_key and not lazy_embeddings:
         print(f"      🌐 Precomputing embeddings for {len(okr_texts)} OKRs...")
         okr_embeddings = get_okr_embeddings_batch(okr_texts, openai_api_key)
-    else:
-        # TF-IDF vectors (computed on-demand during matching)
-        okr_embeddings = None
+        embeddings_computed = True
+    elif lazy_embeddings and openai_api_key:
+        print(f"      ⚡ Lazy loading enabled - embeddings will be computed on-demand")
     
     return {
         "okr_texts": okr_texts,
         "okr_embeddings": okr_embeddings,
         "okr_acronyms": okr_acronyms,
         "okr_keywords": okr_keywords,
-        "okrs_df": okrs_df
+        "okrs_df": okrs_df,
+        "embeddings_computed": embeddings_computed,
+        "openai_api_key": openai_api_key  # Store for lazy loading
     }
 
 
@@ -478,6 +488,7 @@ def get_okr_embeddings_batch(okr_texts: List[str], openai_api_key: str) -> np.ar
         model = "text-embedding-3-large"
         
         # Batch embed all OKRs
+        print(f"         🌐 OpenAI API call: batch embeddings for {len(okr_texts)} OKRs")
         response = client.embeddings.create(input=okr_texts, model=model)
         embeddings = np.array([data.embedding for data in response.data])
         
@@ -489,6 +500,29 @@ def get_okr_embeddings_batch(okr_texts: List[str], openai_api_key: str) -> np.ar
     except Exception as e:
         print(f"         ⚠️  Failed to precompute OKR embeddings: {e}")
         return None
+
+
+def ensure_okr_embeddings(okr_data: Dict) -> None:
+    """
+    Ensure OKR embeddings are computed (lazy loading).
+    If embeddings don't exist, compute them and update okr_data in-place.
+    
+    Args:
+        okr_data: Dictionary with OKR data (modified in-place)
+    """
+    if okr_data["embeddings_computed"]:
+        return  # Already computed
+    
+    api_key = okr_data.get("openai_api_key")
+    if not api_key:
+        return  # No API key, can't compute embeddings
+    
+    okr_texts = okr_data["okr_texts"]
+    print(f"         🌐 Computing embeddings for {len(okr_texts)} OKRs (lazy loading)...")
+    
+    embeddings = get_okr_embeddings_batch(okr_texts, api_key)
+    okr_data["okr_embeddings"] = embeddings
+    okr_data["embeddings_computed"] = True
 
 
 def get_pr_embeddings_with_chunking(pr_text: str, openai_api_key: str) -> np.array:
@@ -513,6 +547,7 @@ def get_pr_embeddings_with_chunking(pr_text: str, openai_api_key: str) -> np.arr
     if tokens <= 8000:  # OpenAI limit
         # Single embedding
         pr_text_truncated = pr_text[:30000]  # Character safety limit
+        print(f"         🌐 OpenAI API call: PR embedding ({tokens} tokens)")
         response = client.embeddings.create(input=[pr_text_truncated], model=model)
         embedding = np.array([response.data[0].embedding])
         return embedding
@@ -520,6 +555,7 @@ def get_pr_embeddings_with_chunking(pr_text: str, openai_api_key: str) -> np.arr
         # Chunk for very large texts
         chunks = chunk_text(pr_text, chunk_size=7000, overlap=300, max_chunks=4)
         print(f"         📝 Large PR ({tokens} tokens), chunking into {len(chunks)} parts")
+        print(f"         🌐 OpenAI API call: PR embeddings ({len(chunks)} chunks)")
         response = client.embeddings.create(input=chunks, model=model)
         embeddings = np.array([data.embedding for data in response.data])
         return embeddings
@@ -591,6 +627,11 @@ def stage_b_enhanced_match(pr_text: str, okr_data: Dict, openai_api_key: Optiona
     
     tokens_used = 0
     cost = 0.0
+    
+    # Ensure embeddings are computed (lazy loading)
+    if openai_api_key:
+        ensure_okr_embeddings(okr_data)
+        okr_embeddings = okr_data["okr_embeddings"]  # Get updated embeddings
     
     # Get similarities
     if openai_api_key and okr_embeddings is not None:

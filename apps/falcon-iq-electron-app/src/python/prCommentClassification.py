@@ -103,6 +103,40 @@ def connect_to_database(db_path: Path, quiet: bool = False) -> Optional[sqlite3.
         return None
 
 
+def check_comments_exist_in_db(conn: sqlite3.Connection, df: pd.DataFrame) -> pd.Series:
+    """
+    Check which comments already exist in the database.
+    
+    Args:
+        conn: Database connection
+        df: DataFrame with comments (must have pr_number, comment_id, user columns)
+    
+    Returns:
+        Boolean Series indicating which rows already exist in database
+    """
+    if conn is None or len(df) == 0:
+        return pd.Series([False] * len(df), index=df.index)
+    
+    cursor = conn.cursor()
+    exists_flags = []
+    
+    for idx, row in df.iterrows():
+        pr_number = int(row.get("pr_number", 0))
+        comment_id = int(row.get("comment_id", 0))
+        username = str(row.get("user", ""))
+        
+        # Check if this comment exists in the database
+        cursor.execute("""
+            SELECT COUNT(*) FROM pr_comment_details 
+            WHERE pr_number = ? AND comment_id = ? AND username = ?
+        """, (pr_number, comment_id, username))
+        
+        count = cursor.fetchone()[0]
+        exists_flags.append(count > 0)
+    
+    return pd.Series(exists_flags, index=df.index)
+
+
 def insert_classified_comments_to_db(conn: sqlite3.Connection, df: pd.DataFrame, 
                                     classified_results: List[Dict], start_idx: int, 
                                     quiet: bool = False) -> Dict:
@@ -285,6 +319,7 @@ def invoke_openai_json(client: OpenAI, prompt: str, model: str = OPENAI_MODEL,
     """
     for attempt in range(retries):
         try:
+            print(f"            🌐 OpenAI API call: {model} (attempt {attempt + 1}/{retries})")
             resp = client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
@@ -554,6 +589,29 @@ def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path,
     if already_classified and status["status"] == "completed":
         print(f"      ✅ Already classified: {csv_path.name}")
         return True
+    
+    # Filter out comments that already exist in database
+    if db_conn is not None:
+        print(f"      🔍 Checking for already-classified comments in database...")
+        existing_mask = check_comments_exist_in_db(db_conn, df)
+        existing_count = existing_mask.sum()
+        
+        if existing_count > 0:
+            print(f"      ⏭️  Found {existing_count} already-classified comments, skipping them")
+            # Mark existing comments as "processed" in the DataFrame
+            df = df[~existing_mask].copy()
+            
+            if len(df) == 0:
+                print(f"      ✅ All comments already classified in database")
+                status["status"] = "completed"
+                status["total_comments"] = existing_count
+                status["classified_comments"] = existing_count
+                save_status(status_file, status)
+                return True
+            
+            # Reset index for the filtered DataFrame
+            df = df.reset_index(drop=True)
+            print(f"      📊 Remaining to classify: {len(df)} comments")
     
     # Initialize status
     if status["status"] == "not_started":
