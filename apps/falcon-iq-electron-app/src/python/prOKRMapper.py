@@ -20,6 +20,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, Optional, List, Set, Tuple
 from common import load_all_config
+from readOKRs import get_okrs_from_database
 
 # Global zero-shot classifier (lazy loaded)
 _zero_shot_classifier = None
@@ -177,12 +178,14 @@ def check_okrs_exist(pr_data_folder: Path, owner: str, repo: str, pr_number: int
     """
     Check if okrs_{username}.csv already exists for this PR.
     
+    Note: File is named per-user but contains global OKRs from database.
+    
     Args:
         pr_data_folder: Base PR data folder path
         owner: Repository owner
         repo: Repository name
         pr_number: PR number
-        username: Username for user-specific OKR file
+        username: Username for file naming (OKRs are global, not user-specific)
     
     Returns:
         True if okrs_{username}.csv exists, False otherwise
@@ -195,36 +198,47 @@ def check_okrs_exist(pr_data_folder: Path, owner: str, repo: str, pr_number: int
 
 def load_okrs_for_user(username: str, okr_folder: Path) -> Optional[pd.DataFrame]:
     """
-    Load parsed OKRs for a specific user.
+    Load OKRs from SQLite database.
+    
+    Note: OKRs in the database are global (not user-specific), but this function
+    maintains the same signature for compatibility with existing code.
     
     Args:
-        username: Username
-        okr_folder: OKR folder path
+        username: Username (kept for compatibility, but OKRs are global)
+        okr_folder: OKR folder path (kept for compatibility, contains base_dir path)
     
     Returns:
         DataFrame with OKR texts or None if not found
     """
-    okr_parsed_dir = okr_folder / 'parsed'
-    okr_file = okr_parsed_dir / f"{username}_okrs_extracted.csv"
-    
-    if not okr_file.exists():
-        return None
-    
     try:
-        okrs_df = pd.read_csv(okr_file)
+        # Get base_dir from okr_folder (okr_folder is base_dir/okrs)
+        base_dir = okr_folder.parent
+        db_path = base_dir / "database.dev.db"
         
-        # Keep only Objective + Child Item; forward-fill merged Objective rows
-        okrs_df = okrs_df[["Objectives", "Child Items"]].fillna("")
-        okrs_df["Objectives"] = okrs_df["Objectives"].astype(str).str.strip()
-        okrs_df["Child Items"] = okrs_df["Child Items"].astype(str).str.strip()
-        okrs_df["Objectives"] = okrs_df["Objectives"].replace("", pd.NA).ffill().fillna("")
+        if not db_path.exists():
+            print(f"         ⚠️  Database not found at: {db_path}")
+            return None
         
-        # Create combined OKR text
-        okrs_df["okr_text"] = okrs_df["Objectives"] + " | " + okrs_df["Child Items"]
+        # Read OKRs from database
+        okrs_list = get_okrs_from_database(db_path, quiet=True)
+        
+        if not okrs_list:
+            return None
+        
+        # Convert to DataFrame with expected structure
+        okrs_df = pd.DataFrame(okrs_list)
+        
+        # Transform database format to expected format
+        # Database has: id, goal, startDate, endDate
+        # Keep id as okr_id and add okr_text
+        okrs_df["okr_id"] = okrs_df["id"]
+        okrs_df["okr_text"] = okrs_df["goal"].astype(str).str.strip()
         
         return okrs_df
     except Exception as e:
-        print(f"         ❌ Error loading OKRs: {e}")
+        print(f"         ❌ Error loading OKRs from database: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -739,12 +753,11 @@ def save_classification_result(result: Dict, okr_data: Dict, output_file: Path):
         output_file: Output CSV file path
     """
     if result["classification_type"] == "okr":
-        # OKR match
+        # OKR match - use global OKR from database
         matched_okr = okr_data["okrs_df"].iloc[result["okr_idx"]]
         output_data = {
-            "okr_objective": [matched_okr["Objectives"]],
-            "okr_child_item": [matched_okr["Child Items"]],
-            "okr_text": [matched_okr["okr_text"]],
+            "okr_id": [matched_okr["okr_id"]],  # Global OKR ID from database
+            "okr_text": [matched_okr["okr_text"]],  # Global OKR text from database
             "confidence": [result["confidence"]],
             "method": [result["method"]],
             "classification_type": ["okr"],
@@ -754,8 +767,7 @@ def save_classification_result(result: Dict, okr_data: Dict, output_file: Path):
     else:
         # Fallback category
         output_data = {
-            "okr_objective": [""],
-            "okr_child_item": [""],
+            "okr_id": [""],  # No OKR ID for fallback categories
             "okr_text": [""],
             "confidence": [result["confidence"]],
             "method": [result["method"]],
@@ -782,7 +794,7 @@ def map_okrs_for_pr_with_classification(pr_data_folder: Path, owner: str, repo: 
         owner: Repository owner
         repo: Repository name
         pr_number: PR number
-        username: Username for user-specific OKR file
+        username: Username for file naming (OKRs are global, not user-specific)
         okr_data: Precomputed OKR data for this user
         openai_api_key: Optional OpenAI API key for advanced matching
         score_threshold: Minimum confidence for OKR match
