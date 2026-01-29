@@ -6,7 +6,7 @@ Reads and processes PR tasks for all users
 
 import json
 from pathlib import Path
-from common import load_all_config
+from common import load_all_config, get_github_token, get_org
 from githubCommonFunctions import search_and_save_prs
 
 
@@ -30,9 +30,9 @@ def main():
         pr_data_folder = paths['pr_data_folder']
         search_folder = pr_data_folder / 'search'
         
-        # Get GitHub settings
-        org = settings.get('org')
-        github_token = settings.get('github_token')
+        # Get GitHub settings using helper functions
+        org = get_org(settings)
+        github_token = get_github_token(settings)
         
         if not github_token:
             print("⚠️  Warning: No GitHub token found in settings. Cannot download PRs from GitHub.")

@@ -66,16 +66,16 @@ def load_pipeline_config(config_path: Optional[str] = None) -> Dict:
 
 def load_user_settings(base_dir: Path, settings_folder: str = "settings") -> Dict:
     """
-    Load user settings from settings folder.
+    Load user settings from base directory.
     
     Args:
         base_dir: Base directory path
-        settings_folder: Settings folder name (default: "settings")
+        settings_folder: Deprecated, kept for compatibility
     
     Returns:
         Dictionary with user settings
     """
-    settings_path = base_dir / settings_folder / "user-settings.json"
+    settings_path = base_dir / "settings.dev.json"
     
     if not settings_path.exists():
         raise FileNotFoundError(f"User settings file not found: {settings_path}")
@@ -84,24 +84,135 @@ def load_user_settings(base_dir: Path, settings_folder: str = "settings") -> Dic
         return json.load(f)
 
 
+def get_github_token(settings: Dict) -> Optional[str]:
+    """
+    Get GitHub PAT from settings.
+    
+    Args:
+        settings: Settings dictionary
+    
+    Returns:
+        GitHub token or None if not found
+    """
+    try:
+        return settings['integrations']['github']['pat']
+    except (KeyError, TypeError):
+        return None
+
+
+def get_github_username(settings: Dict) -> Optional[str]:
+    """
+    Get GitHub username from settings.
+    
+    Args:
+        settings: Settings dictionary
+    
+    Returns:
+        GitHub username or None if not found
+    """
+    try:
+        return settings['integrations']['github']['username']
+    except (KeyError, TypeError):
+        return None
+
+
+def get_github_emu_suffix(settings: Dict) -> Optional[str]:
+    """
+    Get GitHub EMU suffix from settings.
+    
+    Args:
+        settings: Settings dictionary
+    
+    Returns:
+        GitHub EMU suffix or None if not found
+    """
+    try:
+        return settings['integrations']['github']['emuSuffix']
+    except (KeyError, TypeError):
+        return None
+
+
+def get_org(settings: Dict) -> Optional[str]:
+    """
+    Get organization from settings.
+    
+    Args:
+        settings: Settings dictionary
+    
+    Returns:
+        Organization name or None if not found
+    """
+    return settings.get('org')
+
+
+def get_openai_api_key(settings: Dict) -> Optional[str]:
+    """
+    Get OpenAI API key from settings.
+    
+    Args:
+        settings: Settings dictionary
+    
+    Returns:
+        OpenAI API key or None if not found
+    """
+    return settings.get('openai_api_key')
+
+
+def get_start_date(settings: Dict) -> Optional[str]:
+    """
+    Get start date from settings.
+    
+    Args:
+        settings: Settings dictionary
+    
+    Returns:
+        Start date or None if not found
+    """
+    return settings.get('start_date')
+
+
+def get_ai_reviewer_prefixes(settings: Dict, default: Optional[List[str]] = None) -> List[str]:
+    """
+    Get AI reviewer prefixes from settings.
+    
+    Args:
+        settings: Settings dictionary
+        default: Default value if not found (defaults to ["github-actions", "svc-"])
+    
+    Returns:
+        List of AI reviewer prefixes
+    """
+    if default is None:
+        default = ["github-actions", "svc-"]
+    return settings.get('ai_reviewer_prefixes', default)
+
+
 def load_users(base_dir: Path, user_data_folder: str = "user_data") -> List[Dict]:
     """
-    Load users from user_data folder.
+    Load users from SQLite database.
     
     Args:
         base_dir: Base directory path
-        user_data_folder: User data folder name (default: "user_data")
+        user_data_folder: User data folder name (deprecated, kept for compatibility)
     
     Returns:
         List of user dictionaries with firstName, lastName, userName, prUserName
     """
-    users_path = base_dir / user_data_folder / "users.json"
+    # Import here to avoid circular imports
+    from readUsers import get_users_from_database
     
-    if not users_path.exists():
-        raise FileNotFoundError(f"Users file not found: {users_path}")
+    # Database path: base_dir/database.dev.db
+    db_path = base_dir / "database.dev.db"
     
-    with open(users_path, 'r') as f:
-        users = json.load(f)
+    if not db_path.exists():
+        raise FileNotFoundError(f"Database file not found: {db_path}")
+    
+    # Get users from database
+    users = get_users_from_database(db_path, quiet=True)
+    
+    if not users:
+        print(f"Warning: No users found in database: {db_path}")
+        return []
     
     # Validate user schema
     required_fields = ['firstName', 'lastName', 'userName', 'prUserName']
@@ -150,10 +261,7 @@ def initialize_paths(config: Dict) -> Dict[str, Path]:
     paths = {
         'base_dir': base_dir,
         'okr_folder': base_dir / config.get('okr_folder', 'okrs'),
-        'output_folder': base_dir / config.get('output_folder', 'output'),
         'pr_data_folder': base_dir / config.get('pr_data_folder', 'pr_data'),
-        'user_data_folder': base_dir / config.get('user_data_folder', 'user_data'),
-        'settings_folder': base_dir / config.get('settings_folder', 'settings'),
         'task_folder': base_dir / config.get('task_folder', 'tasks'),
     }
     
@@ -208,11 +316,25 @@ if __name__ == "__main__":
         print(f"   Start date: {all_config['config'].get('start_date', 'N/A')}")
         
         print(f"\n⚙️  User Settings:")
-        for key, value in all_config['settings'].items():
-            # Mask sensitive data
-            if 'token' in key.lower() or 'key' in key.lower():
-                value = value[:10] + "..." if isinstance(value, str) and len(value) > 10 else "***"
-            print(f"   {key}: {value}")
+        settings = all_config['settings']
+        
+        # Use helper functions to access nested values
+        github_token = get_github_token(settings)
+        github_username = get_github_username(settings)
+        github_emu_suffix = get_github_emu_suffix(settings)
+        org = get_org(settings)
+        openai_key = get_openai_api_key(settings)
+        start_date = get_start_date(settings)
+        ai_prefixes = get_ai_reviewer_prefixes(settings)
+        
+        print(f"   version: {settings.get('version')}")
+        print(f"   org: {org}")
+        print(f"   start_date: {start_date}")
+        print(f"   github_token: {github_token[:10] + '...' if github_token else 'NOT SET'}")
+        print(f"   github_username: {github_username}")
+        print(f"   github_emu_suffix: {github_emu_suffix}")
+        print(f"   openai_api_key: {openai_key[:10] + '...' if openai_key else 'NOT SET'}")
+        print(f"   ai_reviewer_prefixes: {ai_prefixes}")
         
         print(f"\n👥 Users ({len(all_config['users'])}):")
         for user in all_config['users']:

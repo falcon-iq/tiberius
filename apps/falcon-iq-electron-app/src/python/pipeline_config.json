@@ -1,10 +1,7 @@
 {
-  "base_dir": "/Users/npurwar/falcon-download-folder",
+  "base_dir": "/Users/npurwar/Library/Application Support/Falcon IQ",
   "okr_folder": "okrs",
-  "output_folder": "output",
   "pr_data_folder": "pr_data",
-  "user_data_folder": "user_data",
-  "settings_folder": "settings",
   "task_folder": "tasks",
   "pipeline": {
     "default_start_step": 1,
