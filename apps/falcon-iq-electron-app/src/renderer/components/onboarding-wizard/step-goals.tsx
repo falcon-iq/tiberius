@@ -5,7 +5,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { useGoals, useAddGoal, useDeleteGoal } from '@hooks/use-goals';
-import { getTodayDateInputValue, dateInputToISO } from '@libs/shared/utils/date';
+import { getTodayDateInputValue, dateInputToISO, formatDate } from '@libs/shared/utils/date';
 import type { Step3Props, Goal } from './types';
 
 export const StepGoals = ({ onBack, onNext }: Step3Props) => {
@@ -184,10 +184,13 @@ export const StepGoals = ({ onBack, onNext }: Step3Props) => {
             goals.map((goal) => (
               <div
                 key={goal.id}
-                className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3"
+                className="flex items-start justify-between rounded-lg border border-border bg-background px-4 py-3"
               >
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-foreground">{goal.goal}</span>
+                  <p className="text-sm font-medium text-foreground">{goal.goal}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Started: {formatDate(goal.start_date)}
+                  </p>
                 </div>
                 <button
                   onClick={() => void handleRemoveGoal(goal)}
