@@ -5,12 +5,14 @@ Provides functions to read configuration, users, and settings.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
 # Global variable to override base_dir from config
-_OVERRIDE_BASE_DIR: Optional[str] = None
-IS_DEV: bool = True
+# Check environment variable first, then default to None
+_OVERRIDE_BASE_DIR: Optional[str] = os.environ.get('FALCON_BASE_DIR')
+IS_DEV: bool = os.environ.get('FALCON_IS_DEV', '1') == '1'
 
 
 def set_base_dir(base_dir: str):

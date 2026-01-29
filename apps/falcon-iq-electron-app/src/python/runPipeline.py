@@ -23,6 +23,7 @@ Usage:
 import argparse
 import subprocess
 import sys
+import os
 from pathlib import Path
 from datetime import datetime
 import common
@@ -144,13 +145,24 @@ class PipelineRunner:
         start_time = datetime.now()
         
         try:
+            # Prepare environment variables
+            env = os.environ.copy()
+            
+            # Pass base_dir override to subprocess if set
+            if self.base_dir:
+                env['FALCON_BASE_DIR'] = self.base_dir
+            
+            # Pass IS_DEV flag to subprocess
+            env['FALCON_IS_DEV'] = '1' if self.is_dev else '0'
+            
             # Run the script using the same Python interpreter
             result = subprocess.run(
                 [sys.executable, str(script_path)],
                 cwd=self.script_dir,
                 capture_output=True,
                 text=True,
-                timeout=600  # 10 minute timeout per script
+                timeout=600,  # 10 minute timeout per script
+                env=env  # Pass environment variables
             )
             
             duration = (datetime.now() - start_time).total_seconds()
