@@ -163,8 +163,8 @@ class MCPTools:
             },
             {
                 "name": "query_review_comments",
-                "description": "Query and analyze code review comments with signal classifications",
-                "parameters": "username, filter_by_signals, filter_by_category, filter_by_pr, group_by, include_details, limit"
+                "description": "Query and analyze code review comments with signal classifications. Available signals: is_nitpick, mentions_tests, mentions_bug, mentions_design, mentions_performance, mentions_reliability, mentions_security. Use exact signal names for filtering.",
+                "parameters": "username, filter_by_signals (use exact signal names like 'mentions_bug'), filter_by_category, filter_by_pr, group_by, include_details, limit"
             },
             {
                 "name": "query_pr_stats",
@@ -263,9 +263,20 @@ class MCPTools:
                         where_clauses.append("username = ?")
                         params.append(arguments["username"])
                     
-                    if arguments.get("filter_by_signals"):
-                        for signal, value in arguments["filter_by_signals"].items():
-                            if value:
+                    # Handle filter_by_signals - can be dict or string
+                    filter_by_signals = arguments.get("filter_by_signals")
+                    if filter_by_signals:
+                        if isinstance(filter_by_signals, dict):
+                            # Dict format: {"mentions_bug": true, "is_nitpick": true}
+                            for signal, value in filter_by_signals.items():
+                                if value:
+                                    where_clauses.append(f"{signal} = 1")
+                        elif isinstance(filter_by_signals, str):
+                            # String format: "mentions_bug"
+                            where_clauses.append(f"{filter_by_signals} = 1")
+                        elif isinstance(filter_by_signals, list):
+                            # List format: ["mentions_bug", "mentions_performance"]
+                            for signal in filter_by_signals:
                                 where_clauses.append(f"{signal} = 1")
                     
                     if arguments.get("filter_by_category"):
