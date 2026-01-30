@@ -10,12 +10,13 @@ interface SeverityDistributionProps {
   data: SeverityStat[];
 }
 
+// Use CSS variables and HSL for theming consistency
 const SEVERITY_COLORS: Record<string, string> = {
-  TRIVIAL: '#10b981', // green-500
-  LOW: '#3b82f6', // blue-500
-  MEDIUM: '#f59e0b', // yellow-500
-  HIGH: '#f97316', // orange-500
-  BLOCKER: '#ef4444', // red-500
+  TRIVIAL: 'hsl(160 84% 39%)', // emerald
+  LOW: 'hsl(217 91% 60%)', // blue
+  MEDIUM: 'hsl(38 92% 50%)', // amber
+  HIGH: 'hsl(25 95% 53%)', // orange
+  BLOCKER: 'hsl(0 84% 60%)', // red
 };
 
 export function SeverityDistribution({ data }: SeverityDistributionProps) {
@@ -28,11 +29,12 @@ export function SeverityDistribution({ data }: SeverityDistributionProps) {
   }
 
   return (
-    <div className="w-full h-80">
+    <div className="w-full h-80" role="img" aria-label="Severity distribution chart showing comment counts by severity level">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          accessibilityLayer
         >
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
           <XAxis
@@ -58,7 +60,7 @@ export function SeverityDistribution({ data }: SeverityDistributionProps) {
             {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={SEVERITY_COLORS[entry.severity] || '#6366f1'}
+                fill={SEVERITY_COLORS[entry.severity] || 'hsl(var(--color-primary))'}
               />
             ))}
           </Bar>

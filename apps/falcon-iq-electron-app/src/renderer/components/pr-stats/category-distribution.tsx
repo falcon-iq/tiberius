@@ -10,14 +10,15 @@ interface CategoryDistributionProps {
   data: CategoryStat[];
 }
 
+// Use CSS variables for theming consistency
 const COLORS = [
-  '#6366f1', // primary
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#f59e0b', // amber
-  '#10b981', // emerald
-  '#3b82f6', // blue
-  '#ef4444', // red
+  'hsl(var(--color-primary))',
+  'hsl(262 83% 58%)', // purple
+  'hsl(330 81% 60%)', // pink
+  'hsl(38 92% 50%)', // amber
+  'hsl(160 84% 39%)', // emerald
+  'hsl(217 91% 60%)', // blue
+  'hsl(0 84% 60%)', // red
 ];
 
 export function CategoryDistribution({ data }: CategoryDistributionProps) {
@@ -33,12 +34,13 @@ export function CategoryDistribution({ data }: CategoryDistributionProps) {
   }
 
   return (
-    <div className="w-full h-80">
+    <div className="w-full h-80" role="img" aria-label="Category distribution chart showing comment counts by category">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={topCategories}
           layout="vertical"
           margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
+          accessibilityLayer
         >
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
           <XAxis type="number" stroke="var(--color-muted-foreground)" />

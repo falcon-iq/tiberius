@@ -168,6 +168,23 @@ export function calculatePRCommentStats(comments: PRCommentRow[]): PRCommentStat
 
   const bugCorrectness = bugsInLogic; // Same as top-level metric
 
+  // Calculate unique system-level concerns total (avoid double counting)
+  const systemLevelCommentIds = new Set<number>();
+  comments.forEach(c => {
+    if (
+      c.primary_category === 'EDGE_CASES' ||
+      c.primary_category === 'RELIABILITY_RESILIENCE' ||
+      c.mentions_reliability === 1 ||
+      c.primary_category === 'PERFORMANCE' ||
+      c.mentions_performance === 1 ||
+      c.primary_category === 'BUG_CORRECTNESS' ||
+      c.primary_category === 'PRODUCT_BEHAVIOR'
+    ) {
+      systemLevelCommentIds.add(c.comment_id);
+    }
+  });
+  const systemLevelTotal = systemLevelCommentIds.size;
+
   const highEngagement = comments.filter(c =>
     c.primary_category === 'QUESTION_CLARIFICATION'
   ).length;
@@ -184,7 +201,7 @@ export function calculatePRCommentStats(comments: PRCommentRow[]): PRCommentStat
       reliability: toPercent(reliability),
       performance: toPercent(performance),
       bug_correctness: toPercent(bugCorrectness),
-      total: toPercent(edgeCases + reliability + performance + bugCorrectness),
+      total: toPercent(systemLevelTotal),
     },
     high_engagement: toPercent(highEngagement),
     nitpick_rate: toPercent(nitpicks),
