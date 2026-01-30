@@ -99,7 +99,7 @@ app.on('ready', async () => {
       serverScript,
       port: 8765,
       healthCheckEndpoint: '/health',
-      startupTimeout: 10000,
+      startupTimeout: 100000,
       userDataBaseDirectory: app.getPath('userData'),
       isDevelopment: isDevelopment(),
     });
@@ -194,6 +194,37 @@ ipcMain.handle('python:getPRFiles', async (_event, prId: number) => {
     return { success: true, data };
   } catch (error) {
     return { success: false, error: 'Failed to fetch PR files' };
+  }
+});
+
+// IPC handlers for smart agent operations
+ipcMain.handle('smart-agent:getCapabilities', async () => {
+  try {
+    const response = await fetch('http://localhost:8765/api/smart-agent/capabilities');
+    if (!response.ok) {
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch capabilities' };
+  }
+});
+
+ipcMain.handle('smart-agent:query', async (_event, query: string) => {
+  try {
+    const response = await fetch('http://localhost:8765/api/smart-agent/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    if (!response.ok) {
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: 'Failed to query smart agent' };
   }
 });
 

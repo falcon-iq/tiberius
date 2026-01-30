@@ -1,4 +1,13 @@
-import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
+import { Sparkles, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import {
+  useAgentCapabilities,
+  useAgentQuery,
+  useConversationHistory,
+} from '../hooks/use-smart-agent';
+import { CapabilitiesPanel } from './agent-sidebar/capabilities-panel';
+import { ChatInput } from './agent-sidebar/chat-input';
+import { ConversationView } from './agent-sidebar/conversation-view';
 
 interface AgentSidebarProps {
   isCollapsed: boolean;
@@ -21,6 +30,14 @@ const AgentSidebar = ({
   onResizeStart,
   onResizeEnd,
 }: AgentSidebarProps) => {
+  const [inputValue, setInputValue] = useState('');
+
+  // Hooks for agent capabilities and conversation
+  const { data: capabilitiesData, isLoading: isLoadingCapabilities } = useAgentCapabilities();
+  const { mutate: sendQuery, isPending } = useAgentQuery();
+  const { messages, isLoading: isLoadingHistory, addMessage, updateMessage, clearHistory } =
+    useConversationHistory();
+
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     onResizeStart();
@@ -30,7 +47,7 @@ const AgentSidebar = ({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = moveEvent.clientX - startX;
-      const newWidth = startWidth - deltaX;  // Right sidebar, so subtract
+      const newWidth = startWidth - deltaX; // Right sidebar, so subtract
       onWidthChange(newWidth);
     };
 
@@ -42,6 +59,90 @@ const AgentSidebar = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleSend = () => {
+    if (!inputValue.trim() || isPending) return;
+
+    const query = inputValue.trim();
+    setInputValue('');
+
+    // Add user message
+    addMessage({
+      role: 'user',
+      content: query,
+      status: 'success',
+    });
+
+    // Add pending assistant message
+    const assistantMessageId = addMessage({
+      role: 'assistant',
+      content: '',
+      status: 'pending',
+    });
+
+    // Send query to agent
+    sendQuery(query, {
+      onSuccess: (response) => {
+        updateMessage(assistantMessageId, {
+          content: response.answer,
+          status: 'success',
+        });
+      },
+      onError: (error) => {
+        updateMessage(assistantMessageId, {
+          content: '',
+          status: 'error',
+          error: error.message || 'Failed to get response from Agent',
+        });
+      },
+    });
+  };
+
+  const handleSelectExample = (example: string) => {
+    setInputValue(example);
+  };
+
+  const handleRetry = (messageId: string) => {
+    const message = messages.find((msg) => msg.id === messageId);
+    if (!message) return;
+
+    // Find the user message before this assistant message
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
+    const userMessage = messages
+      .slice(0, messageIndex)
+      .reverse()
+      .find((msg) => msg.role === 'user');
+
+    if (!userMessage) return;
+
+    // Update assistant message to pending
+    updateMessage(messageId, {
+      status: 'pending',
+      error: undefined,
+    });
+
+    // Retry query
+    sendQuery(userMessage.content, {
+      onSuccess: (response) => {
+        updateMessage(messageId, {
+          content: response.answer,
+          status: 'success',
+        });
+      },
+      onError: (error) => {
+        updateMessage(messageId, {
+          status: 'error',
+          error: error.message || 'Failed to get response from Agent',
+        });
+      },
+    });
+  };
+
+  const handleClearHistory = () => {
+    if (confirm('Are you sure you want to clear the conversation history?')) {
+      clearHistory();
+    }
   };
 
   return (
@@ -65,62 +166,66 @@ const AgentSidebar = ({
         <button
           onClick={onToggleCollapse}
           className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted"
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {isCollapsed ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </button>
         {!isCollapsed && (
           <>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">AI Buddy</h2>
+            <div className="flex-1">
+              <h2 className="text-sm font-semibold text-foreground">Agent</h2>
               <p className="text-xs text-muted-foreground">Your helpful assistant</p>
             </div>
+            {messages.length > 0 && (
+              <button
+                onClick={handleClearHistory}
+                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
+                aria-label="Clear conversation history"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </>
         )}
       </div>
 
       {!isCollapsed && (
         <>
-          {/* Feed Content */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-4">
-              {/* Sample Feed Item */}
-              <div className="rounded-lg border border-border bg-background p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                  <span className="text-xs font-medium text-muted-foreground">Insight</span>
-                </div>
-                <p className="text-sm text-foreground">AI-powered insights and suggestions will appear here.</p>
-              </div>
+          {/* Conversation View */}
+          <ConversationView
+            messages={messages}
+            isLoading={isLoadingHistory}
+            onRetry={handleRetry}
+          />
 
-              <div className="rounded-lg border border-border bg-background p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-accent" />
-                  <span className="text-xs font-medium text-muted-foreground">Action</span>
-                </div>
-                <p className="text-sm text-foreground">Suggested actions and quick notes will be displayed here.</p>
-              </div>
-            </div>
-          </div>
+          {/* Capabilities Panel */}
+          {!isLoadingCapabilities && capabilitiesData?.capabilities && (
+            <CapabilitiesPanel
+              capabilities={capabilitiesData.capabilities}
+              onSelectExample={handleSelectExample}
+              collapsed={messages.length > 0}
+            />
+          )}
 
-          {/* Input Area */}
-          <div className="border-t border-sidebar-border p-4">
-            <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2">
-              <input
-                type="text"
-                placeholder="Ask your buddy..."
-                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </div>
+          {/* Chat Input */}
+          <ChatInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSend={handleSend}
+            disabled={isPending}
+            isLoading={isPending}
+          />
         </>
       )}
     </aside>
-  )
-}
+  );
+};
 
 export default AgentSidebar;
