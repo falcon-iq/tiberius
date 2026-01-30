@@ -22,6 +22,7 @@ interface TeamMember {
   lastname?: string;
   email_address?: string;
   github_suffix?: string | null;
+  avatar_url?: string;
 }
 
 export const Settings = () => {
@@ -148,6 +149,7 @@ export const Settings = () => {
         firstname: parsedUser.firstname || null,
         lastname: parsedUser.lastname || null,
         email_address: parsedUser.email_address || null,
+        avatar_url: parsedUser.avatar_url || null,
       });
 
       // Update local state with parsed user object

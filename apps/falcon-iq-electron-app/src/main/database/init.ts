@@ -91,6 +91,21 @@ export function initDatabase() {
     )
   `);
 
+  // Migration: Add avatar_url column if it doesn't exist
+  try {
+    const columns = db.pragma('table_info(users)') as Array<{ name: string }>;
+    const hasAvatarUrl = columns.some((col) => col.name === 'avatar_url');
+
+    if (!hasAvatarUrl) {
+      log.info('Running migration: Adding avatar_url column to users table');
+      db.exec(`ALTER TABLE users ADD COLUMN avatar_url TEXT`);
+      log.info('Migration completed: avatar_url column added');
+    }
+  } catch (error) {
+    log.error({ error }, 'Failed to run avatar_url migration');
+    // Don't throw - allow app to continue (users will see initials)
+  }
+
   log.info('Database initialized successfully');
 }
 

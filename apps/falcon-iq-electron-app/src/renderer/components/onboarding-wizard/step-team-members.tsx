@@ -151,6 +151,7 @@ export const StepTeamMembers = ({ userDetails, githubIntegration, onBack, onComp
           email_address: user.email_address || null,
           firstname: user.firstname || null,
           lastname: user.lastname || null,
+          avatar_url: user.avatar_url || null,
         });
       }
 
