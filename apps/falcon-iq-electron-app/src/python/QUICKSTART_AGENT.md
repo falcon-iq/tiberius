@@ -52,6 +52,7 @@ python -m app.main "What are my top PRs?"
 
 ## 🎯 Common Questions
 
+### SQL-Based Queries
 ```bash
 # Top PRs
 python -m app.main "What are my top PRs?"
@@ -62,12 +63,38 @@ python -m app.main "Which user did I give the most comments on (top 5)?"
 # Users who commented on my PRs
 python -m app.main "Which user gave me the most comments?"
 
+# OKRs and PRs
+python -m app.main "What OKRs am I working on?"
+python -m app.main "What OKRs is jsmith working on?"
+python -m app.main "Show PRs for the resiliency OKR"
+
 # Reliability/resiliency comments
 python -m app.main "Show PRs where I gave comments on resiliency"
-
-# OKR updates
-python -m app.main "Tell me about Phoenix OKR in the last 3 weeks"
 ```
+
+### 🆕 Special Commands (File System + AI)
+
+```bash
+# Show PR body and details from filesystem
+python -m app.main "show pr 16347"
+
+# Show specific comment details
+python -m app.main "show comment 3633787131 on pr 16347"
+
+# Show all files changed in PR with patches
+python -m app.main "show files in pr 16347"
+
+# Generate OKR update using AI (with date parsing)
+python -m app.main "get me the update for reserved ads in jan 2026"
+
+# Generate OKR update using AI (last 30 days by default)
+python -m app.main "generate update for resiliency okr"
+```
+
+**Note:** The "update" command automatically:
+1. Finds PRs matching the OKR (by goal name OR category)
+2. Reads PR bodies from filesystem
+3. Uses GPT-4 to generate technical (1000 chars) and executive (2000 chars) summaries
 
 ## 💡 Interactive Mode
 
