@@ -12,12 +12,15 @@ if len(sys.argv) > 3:
 import signal
 import threading
 import time
+import sqlite3
 from typing import Optional
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 from runPipeline import PipelineRunner
+from prDataReader import get_pr_details, get_comment_details, get_pr_files
+from common import getDBPath, get_base_dir
 
 # Global variables to store Electron configuration
 BASE_DIR: Optional[str] = None
@@ -47,6 +50,139 @@ def get_userdata_path():
 @app.post("/api/example")
 def example_endpoint(data: dict):
     return {"received": data}
+
+
+@app.get("/api/pr/{pr_id}")
+def get_pr(pr_id: int, username: Optional[str] = None):
+    """
+    Get PR details by PR ID.
+    
+    Args:
+        pr_id: PR number
+        username: Optional username filter
+    
+    Returns:
+        PR details dictionary or error
+    """
+    try:
+        # Get base directory (uses FALCON_BASE_DIR env var set by server.py)
+        base_dir = get_base_dir()
+        
+        # Connect to database
+        db_path = getDBPath(base_dir)
+        if not db_path.exists():
+            return {"error": f"Database not found: {db_path}"}
+        
+        db_conn = sqlite3.connect(str(db_path))
+        
+        # Get PR details
+        pr_details = get_pr_details(db_conn, pr_id=pr_id, username=username)
+        
+        db_conn.close()
+        
+        if pr_details:
+            return {"success": True, "data": pr_details}
+        else:
+            return {"success": False, "error": f"PR {pr_id} not found"}
+            
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/pr/{pr_id}/comment/{comment_id}")
+def get_comment(pr_id: int, comment_id: int, username: Optional[str] = None):
+    """
+    Get comment details by PR ID and comment ID.
+    
+    Args:
+        pr_id: PR number
+        comment_id: Comment ID
+        username: Optional username filter
+    
+    Returns:
+        Comment details dictionary or error
+    """
+    try:
+        base_dir = get_base_dir()
+        db_path = getDBPath(base_dir)
+        
+        if not db_path.exists():
+            return {"error": f"Database not found: {db_path}"}
+        
+        db_conn = sqlite3.connect(str(db_path))
+        
+        # Get comment details
+        comment_details = get_comment_details(
+            db_conn, 
+            pr_id=pr_id, 
+            comment_id=comment_id,
+            username=username
+        )
+        
+        db_conn.close()
+        
+        if comment_details:
+            return {"success": True, "data": comment_details}
+        else:
+            return {"success": False, "error": f"Comment {comment_id} not found in PR {pr_id}"}
+            
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/pr/{pr_id}/files")
+def get_files(pr_id: int, username: Optional[str] = None):
+    """
+    Get all files changed in a PR.
+    
+    Args:
+        pr_id: PR number
+        username: Optional username filter
+    
+    Returns:
+        List of file details or error
+    """
+    try:
+        base_dir = get_base_dir()
+        db_path = getDBPath(base_dir)
+        
+        if not db_path.exists():
+            return {"error": f"Database not found: {db_path}"}
+        
+        db_conn = sqlite3.connect(str(db_path))
+        
+        # Get PR files
+        files_list = get_pr_files(
+            db_conn, 
+            pr_id=pr_id,
+            username=username
+        )
+        
+        db_conn.close()
+        
+        if files_list:
+            # Calculate summary stats
+            total_additions = sum(f.get('additions', 0) for f in files_list)
+            total_deletions = sum(f.get('deletions', 0) for f in files_list)
+            total_changes = sum(f.get('changes', 0) for f in files_list)
+            
+            return {
+                "success": True, 
+                "data": {
+                    "files": files_list,
+                    "summary": {
+                        "total_files": len(files_list),
+                        "total_additions": total_additions,
+                        "total_deletions": total_deletions,
+                        "total_changes": total_changes
+                    }
+                }
+            }
+        else:
+            return {"success": False, "error": f"Files not found for PR {pr_id}"}
+            
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 class PipelineRequest(BaseModel):
