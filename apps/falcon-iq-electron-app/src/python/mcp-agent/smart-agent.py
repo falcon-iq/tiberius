@@ -102,14 +102,18 @@ class MCPTools:
     """Registry of available MCP tools."""
     
     def __init__(self):
-        self.db_conn = self._get_db_connection()
         self.base_dir = get_base_dir()
     
     def _get_db_connection(self) -> sqlite3.Connection:
-        """Get database connection with Row factory."""
+        """
+        Get database connection with Row factory.
+        Creates a new connection each time to avoid SQLite threading issues.
+        """
         base_dir = get_base_dir()
         db_path = getDBPath(base_dir)
-        conn = sqlite3.connect(str(db_path))
+        # check_same_thread=False allows connection to be used across threads
+        # Safe here because we create new connections per request
+        conn = sqlite3.connect(str(db_path), check_same_thread=False)
         conn.row_factory = sqlite3.Row
         return conn
     
@@ -175,9 +179,13 @@ class MCPTools:
     
     def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool and return results."""
+        # Create a fresh database connection for this tool execution
+        # This avoids SQLite threading issues
+        db_conn = self._get_db_connection()
+        
         try:
             if tool_name == "list_all_users":
-                users = read_users_from_db(self.db_conn)
+                users = read_users_from_db(db_conn)
                 return {"success": True, "data": users}
             
             elif tool_name == "search_okrs":
@@ -186,15 +194,15 @@ class MCPTools:
                 
                 if with_details:
                     from readOKRs import findByOkrNameWithDetails
-                    okrs = findByOkrNameWithDetails(self.db_conn, search_term)
+                    okrs = findByOkrNameWithDetails(db_conn, search_term)
                 else:
-                    okr_ids = findByOkrName(self.db_conn, search_term)
+                    okr_ids = findByOkrName(db_conn, search_term)
                     okrs = okr_ids
                 
                 return {"success": True, "data": okrs}
             
             elif tool_name == "list_all_okrs":
-                okrs = read_okrs_from_db(self.db_conn)
+                okrs = read_okrs_from_db(db_conn)
                 return {"success": True, "data": okrs}
             
             elif tool_name == "find_prs_by_okr":
@@ -204,11 +212,11 @@ class MCPTools:
                 usernames = arguments.get("usernames")
                 
                 # Find OKR IDs
-                okr_ids = findByOkrName(self.db_conn, okr_search)
+                okr_ids = findByOkrName(db_conn, okr_search)
                 
                 # Find PRs (note: correct parameter order is conn, okr_ids, category_search, start_date, end_date, usernames)
                 prs = find_prs_by_okr_and_dates(
-                    conn=self.db_conn,
+                    conn=db_conn,
                     okr_ids=okr_ids,
                     category_search=okr_search if not okr_ids else None,
                     start_date=start_date,
@@ -229,7 +237,7 @@ class MCPTools:
                 if group_by == "signal":
                     # Get signal distribution
                     signals = {}
-                    cursor = self.db_conn.cursor()
+                    cursor = db_conn.cursor()
                     cursor.execute("SELECT SUM(is_nitpick) as nitpick, SUM(mentions_tests) as tests, "
                                  "SUM(mentions_bug) as bug, SUM(mentions_design) as design, "
                                  "SUM(mentions_performance) as performance, SUM(mentions_reliability) as reliability, "
@@ -239,7 +247,7 @@ class MCPTools:
                     return {"success": True, "data": signals}
                 
                 elif group_by:
-                    cursor = self.db_conn.cursor()
+                    cursor = db_conn.cursor()
                     if group_by == "category":
                         cursor.execute(f"SELECT primary_category, COUNT(*) as count FROM pr_comment_details "
                                      f"GROUP BY primary_category ORDER BY count DESC LIMIT {limit}")
@@ -294,7 +302,7 @@ class MCPTools:
                     else:
                         query = f"SELECT pr_number, comment_id, username, primary_category, severity FROM pr_comment_details WHERE {where_clause} LIMIT {limit}"
                     
-                    cursor = self.db_conn.cursor()
+                    cursor = db_conn.cursor()
                     cursor.execute(query, params)
                     rows = cursor.fetchall()
                     results = [dict(row) for row in rows]
@@ -304,20 +312,20 @@ class MCPTools:
             elif tool_name == "get_pr_details":
                 pr_id = arguments.get("pr_id")
                 username = arguments.get("username")
-                details = get_pr_details(self.db_conn, pr_id, username, self.base_dir)
+                details = get_pr_details(db_conn, pr_id, username, self.base_dir)
                 return {"success": True, "data": details}
             
             elif tool_name == "get_pr_files":
                 pr_id = arguments.get("pr_id")
                 username = arguments.get("username")
-                files = get_pr_files(self.db_conn, pr_id, username, self.base_dir)
+                files = get_pr_files(db_conn, pr_id, username, self.base_dir)
                 return {"success": True, "data": files}
             
             elif tool_name == "get_comment_details":
                 pr_id = arguments.get("pr_id")
                 comment_id = arguments.get("comment_id")
                 username = arguments.get("username")
-                comment = get_comment_details(self.db_conn, pr_id, comment_id, username, self.base_dir)
+                comment = get_comment_details(db_conn, pr_id, comment_id, username, self.base_dir)
                 return {"success": True, "data": comment}
             
             elif tool_name == "generate_okr_update":
@@ -327,14 +335,14 @@ class MCPTools:
                 usernames = arguments.get("usernames")
                 
                 # Find OKR IDs
-                okr_ids = findByOkrName(self.db_conn, okr_search)
+                okr_ids = findByOkrName(db_conn, okr_search)
                 
                 if not okr_ids:
                     return {"success": False, "error": f"No OKRs found matching: {okr_search}"}
                 
                 # Find PRs (note: correct parameter order is conn, okr_ids, category_search, start_date, end_date, usernames)
                 prs = find_prs_by_okr_and_dates(
-                    conn=self.db_conn,
+                    conn=db_conn,
                     okr_ids=okr_ids,
                     category_search=okr_search if not okr_ids else None,
                     start_date=start_date,
@@ -346,7 +354,7 @@ class MCPTools:
                     return {"success": True, "data": {"message": f"No PRs found for OKR '{okr_search}' in the given date range.", "prs": []}}
                 
                 # Collect PR bodies
-                pr_details = collect_pr_bodies(self.db_conn, prs, self.base_dir)
+                pr_details = collect_pr_bodies(db_conn, prs, self.base_dir)
                 
                 # Generate updates with OpenAI
                 api_key = get_openai_api_key_from_config_or_env()
@@ -382,7 +390,7 @@ class MCPTools:
                 if any(keyword in sql_upper for keyword in dangerous_keywords):
                     return {"success": False, "error": "Query contains dangerous keywords"}
                 
-                cursor = self.db_conn.cursor()
+                cursor = db_conn.cursor()
                 cursor.execute(sql_query)
                 rows = cursor.fetchall()
                 results = [dict(row) for row in rows]
@@ -403,7 +411,7 @@ class MCPTools:
                 if any(keyword in sql_upper for keyword in dangerous_keywords):
                     return {"success": False, "error": "Query contains dangerous keywords"}
                 
-                cursor = self.db_conn.cursor()
+                cursor = db_conn.cursor()
                 cursor.execute(sql_query)
                 rows = cursor.fetchall()
                 results = [dict(row) for row in rows]
@@ -415,6 +423,11 @@ class MCPTools:
         
         except Exception as e:
             return {"success": False, "error": str(e)}
+        
+        finally:
+            # Always close the database connection
+            if 'db_conn' in locals():
+                db_conn.close()
 
 
 class SmartAgent:
