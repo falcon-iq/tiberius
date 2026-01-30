@@ -37,7 +37,7 @@ import pandas as pd
 from openai import OpenAI
 from tqdm import tqdm
 import textwrap
-from common import load_all_config, getDBPath, get_batch_size
+from common import load_all_config, getDBPath, get_batch_size, strip_github_emu_suffix
 
 # ============================================================================
 # Configuration
@@ -103,13 +103,14 @@ def connect_to_database(db_path: Path, quiet: bool = False) -> Optional[sqlite3.
         return None
 
 
-def check_comments_exist_in_db(conn: sqlite3.Connection, df: pd.DataFrame) -> pd.Series:
+def check_comments_exist_in_db(conn: sqlite3.Connection, df: pd.DataFrame, settings: Dict) -> pd.Series:
     """
     Check which comments already exist in the database.
     
     Args:
         conn: Database connection
         df: DataFrame with comments (must have pr_number, comment_id, user columns)
+        settings: Settings dictionary (for stripping EMU suffix)
     
     Returns:
         Boolean Series indicating which rows already exist in database
@@ -123,7 +124,7 @@ def check_comments_exist_in_db(conn: sqlite3.Connection, df: pd.DataFrame) -> pd
     for idx, row in df.iterrows():
         pr_number = int(row.get("pr_number", 0))
         comment_id = int(row.get("comment_id", 0))
-        username = str(row.get("user", ""))
+        username = strip_github_emu_suffix(str(row.get("user", "")), settings)
         
         # Check if this comment exists in the database
         cursor.execute("""
@@ -139,7 +140,7 @@ def check_comments_exist_in_db(conn: sqlite3.Connection, df: pd.DataFrame) -> pd
 
 def insert_classified_comments_to_db(conn: sqlite3.Connection, df: pd.DataFrame, 
                                     classified_results: List[Dict], start_idx: int, 
-                                    quiet: bool = False) -> Dict:
+                                    settings: Dict, quiet: bool = False) -> Dict:
     """
     Insert classified comments into pr_comment_details table.
     
@@ -148,6 +149,7 @@ def insert_classified_comments_to_db(conn: sqlite3.Connection, df: pd.DataFrame,
         df: Original DataFrame with comment data
         classified_results: List of classification results
         start_idx: Starting index in the DataFrame
+        settings: Settings dictionary (for stripping EMU suffix)
         quiet: If True, suppress print statements
     
     Returns:
@@ -170,13 +172,13 @@ def insert_classified_comments_to_db(conn: sqlite3.Connection, df: pd.DataFrame,
             # Extract data from row
             pr_number = int(row.get("pr_number", 0))
             comment_id = int(row.get("comment_id", 0))
-            username = str(row.get("user", ""))
+            username = strip_github_emu_suffix(str(row.get("user", "")), settings)
             comment_type = str(row.get("comment_type", ""))
             created_at = str(row.get("created_at", ""))
             is_reviewer = 1 if row.get("is_reviewer", False) else 0
             line = int(row.get("line", 0)) if pd.notna(row.get("line")) else None
             side = str(row.get("side", "")) if pd.notna(row.get("side")) else None
-            pr_author = str(row.get("pr_author", ""))
+            pr_author = strip_github_emu_suffix(str(row.get("pr_author", "")), settings)
             
             # Extract classification data
             primary_category = result.get("primary_category", "OTHER")
@@ -539,7 +541,8 @@ def classify_comments_batch(client: OpenAI, df: pd.DataFrame, start_idx: int,
 
 
 def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path, 
-                        ai_reviewer_prefixes: List[str], db_conn: Optional[sqlite3.Connection] = None,
+                        ai_reviewer_prefixes: List[str], settings: Dict,
+                        db_conn: Optional[sqlite3.Connection] = None,
                         batch_size: int = DEFAULT_BATCH_SIZE, single_batch_mode: bool = False) -> bool:
     """
     Process a single comment file with batching and status tracking
@@ -549,6 +552,7 @@ def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path,
         csv_path: Path to the CSV file to process
         status_file: Path to the status file
         ai_reviewer_prefixes: List of AI reviewer username prefixes
+        settings: Settings dictionary (for stripping EMU suffix)
         db_conn: Optional database connection for inserting classified comments
         batch_size: Number of comments to process per batch
         single_batch_mode: If True, process only one batch per run and exit
@@ -593,7 +597,7 @@ def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path,
     # Filter out comments that already exist in database
     if db_conn is not None:
         print(f"      🔍 Checking for already-classified comments in database...")
-        existing_mask = check_comments_exist_in_db(db_conn, df)
+        existing_mask = check_comments_exist_in_db(db_conn, df, settings)
         existing_count = existing_mask.sum()
         
         if existing_count > 0:
@@ -656,7 +660,7 @@ def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path,
             
             # Insert batch results into database if connection provided
             if db_conn is not None:
-                db_result = insert_classified_comments_to_db(db_conn, df, results, batch_start, quiet=False)
+                db_result = insert_classified_comments_to_db(db_conn, df, results, batch_start, settings, quiet=False)
                 if db_result['errors'] > 0:
                     print(f"         ⚠️  Database insertion had {db_result['errors']} error(s)")
             
@@ -739,6 +743,7 @@ def process_comment_file(client: OpenAI, csv_path: Path, status_file: Path,
 
 def classify_user_comments(username: str, comments_folder: Path, task_folder: Path, 
                           openai_client: OpenAI, ai_reviewer_prefixes: List[str],
+                          settings: Dict,
                           db_conn: Optional[sqlite3.Connection] = None,
                           batch_size: int = DEFAULT_BATCH_SIZE, single_batch_mode: bool = False) -> Dict[str, bool]:
     """Classify comments for a single user and insert into database"""
@@ -791,7 +796,7 @@ def classify_user_comments(username: str, comments_folder: Path, task_folder: Pa
             
             print(f"\n   📝 Processing: {comment_file.name}")
             success = process_comment_file(openai_client, comment_file, status_file, ai_reviewer_prefixes, 
-                                          db_conn, batch_size, single_batch_mode)
+                                          settings, db_conn, batch_size, single_batch_mode)
             results[f"{file_type}_{start_date}_{end_date}"] = success
         
         except Exception as e:
@@ -881,7 +886,7 @@ def main():
         
         try:
             results = classify_user_comments(username, comments_folder, task_folder, openai_client, 
-                                            ai_reviewer_prefixes, db_conn, batch_size, single_batch_mode)
+                                            ai_reviewer_prefixes, settings, db_conn, batch_size, single_batch_mode)
             
             # Accumulate costs from status files
             for file_key in results.keys():

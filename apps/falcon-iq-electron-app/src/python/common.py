@@ -147,6 +147,39 @@ def get_github_emu_suffix(settings: Dict) -> Optional[str]:
         return None
 
 
+def strip_github_emu_suffix(username: str, settings: Dict) -> str:
+    """
+    Remove GitHub EMU suffix from username if present.
+    
+    Args:
+        username: GitHub username (may have EMU suffix)
+        settings: Settings dictionary containing emuSuffix
+    
+    Returns:
+        Username without EMU suffix and trailing underscores
+    
+    Examples:
+        >>> strip_github_emu_suffix("npurwar_corp", settings)  # suffix="_corp"
+        "npurwar"
+        >>> strip_github_emu_suffix("jbaik_linkedin", settings)  # suffix="linkedin"
+        "jbaik"
+        >>> strip_github_emu_suffix("alice_", settings)  # suffix="" or None
+        "alice"
+    """
+    if not username:
+        return username
+    
+    # Strip the EMU suffix if configured
+    emu_suffix = get_github_emu_suffix(settings)
+    if emu_suffix and username.endswith(emu_suffix):
+        username = username[:-len(emu_suffix)]
+    
+    # Remove any trailing underscores (in case suffix didn't include underscore)
+    username = username.rstrip('_')
+    
+    return username
+
+
 def get_batch_size(config: Optional[Dict] = None) -> int:
     """
     Get batch size from pipeline configuration.
