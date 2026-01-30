@@ -25,6 +25,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Doe',
         email_address: 'john.doe@company.com',
         github_suffix: 'LinkedIn',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -50,6 +51,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Cat',
         email_address: 'octocat@github.com',
         github_suffix: null,
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -75,6 +77,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Smith-Johnson',
         email_address: 'jane@company.com',
         github_suffix: 'Company',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -100,6 +103,7 @@ describe('parseGitHubUser', () => {
         lastname: "O'Brien",
         email_address: 'mary@org.com',
         github_suffix: 'Org',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
   });
@@ -127,6 +131,7 @@ describe('parseGitHubUser', () => {
         lastname: '',
         email_address: 'madonna@example.com',
         github_suffix: 'LinkedIn',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -152,6 +157,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Van Damme',
         email_address: 'jcvd@company.com',
         github_suffix: 'Company',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -177,6 +183,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Doe',
         email_address: 'john@org.com',
         github_suffix: 'Org',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -202,6 +209,7 @@ describe('parseGitHubUser', () => {
         lastname: '',
         email_address: 'user@company.com',
         github_suffix: 'LinkedIn',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -227,6 +235,7 @@ describe('parseGitHubUser', () => {
         lastname: '',
         email_address: 'user@company.com',
         github_suffix: 'Company',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -252,6 +261,7 @@ describe('parseGitHubUser', () => {
         lastname: '',
         email_address: 'user@org.com',
         github_suffix: 'Org',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
   });
@@ -279,6 +289,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Doe',
         email_address: '',
         github_suffix: 'LinkedIn',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
 
@@ -304,6 +315,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Smith',
         email_address: '',
         github_suffix: 'Company',
+        avatar_url: 'https://avatars.githubusercontent.com/u/12345',
       });
     });
   });
@@ -405,6 +417,7 @@ describe('parseGitHubUser', () => {
         lastname: '',
         email_address: '',
         github_suffix: null,
+        avatar_url: '',
       });
     });
 
@@ -422,6 +435,7 @@ describe('parseGitHubUser', () => {
         lastname: '',
         email_address: '',
         github_suffix: null,
+        avatar_url: '',
       });
     });
   });
@@ -449,6 +463,7 @@ describe('parseGitHubUser', () => {
         lastname: 'David Doe',
         email_address: 'john.doe@acme.com',
         github_suffix: 'Acme',
+        avatar_url: 'https://avatars.githubusercontent.com/u/98765',
       });
     });
 
@@ -474,6 +489,7 @@ describe('parseGitHubUser', () => {
         lastname: '',
         email_address: '',
         github_suffix: 'Company',
+        avatar_url: 'https://avatars.githubusercontent.com/u/11111',
       });
     });
 
@@ -499,6 +515,7 @@ describe('parseGitHubUser', () => {
         lastname: 'Corporation',
         email_address: 'contact@acme.com',
         github_suffix: null,
+        avatar_url: 'https://avatars.githubusercontent.com/u/55555',
       });
     });
   });
