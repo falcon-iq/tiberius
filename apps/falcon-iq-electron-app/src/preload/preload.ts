@@ -6,6 +6,7 @@ export interface AddUserInput {
   email_address?: string | null;
   firstname?: string | null;
   lastname?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface AddGoalInput {
@@ -43,6 +44,26 @@ export interface AppSettings {
   onboardingCompleted: boolean;
 }
 
+export interface Capability {
+  name: string;
+  description: string;
+  examples: string[];
+}
+
+export interface CapabilitiesResponse {
+  success: boolean;
+  capabilities: Capability[];
+  tools: string[];
+}
+
+export interface QueryResponse {
+  success: boolean;
+  query: string;
+  answer: string;
+  error?: string;
+  traceback?: string;
+}
+
 contextBridge.exposeInMainWorld('api', {
   getUsers: () => ipcRenderer.invoke('db:getUsers'),
   addUser: (user: AddUserInput) => ipcRenderer.invoke('db:addUser', user),
@@ -70,5 +91,9 @@ contextBridge.exposeInMainWorld('api', {
     get: () => ipcRenderer.invoke('settings:get'),
     save: (settings: AppSettings) => ipcRenderer.invoke('settings:save', settings),
     update: (partial: Partial<AppSettings>) => ipcRenderer.invoke('settings:update', partial),
+  },
+  smartAgent: {
+    getCapabilities: () => ipcRenderer.invoke('smart-agent:getCapabilities'),
+    query: (query: string) => ipcRenderer.invoke('smart-agent:query', query),
   },
 });

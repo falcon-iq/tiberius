@@ -7,6 +7,7 @@ export interface User {
   email_address: string | null;
   firstname: string | null;
   lastname: string | null;
+  avatar_url: string | null;
 }
 
 export interface AddUserInput {
@@ -15,12 +16,13 @@ export interface AddUserInput {
   email_address?: string | null;
   firstname?: string | null;
   lastname?: string | null;
+  avatar_url?: string | null;
 }
 
 export function getUsers() {
   try {
     const db = getDatabase();
-    const stmt = db.prepare('SELECT * FROM users ORDER BY username');
+    const stmt = db.prepare('SELECT id, username, github_suffix, email_address, firstname, lastname, avatar_url FROM users ORDER BY username');
     return { success: true, data: stmt.all() as User[] };
   } catch {
     return { success: false, error: 'Failed to fetch users' };
@@ -31,21 +33,23 @@ export function addUser(user: AddUserInput) {
   try {
     const db = getDatabase();
     const stmt = db.prepare(`
-      INSERT INTO users (username, github_suffix, email_address, firstname, lastname)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO users (username, github_suffix, email_address, firstname, lastname, avatar_url)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       user.username,
       user.github_suffix ?? null,
       user.email_address ?? null,
       user.firstname ?? null,
-      user.lastname ?? null
+      user.lastname ?? null,
+      user.avatar_url ?? null
     );
     return {
       success: true,
       data: {
         id: result.lastInsertRowid,
-        ...user
+        ...user,
+        avatar_url: user.avatar_url ?? null
       } as User
     };
   } catch (error) {

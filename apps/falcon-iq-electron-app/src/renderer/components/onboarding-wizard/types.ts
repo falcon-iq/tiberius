@@ -29,6 +29,7 @@ export interface TeamMember {
   lastname?: string;
   email_address?: string;
   github_suffix?: string | null;
+  avatar_url?: string;
 }
 
 /**

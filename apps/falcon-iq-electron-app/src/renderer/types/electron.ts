@@ -5,6 +5,7 @@ export interface User {
   email_address: string | null;
   firstname: string | null;
   lastname: string | null;
+  avatar_url: string | null;
 }
 
 export interface AddUserInput {
@@ -13,6 +14,7 @@ export interface AddUserInput {
   email_address?: string | null;
   firstname?: string | null;
   lastname?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface Goal {
@@ -182,6 +184,27 @@ export type {
   PythonServerResult,
 };
 
+// Smart agent types
+export interface Capability {
+  name: string;
+  description: string;
+  examples: string[];
+}
+
+export interface CapabilitiesResponse {
+  success: boolean;
+  capabilities: Capability[];
+  tools: string[];
+}
+
+export interface QueryResponse {
+  success: boolean;
+  query: string;
+  answer: string;
+  error?: string;
+  traceback?: string;
+}
+
 export interface ElectronAPI {
   getUsers(): Promise<DatabaseResult<User[]>>;
   addUser(user: AddUserInput): Promise<DatabaseResult<User>>;
@@ -207,6 +230,10 @@ export interface ElectronAPI {
     get(): Promise<SettingsResult<AppSettings>>;
     save(settings: AppSettings): Promise<SettingsResult<void>>;
     update(partial: Partial<AppSettings>): Promise<SettingsResult<void>>;
+  };
+  smartAgent: {
+    getCapabilities(): Promise<DatabaseResult<CapabilitiesResponse>>;
+    query(query: string): Promise<DatabaseResult<QueryResponse>>;
   };
 }
 

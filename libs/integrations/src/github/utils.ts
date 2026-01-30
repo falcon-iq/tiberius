@@ -20,6 +20,8 @@ export interface ParsedGitHubUser {
   email_address: string;
   /** EMU suffix extracted from username (e.g., "LinkedIn") */
   github_suffix: string | null;
+  /** GitHub avatar URL */
+  avatar_url: string;
 }
 
 /**
@@ -57,6 +59,7 @@ export function parseGitHubUser(validateResult: ValidateUserResult): ParsedGitHu
       lastname: '',
       email_address: '',
       github_suffix: null,
+      avatar_url: '',
     };
   }
 
@@ -80,5 +83,6 @@ export function parseGitHubUser(validateResult: ValidateUserResult): ParsedGitHu
     lastname,
     email_address: user.email || '',
     github_suffix,
+    avatar_url: user.avatar_url,
   };
 }
