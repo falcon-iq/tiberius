@@ -8,8 +8,11 @@ interface StatsKPIProps {
 }
 
 export function StatsKPI({ label, value, icon, color }: StatsKPIProps) {
-  // Prepare data for radial chart
-  const data = [{ value, fill: color === 'primary' ? '#6366f1' : '#f59e0b' }];
+  // Prepare data for radial chart - use CSS variables for theming
+  const fillColor = color === 'primary'
+    ? 'hsl(var(--color-primary))'
+    : 'hsl(var(--color-warning))';
+  const data = [{ value, fill: fillColor }];
 
   const iconSvg = icon === 'target' ? (
     <svg
