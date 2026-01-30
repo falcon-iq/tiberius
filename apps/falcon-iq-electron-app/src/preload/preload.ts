@@ -51,6 +51,7 @@ contextBridge.exposeInMainWorld('api', {
   addGoal: (goal: AddGoalInput) => ipcRenderer.invoke('db:addGoal', goal),
   deleteGoal: (id: number) => ipcRenderer.invoke('db:deleteGoal', id),
   updateGoal: (goal: UpdateGoalInput) => ipcRenderer.invoke('db:updateGoal', goal),
+  getPRCommentStats: (username: string) => ipcRenderer.invoke('db:getPRCommentStats', username),
   pythonServer: {
     getStatus: () => ipcRenderer.invoke('python:getStatus'),
     restart: () => ipcRenderer.invoke('python:restart'),

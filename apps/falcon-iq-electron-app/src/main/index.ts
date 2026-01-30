@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { initDatabase, getUsers, addUser, deleteUser, getGoals, addGoal, deleteGoal, updateGoal, closeDatabase, type AddUserInput, type AddGoalInput, type UpdateGoalInput } from './database';
+import { initDatabase, getUsers, addUser, deleteUser, getGoals, addGoal, deleteGoal, updateGoal, getPRCommentStats, closeDatabase, type AddUserInput, type AddGoalInput, type UpdateGoalInput } from './database';
 import { initPythonServer, getPythonServerStatus, restartPythonServer } from './python-server';
 import { getSettings, saveSettings, updateSettings } from './settings';
 import { getLogger } from '@libs/shared/utils/logger';
@@ -89,34 +89,34 @@ const createWindow = () => {
 app.on('ready', async () => {
   initDatabase();
 
-  // Start Python server (non-blocking)
-  try {
-    const pythonExecutable = getPythonExecutable();
-    const serverScript = getPythonServerScript();
+  // // Start Python server (non-blocking)
+  // try {
+  //   const pythonExecutable = getPythonExecutable();
+  //   const serverScript = getPythonServerScript();
 
-    const result = await initPythonServer({
-      pythonExecutable,
-      serverScript,
-      port: 8765,
-      healthCheckEndpoint: '/health',
-      startupTimeout: 10000,
-      userDataBaseDirectory: app.getPath('userData'),
-      isDevelopment: isDevelopment(),
-    });
+  //   const result = await initPythonServer({
+  //     pythonExecutable,
+  //     serverScript,
+  //     port: 8765,
+  //     healthCheckEndpoint: '/health',
+  //     startupTimeout: 10000,
+  //     userDataBaseDirectory: app.getPath('userData'),
+  //     isDevelopment: isDevelopment(),
+  //   });
 
-    if (!result.success) {
-      log.error({ error: result.error }, 'Python server failed to start');
-      // Show notification but continue
-      dialog.showErrorBox(
-        'Python Server Error',
-        'Background services unavailable. Some features may be limited.'
-      );
-    } else {
-      log.info({ pid: result.data?.pid }, 'Python server started');
-    }
-  } catch (error) {
-    log.error({ error }, 'Python server init error');
-  }
+  //   if (!result.success) {
+  //     log.error({ error: result.error }, 'Python server failed to start');
+  //     // Show notification but continue
+  //     dialog.showErrorBox(
+  //       'Python Server Error',
+  //       'Background services unavailable. Some features may be limited.'
+  //     );
+  //   } else {
+  //     log.info({ pid: result.data?.pid }, 'Python server started');
+  //   }
+  // } catch (error) {
+  //   log.error({ error }, 'Python server init error');
+  // }
 
   createWindow();
 });
@@ -147,6 +147,8 @@ ipcMain.handle('db:getGoals', () => getGoals());
 ipcMain.handle('db:addGoal', (_event, goal: AddGoalInput) => addGoal(goal));
 ipcMain.handle('db:deleteGoal', (_event, id: number) => deleteGoal(id));
 ipcMain.handle('db:updateGoal', (_event, goal: UpdateGoalInput) => updateGoal(goal));
+
+ipcMain.handle('db:getPRCommentStats', (_event, username: string) => getPRCommentStats(username));
 
 // IPC handlers for Python server operations
 ipcMain.handle('python:getStatus', () => getPythonServerStatus());

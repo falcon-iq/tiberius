@@ -33,6 +33,28 @@ export interface UpdateGoalInput {
   end_date?: string | null;
 }
 
+export interface CategoryStat {
+  category: string;
+  count: number;
+  percentage: number;
+}
+
+export interface SeverityStat {
+  severity: string;
+  count: number;
+  percentage: number;
+}
+
+export interface PRCommentStats {
+  categories: CategoryStat[];
+  severities: SeverityStat[];
+  rates: {
+    nitpick_rate: number;
+    actionable_rate: number;
+    total_comments: number;
+  };
+}
+
 export interface DatabaseResult<T> {
   success: boolean;
   data?: T;
@@ -84,6 +106,7 @@ export interface ElectronAPI {
   addGoal(goal: AddGoalInput): Promise<DatabaseResult<Goal>>;
   deleteGoal(id: number): Promise<DatabaseResult<void>>;
   updateGoal(goal: UpdateGoalInput): Promise<DatabaseResult<void>>;
+  getPRCommentStats(username: string): Promise<DatabaseResult<PRCommentStats>>;
   pythonServer: {
     getStatus(): Promise<PythonServerStatus>;
     restart(): Promise<PythonServerResult<PythonServerState>>;

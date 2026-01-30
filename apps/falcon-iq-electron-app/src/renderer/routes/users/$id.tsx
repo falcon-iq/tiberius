@@ -3,6 +3,7 @@ import { useUsers } from '@hooks/use-users';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { getDisplayName, getInitials } from '@libs/shared/utils/user-display';
+import { PRCommentStatsWidget } from '@components/pr-comment-stats-widget';
 
 export const Route = createFileRoute('/users/$id')({
   component: UserDetail,
@@ -127,11 +128,7 @@ function UserDetail() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-6">
-            <p className="text-sm text-muted-foreground">
-              Additional details coming soon...
-            </p>
-          </div>
+          <PRCommentStatsWidget username={user.username} />
         </div>
       </div>
     </>
