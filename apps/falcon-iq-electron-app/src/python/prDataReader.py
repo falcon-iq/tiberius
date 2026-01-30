@@ -317,28 +317,36 @@ def get_comment_details(
         
         # Get the first matching row
         comment_row = matching_rows.iloc[0]
-        
-        # Convert to dictionary
+
+        # Convert pandas Series to dict and replace NaN with None for JSON serialization
+        comment_dict = comment_row.to_dict()
+
+        # Replace NaN values with None for JSON serialization
+        for key, value in comment_dict.items():
+            if pd.isna(value):
+                comment_dict[key] = None
+
+        # Convert to dictionary with proper types
         comment_details = {
-            'owner': comment_row.get('owner'),
-            'repo': comment_row.get('repo'),
-            'pr_number': int(comment_row.get('pr_number', pr_number)),
-            'comment_type': comment_row.get('comment_type'),
-            'comment_id': int(comment_row.get('comment_id', comment_id)),
-            'user': comment_row.get('user'),
-            'created_at': comment_row.get('created_at'),
-            'body': comment_row.get('body'),
-            'state': comment_row.get('state'),
-            'is_reviewer': bool(comment_row.get('is_reviewer', False)),
-            'path': comment_row.get('path'),
-            'line': int(comment_row.get('line')) if pd.notna(comment_row.get('line')) else None,
-            'side': comment_row.get('side'),
+            'owner': comment_dict.get('owner'),
+            'repo': comment_dict.get('repo'),
+            'pr_number': int(comment_dict.get('pr_number', pr_number)),
+            'comment_type': comment_dict.get('comment_type'),
+            'comment_id': int(comment_dict.get('comment_id', comment_id)),
+            'user': comment_dict.get('user'),
+            'created_at': comment_dict.get('created_at'),
+            'body': comment_dict.get('body'),
+            'state': comment_dict.get('state'),
+            'is_reviewer': bool(comment_dict.get('is_reviewer', False)) if comment_dict.get('is_reviewer') is not None else False,
+            'path': comment_dict.get('path'),
+            'line': int(comment_dict.get('line')) if comment_dict.get('line') is not None else None,
+            'side': comment_dict.get('side'),
             # Add metadata from pr_stats query
             'username_from_db': username_from_db,
             'repo_full': repo_full,
             'comments_csv_path': str(comments_csv_path)
         }
-        
+
         return comment_details
         
     except Exception as e:

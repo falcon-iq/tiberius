@@ -52,6 +52,16 @@ contextBridge.exposeInMainWorld('api', {
   deleteGoal: (id: number) => ipcRenderer.invoke('db:deleteGoal', id),
   updateGoal: (goal: UpdateGoalInput) => ipcRenderer.invoke('db:updateGoal', goal),
   getPRCommentStats: (username: string) => ipcRenderer.invoke('db:getPRCommentStats', username),
+  getPRCommentsByMetric: (username: string, metricType: string) =>
+    ipcRenderer.invoke('db:getPRCommentsByMetric', username, metricType),
+  python: {
+    getStatus: () => ipcRenderer.invoke('python:getStatus'),
+    restart: () => ipcRenderer.invoke('python:restart'),
+    getPR: (prId: number) => ipcRenderer.invoke('python:getPR', prId),
+    getComment: (prId: number, commentId: number) =>
+      ipcRenderer.invoke('python:getComment', prId, commentId),
+    getPRFiles: (prId: number) => ipcRenderer.invoke('python:getPRFiles', prId),
+  },
   pythonServer: {
     getStatus: () => ipcRenderer.invoke('python:getStatus'),
     restart: () => ipcRenderer.invoke('python:restart'),
