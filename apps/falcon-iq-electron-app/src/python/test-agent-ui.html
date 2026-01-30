@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Agent Test UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .query-section {
+            margin-bottom: 30px;
+        }
+
+        .query-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .example-card {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .example-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .example-card h3 {
+            font-size: 14px;
+            color: #667eea;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .example-card p {
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .response-section {
+            margin-top: 30px;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .response-header h2 {
+            font-size: 20px;
+            color: #2d3748;
+        }
+
+        .status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status.loading {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .response-content {
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            white-space: pre-wrap;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .markdown-content {
+            font-family: inherit;
+            line-height: 1.8;
+        }
+
+        .markdown-content h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .markdown-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .markdown-content li {
+            margin-bottom: 5px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .timer {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Smart Agent Test UI</h1>
+            <p>Natural language interface for PR analytics, OKR tracking, and code review insights</p>
+        </header>
+
+        <div class="main-content">
+            <div class="query-section">
+                <h2 style="margin-bottom: 15px; color: #2d3748;">Ask the Agent</h2>
+                <div class="query-input-group">
+                    <textarea id="queryInput" placeholder="Type your question here... (e.g., 'List all users in the system')"></textarea>
+                    <button id="submitBtn" onclick="submitQuery()">
+                        <span id="submitText">Send Query</span>
+                        <span id="submitSpinner" class="loading-spinner hidden"></span>
+                    </button>
+                </div>
+                <div class="timer" id="timer"></div>
+            </div>
+
+            <div class="examples">
+                <div class="example-card" onclick="setQuery('List all users in the system')">
+                    <h3>👥 User Management</h3>
+                    <p>List all users in the system</p>
+                </div>
+                <div class="example-card" onclick="setQuery('Search for Reserved Ads OKR')">
+                    <h3>🎯 OKR Search</h3>
+                    <p>Search for Reserved Ads OKR</p>
+                </div>
+                <div class="example-card" onclick="setQuery('Generate update for Reserved Ads goal for Jan 2026')">
+                    <h3>📝 OKR Update</h3>
+                    <p>Generate update for Reserved Ads goal for Jan 2026</p>
+                </div>
+                <div class="example-card" onclick="setQuery('Show me PR 1013')">
+                    <h3>🔍 PR Details</h3>
+                    <p>Show me PR 1013</p>
+                </div>
+                <div class="example-card" onclick="setQuery('Show me all performance-related comments')">
+                    <h3>💬 Review Comments</h3>
+                    <p>Show me all performance-related comments</p>
+                </div>
+                <div class="example-card" onclick="setQuery('How many PRs did I review for nhjain?')">
+                    <h3>📊 PR Statistics</h3>
+                    <p>How many PRs did I review for nhjain?</p>
+                </div>
+            </div>
+
+            <div class="response-section" id="responseSection" class="hidden">
+                <div class="response-header">
+                    <h2>Response</h2>
+                    <span id="statusBadge" class="status">Ready</span>
+                </div>
+                <div class="response-content" id="responseContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime;
+
+        function setQuery(query) {
+            document.getElementById('queryInput').value = query;
+        }
+
+        function updateTimer() {
+            if (!startTime) return;
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            document.getElementById('timer').textContent = `⏱️ Elapsed: ${elapsed}s`;
+        }
+
+        async function submitQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+
+            // Update UI
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+            const statusBadge = document.getElementById('statusBadge');
+            const responseSection = document.getElementById('responseSection');
+            const responseContent = document.getElementById('responseContent');
+            const timerElement = document.getElementById('timer');
+
+            submitBtn.disabled = true;
+            submitText.textContent = 'Processing...';
+            submitSpinner.classList.remove('hidden');
+            statusBadge.textContent = 'Loading';
+            statusBadge.className = 'status loading';
+            responseSection.classList.remove('hidden');
+            responseContent.textContent = 'Thinking... This may take 30-60 seconds for complex queries.';
+
+            // Start timer
+            startTime = Date.now();
+            const timerInterval = setInterval(updateTimer, 100);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8765/api/smart-agent/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query }),
+                });
+
+                const data = await response.json();
+                
+                // Stop timer
+                clearInterval(timerInterval);
+                const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                timerElement.textContent = `⏱️ Completed in ${totalTime}s`;
+                startTime = null;
+
+                if (data.success) {
+                    statusBadge.textContent = 'Success';
+                    statusBadge.className = 'status success';
+                    responseContent.innerHTML = formatMarkdown(data.answer);
+                    responseContent.classList.add('markdown-content');
+                } else {
+                    statusBadge.textContent = 'Error';
+                    statusBadge.className = 'status error';
+                    responseContent.textContent = `Error: ${data.error}\n\n${data.traceback || ''}`;
+                }
+            } catch (error) {
+                clearInterval(timerInterval);
+                startTime = null;
+                statusBadge.textContent = 'Error';
+                statusBadge.className = 'status error';
+                responseContent.textContent = `Network Error: ${error.message}`;
+                timerElement.textContent = '';
+            } finally {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Send Query';
+                submitSpinner.classList.add('hidden');
+            }
+        }
+
+        function formatMarkdown(text) {
+            // Simple markdown formatting
+            let html = text
+                .replace(/### (.*)/g, '<h3>$1</h3>')
+                .replace(/## (.*)/g, '<h2>$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            return '<p>' + html + '</p>';
+        }
+
+        // Allow Enter key to submit (Shift+Enter for new line)
+        document.getElementById('queryInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitQuery();
+            }
+        });
+    </script>
+</body>
+</html>
