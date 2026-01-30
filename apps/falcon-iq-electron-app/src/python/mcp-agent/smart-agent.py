@@ -167,8 +167,8 @@ class MCPTools:
             },
             {
                 "name": "query_review_comments",
-                "description": "Query and analyze code review comments with signal classifications. Available signals: is_nitpick, mentions_tests, mentions_bug, mentions_design, mentions_performance, mentions_reliability, mentions_security. Use exact signal names for filtering.",
-                "parameters": "username, filter_by_signals (use exact signal names like 'mentions_bug'), filter_by_category, filter_by_pr, group_by, include_details, limit"
+                "description": "Query and analyze code review comments with signal classifications. Available signals: is_nitpick, mentions_tests, mentions_bug, mentions_design, mentions_performance, mentions_reliability, mentions_security. Use exact signal names for filtering. Supports date range filtering with start_date and end_date in YYYY-MM-DD format.",
+                "parameters": "username, filter_by_signals (use exact signal names like 'mentions_bug'), filter_by_category, filter_by_pr, start_date (YYYY-MM-DD), end_date (YYYY-MM-DD), group_by, include_details, limit"
             },
             {
                 "name": "query_pr_stats",
@@ -294,6 +294,20 @@ class MCPTools:
                     if arguments.get("filter_by_pr"):
                         where_clauses.append("pr_number = ?")
                         params.append(arguments["filter_by_pr"])
+                    
+                    # Date range filtering
+                    if arguments.get("start_date"):
+                        where_clauses.append("created_at >= ?")
+                        params.append(arguments["start_date"])
+                    
+                    if arguments.get("end_date"):
+                        # Add time to end date to include the entire day
+                        where_clauses.append("created_at <= ?")
+                        end_date = arguments["end_date"]
+                        # If just YYYY-MM-DD format, add time to include full day
+                        if len(end_date) == 10:
+                            end_date = f"{end_date}T23:59:59Z"
+                        params.append(end_date)
                     
                     where_clause = " AND ".join(where_clauses) if where_clauses else "1=1"
                     
