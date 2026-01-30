@@ -1,0 +1,13 @@
+# Requirements for Smart MCP Agent
+# Install with: pip install -r requirements-smart-agent.txt
+
+# Core dependencies from parent
+-r ../requirements.txt
+
+# LangGraph and LangChain
+langgraph>=0.0.20
+langchain-openai>=0.0.5
+langchain-core>=0.1.0
+
+# Additional utilities
+python-dotenv>=1.0.0

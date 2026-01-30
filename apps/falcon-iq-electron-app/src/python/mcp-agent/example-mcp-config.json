@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "falcon-iq-manager": {
+      "command": "python3",
+      "args": [
+        "/Users/npurwar/Documents/GitHub/tiberius/apps/falcon-iq-electron-app/src/python/mcp-agent/manager-mcp-server.py"
+      ],
+      "env": {
+        "FALCON_BASE_DIR": "/Users/npurwar/your-actual-base-dir",
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
+    }
+  }
+}

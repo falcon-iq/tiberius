@@ -22,6 +22,15 @@ from runPipeline import PipelineRunner
 from prDataReader import get_pr_details, get_comment_details, get_pr_files
 from common import getDBPath, get_base_dir
 
+# Import smart agent (handle hyphenated module name)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'mcp-agent'))
+import importlib.util
+_smart_agent_path = os.path.join(os.path.dirname(__file__), 'mcp-agent', 'smart-agent.py')
+_spec = importlib.util.spec_from_file_location("smart_agent_module", _smart_agent_path)
+_smart_agent_module = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_smart_agent_module)
+SmartAgent = _smart_agent_module.SmartAgent
+
 # Global variables to store Electron configuration
 BASE_DIR: Optional[str] = None
 IS_DEV: bool = False
@@ -183,6 +192,147 @@ def get_files(pr_id: int, username: Optional[str] = None):
             
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+class SmartAgentRequest(BaseModel):
+    query: str
+
+
+# Global smart agent instance (lazy initialization)
+_smart_agent_instance = None
+
+
+def get_smart_agent() -> SmartAgent:
+    """Get or create the smart agent instance."""
+    global _smart_agent_instance
+    if _smart_agent_instance is None:
+        _smart_agent_instance = SmartAgent()
+    return _smart_agent_instance
+
+
+@app.get("/api/smart-agent/capabilities")
+def get_agent_capabilities():
+    """
+    Get available smart agent capabilities and tools.
+    
+    Returns:
+        List of available tools and example queries
+    """
+    return {
+        "success": True,
+        "capabilities": [
+            {
+                "name": "PR Analysis",
+                "description": "Get detailed information about specific PRs",
+                "examples": [
+                    "Show me PR 1013",
+                    "Get details about pull request 660"
+                ]
+            },
+            {
+                "name": "User Management",
+                "description": "Query and list users in the system",
+                "examples": [
+                    "List all users",
+                    "Who are the users in the system?"
+                ]
+            },
+            {
+                "name": "OKR Tracking",
+                "description": "Search for OKRs and generate updates",
+                "examples": [
+                    "Search for Reserved Ads OKR",
+                    "Generate update for Reserved Ads goal for Jan 2026"
+                ]
+            },
+            {
+                "name": "Code Review Analytics",
+                "description": "Analyze code review comments with signal classifications",
+                "examples": [
+                    "Show me all performance-related comments",
+                    "How many bug comments did I make?",
+                    "What's my comment breakdown by category?"
+                ]
+            },
+            {
+                "name": "PR Statistics",
+                "description": "Query PR statistics and review data",
+                "examples": [
+                    "How many PRs did I review for John?",
+                    "Show me authors where I left more than 10 comments"
+                ]
+            },
+            {
+                "name": "OKR Update Generation",
+                "description": "Generate AI-powered technical and executive updates for OKRs",
+                "examples": [
+                    "Write me an update for Reserved Ads goal for Jan 2026 by looking at all the PRs"
+                ]
+            }
+        ],
+        "tools": [
+            "get_pr_details",
+            "get_comment_details",
+            "get_pr_files",
+            "list_all_users",
+            "query_users",
+            "search_okrs",
+            "list_all_okrs",
+            "find_prs_by_okr",
+            "generate_okr_update",
+            "query_review_comments",
+            "query_pr_stats"
+        ]
+    }
+
+
+@app.post("/api/smart-agent/query")
+async def smart_agent_query(request: SmartAgentRequest):
+    """
+    Query the smart agent with natural language.
+    
+    The agent can:
+    - Analyze PR data and code reviews
+    - Generate OKR updates from PR bodies
+    - Query users and review comments
+    - Answer complex questions by orchestrating multiple tools
+    
+    Args:
+        query: Natural language query
+        
+    Returns:
+        Agent's response with reasoning and results
+    """
+    try:
+        if not request.query or not request.query.strip():
+            return {"success": False, "error": "Query cannot be empty"}
+        
+        # Run the agent in a thread executor to avoid blocking
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+        
+        def run_agent():
+            agent = get_smart_agent()
+            return agent.run(request.query)
+        
+        # Execute in thread pool
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            result = await loop.run_in_executor(executor, run_agent)
+        
+        return {
+            "success": True,
+            "query": request.query,
+            "answer": result
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
 
 
 class PipelineRequest(BaseModel):
