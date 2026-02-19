@@ -1,0 +1,23 @@
+Metadata-Version: 2.4
+Name: falcon-iq-analyzer
+Version: 0.1.0
+Summary: Falcon IQ Analyzer - LLM-powered web page analysis service
+Requires-Python: >=3.11
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.32.0
+Requires-Dist: openai>=1.50.0
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: beautifulsoup4>=4.12.0
+Requires-Dist: lxml>=5.0.0
+Requires-Dist: pydantic>=2.9.0
+Requires-Dist: pydantic-settings>=2.5.0
+Requires-Dist: tenacity>=9.0.0
+Requires-Dist: aiofiles>=24.0.0
+Requires-Dist: jinja2>=3.1.0
+Requires-Dist: boto3>=1.35.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.24.0; extra == "dev"
+Requires-Dist: pytest-httpx>=0.32.0; extra == "dev"
+Requires-Dist: ruff>=0.7.0; extra == "dev"
+Requires-Dist: moto[s3]>=5.0.0; extra == "dev"
