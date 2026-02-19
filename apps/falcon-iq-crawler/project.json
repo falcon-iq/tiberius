@@ -1,0 +1,38 @@
+{
+  "name": "falcon-iq-crawler",
+  "projectType": "application",
+  "root": "apps/falcon-iq-crawler",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-crawler",
+        "command": "mvn package -DskipTests"
+      },
+      "outputs": ["{projectRoot}/target"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-crawler",
+        "command": "mvn test"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-crawler",
+        "command": "mvn clean"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "cwd": "apps/falcon-iq-crawler",
+        "command": "java -jar target/falcon-iq-crawler-1.0.0.jar"
+      }
+    }
+  },
+  "tags": []
+}

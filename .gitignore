@@ -6,6 +6,9 @@ tmp
 out-tsc
 target
 
+# Crawler data
+crawled_pages/
+
 # Transpiled JS files in libs (we use TS)
 libs/**/*.js
 libs/**/*.js.map

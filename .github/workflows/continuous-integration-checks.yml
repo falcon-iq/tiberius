@@ -90,7 +90,7 @@ jobs:
         timeout-minutes: 10
 
       - name: Set up Java and Maven
-        if: steps.affected.outputs['falcon-iq-rest'] == 'true'
+        if: steps.affected.outputs['falcon-iq-rest'] == 'true' || steps.affected.outputs['falcon-iq-crawler'] == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
