@@ -1,0 +1,41 @@
+services:
+  analyzer:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - WEB_ANALYZER_STORAGE_TYPE=local
+      - WEB_ANALYZER_RESULTS_DIR=/app/results
+      - WEB_ANALYZER_CRAWLED_SITES_DIR=/app/crawled_pages
+      - WEB_ANALYZER_CRAWLER_API_URL=http://crawler:8080
+      - WEB_ANALYZER_LLM_PROVIDER=${WEB_ANALYZER_LLM_PROVIDER:-openai}
+      - WEB_ANALYZER_OPENAI_API_KEY=${WEB_ANALYZER_OPENAI_API_KEY:-}
+      - WEB_ANALYZER_OPENAI_MODEL=${WEB_ANALYZER_OPENAI_MODEL:-gpt-4o-mini}
+      - WEB_ANALYZER_OLLAMA_BASE_URL=${WEB_ANALYZER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - WEB_ANALYZER_OLLAMA_MODEL=${WEB_ANALYZER_OLLAMA_MODEL:-mistral}
+    volumes:
+      - crawler-pages:/app/crawled_pages
+      - analyzer-results:/app/results
+    depends_on:
+      crawler:
+        condition: service_healthy
+
+  crawler:
+    build: ../falcon-iq-crawler
+    ports:
+      - "8081:8080"
+    environment:
+      - STORAGE_TYPE=local
+      - OUTPUT_DIR=/app/crawled_pages
+    volumes:
+      - crawler-pages:/app/crawled_pages
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  crawler-pages:
+  analyzer-results:

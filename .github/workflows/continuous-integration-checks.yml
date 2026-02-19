@@ -97,6 +97,18 @@ jobs:
           java-version: "21"
           cache: "maven"
 
+      - name: Set up Python
+        if: steps.affected.outputs['falcon-iq-analyzer'] == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        if: steps.affected.outputs['falcon-iq-analyzer'] == 'true'
+        run: |
+          cd apps/falcon-iq-analyzer
+          pip install -e ".[dev]"
+
       - name: Run lint, format, test, and build on affected projects
         run: |
           npx nx affected -t lint format test build --parallel --maxParallel=2
