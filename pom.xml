@@ -10,5 +10,6 @@
 
   <modules>
     <module>apps/falcon-iq-rest</module>
+    <module>apps/falcon-iq-crawler</module>
   </modules>
 </project>
