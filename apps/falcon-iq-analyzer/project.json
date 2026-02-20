@@ -7,35 +7,35 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "ruff check src/"
+        "command": "uv run ruff check src/"
       }
     },
     "format": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "ruff format --check src/"
+        "command": "uv run ruff format --check src/"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "python -m pytest tests/ -v"
+        "command": "uv run pytest tests/ -v"
       }
     },
     "build": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "pip install -e ."
+        "command": "uv sync --dev"
       }
     },
     "serve": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "python -m uvicorn falcon_iq_analyzer.main:app --host 0.0.0.0 --port 8000 --reload"
+        "command": "uv run uvicorn falcon_iq_analyzer.main:app --host 0.0.0.0 --port 8000 --reload"
       }
     }
   },
