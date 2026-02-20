@@ -1,3 +1,4 @@
+README.md
 pyproject.toml
 src/falcon_iq_analyzer/__init__.py
 src/falcon_iq_analyzer/config.py
