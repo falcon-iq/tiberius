@@ -42,7 +42,11 @@ def generate_benchmark_report(result: BenchmarkResult) -> str:
             lines.append(f"| Category | {a} Wins | {b} Wins | Ties | Neither |")
             lines.append("|----------|---------|---------|------|---------|")
             for cat, counts in sorted(categories.items()):
-                lines.append(f"| {cat} | {counts.get('company_a', 0)} | {counts.get('company_b', 0)} | {counts.get('tie', 0)} | {counts.get('neither', 0)} |")
+                a_wins = counts.get("company_a", 0)
+                b_wins = counts.get("company_b", 0)
+                ties = counts.get("tie", 0)
+                neither = counts.get("neither", 0)
+                lines.append(f"| {cat} | {a_wins} | {b_wins} | {ties} | {neither} |")
             lines.append("")
 
         # Company perception

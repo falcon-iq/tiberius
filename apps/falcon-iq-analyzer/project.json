@@ -5,6 +5,7 @@
   "targets": {
     "lint": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
         "command": "uv run ruff check src/"
@@ -12,6 +13,7 @@
     },
     "format": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
         "command": "uv run ruff format --check src/"
@@ -19,6 +21,7 @@
     },
     "test": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
         "command": "uv run pytest tests/ -v"
@@ -28,7 +31,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "uv sync --dev"
+        "command": "uv sync --extra dev"
       }
     },
     "serve": {

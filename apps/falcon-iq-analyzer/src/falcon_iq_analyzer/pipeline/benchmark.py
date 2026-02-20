@@ -42,8 +42,9 @@ async def run_benchmark(
         for i, prompt in enumerate(prompts):
             step += 1
             job_manager.update_status(
-                job_id, "running",
-                f"Step {step}/{actual_total}: Evaluating prompt {i + 1}/{len(prompts)} ({prompt.category})..."
+                job_id,
+                "running",
+                f"Step {step}/{actual_total}: Evaluating prompt {i + 1}/{len(prompts)} ({prompt.category})...",
             )
             evaluation = await evaluate_single_prompt(llm, prompt, result_a.company_name, result_b.company_name)
             evaluations.append(evaluation)
@@ -53,9 +54,13 @@ async def run_benchmark(
         step += 1
         job_manager.update_status(job_id, "running", f"Step {step}/{actual_total}: Summarizing results...")
         summary = await summarize_evaluations(llm, result_a.company_name, result_b.company_name, evaluations)
-        logger.info("Benchmark: summary complete — %s wins: %d, %s wins: %d",
-                     result_a.company_name, summary.company_a_wins,
-                     result_b.company_name, summary.company_b_wins)
+        logger.info(
+            "Benchmark: summary complete — %s wins: %d, %s wins: %d",
+            result_a.company_name,
+            summary.company_a_wins,
+            result_b.company_name,
+            summary.company_b_wins,
+        )
 
         # Step 4: Generate report
         step += 1

@@ -45,9 +45,7 @@ async def run_crawl(
             output_dir = os.path.join(settings.crawled_sites_dir, crawl_id)
 
             logger.info("Crawl started: crawlId=%s for %s", crawl_id, url)
-            job_manager.update_status(
-                job_id, "running", f"Crawling... (crawlId={crawl_id})"
-            )
+            job_manager.update_status(job_id, "running", f"Crawling... (crawlId={crawl_id})")
 
             # Store output_dir on the job immediately so status endpoint can return it
             job = job_manager.get_job(job_id)
@@ -71,7 +69,8 @@ async def run_crawl(
 
                 if crawl_status == "COMPLETED":
                     job_manager.update_status(
-                        job_id, "completed",
+                        job_id,
+                        "completed",
                         f"Crawl complete: {pages_crawled} pages",
                     )
                     if job:
@@ -81,6 +80,7 @@ async def run_crawl(
                     # Write metadata so GET /sites can map directory back to domain
                     try:
                         from urllib.parse import urlparse
+
                         domain = urlparse(url).hostname or url
                         os.makedirs(output_dir, exist_ok=True)
                         meta_path = os.path.join(output_dir, "_metadata.json")
@@ -99,7 +99,8 @@ async def run_crawl(
 
                 else:
                     job_manager.update_status(
-                        job_id, "running",
+                        job_id,
+                        "running",
                         f"Crawling... {pages_crawled} pages downloaded (crawlId={crawl_id})",
                     )
 
