@@ -24,16 +24,18 @@ async def list_benchmarks() -> list[dict]:
     for j in jobs:
         r = j.benchmark_result
         s = r.summary if r else None
-        results.append({
-            "job_id": j.job_id,
-            "company_a": r.company_a if r else "",
-            "company_b": r.company_b if r else "",
-            "total_prompts": s.total_prompts if s else 0,
-            "company_a_wins": s.company_a_wins if s else 0,
-            "company_b_wins": s.company_b_wins if s else 0,
-            "ties": s.ties if s else 0,
-            "created_at": j.created_at,
-        })
+        results.append(
+            {
+                "job_id": j.job_id,
+                "company_a": r.company_a if r else "",
+                "company_b": r.company_b if r else "",
+                "total_prompts": s.total_prompts if s else 0,
+                "company_a_wins": s.company_a_wins if s else 0,
+                "company_b_wins": s.company_b_wins if s else 0,
+                "ties": s.ties if s else 0,
+                "created_at": j.created_at,
+            }
+        )
     return results
 
 

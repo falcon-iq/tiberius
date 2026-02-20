@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 
 from falcon_iq_analyzer.llm.base import LLMClient
