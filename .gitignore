@@ -9,6 +9,9 @@ target
 # Crawler data
 crawled_pages/
 
+# Analyzer results
+apps/falcon-iq-analyzer/results/
+
 # Transpiled JS files in libs (we use TS)
 libs/**/*.js
 libs/**/*.js.map
