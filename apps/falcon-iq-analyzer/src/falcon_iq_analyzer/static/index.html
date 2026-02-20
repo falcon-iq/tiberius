@@ -15,8 +15,8 @@
             padding: 20px;
         }
         h1 { text-align: center; margin-bottom: 8px; color: #1a1a2e; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 32px; font-size: 14px; }
-        .container { max-width: 900px; margin: 0 auto; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 24px; font-size: 14px; }
+        .container { max-width: 960px; margin: 0 auto; }
         .card {
             background: #fff;
             border-radius: 12px;
@@ -25,7 +25,6 @@
             margin-bottom: 20px;
         }
         .card h2 { font-size: 18px; margin-bottom: 16px; color: #1a1a2e; }
-        .card h2 .step { color: #666; font-weight: normal; font-size: 13px; }
         label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #555; }
         input, select {
             width: 100%;
@@ -58,23 +57,6 @@
         .btn-secondary:hover { background: #5a6268; }
         .btn-success { background: #28a745; }
         .btn-success:hover { background: #218838; }
-        .divider {
-            text-align: center;
-            color: #999;
-            font-size: 13px;
-            margin: 16px 0;
-            position: relative;
-        }
-        .divider::before, .divider::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            width: 40%;
-            height: 1px;
-            background: #ddd;
-        }
-        .divider::before { left: 0; }
-        .divider::after { right: 0; }
         .progress-bar {
             background: #e9ecef;
             border-radius: 8px;
@@ -96,67 +78,196 @@
             margin-top: 8px;
         }
         .error { color: #dc3545; font-size: 13px; margin-top: 8px; }
-        .site-info {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
-        .site-info strong { color: #1a1a2e; }
         .hidden { display: none; }
-        .report-content {
-            font-size: 14px;
-            line-height: 1.7;
-        }
+        .report-content { font-size: 14px; line-height: 1.7; }
         .report-content h1 { text-align: left; font-size: 24px; margin: 20px 0 12px; }
         .report-content h2 { font-size: 20px; margin: 20px 0 10px; color: #1a1a2e; }
         .report-content h3 { font-size: 16px; margin: 16px 0 8px; }
         .report-content table { width: 100%; border-collapse: collapse; margin: 12px 0; }
         .report-content th, .report-content td {
-            border: 1px solid #ddd;
-            padding: 8px 12px;
-            text-align: left;
-            font-size: 13px;
+            border: 1px solid #ddd; padding: 8px 12px; text-align: left; font-size: 13px;
         }
         .report-content th { background: #f8f9fa; font-weight: 600; }
         .report-content ul, .report-content ol { padding-left: 24px; margin: 8px 0; }
         .report-content p { margin: 8px 0; }
         .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #ddd;
-            border-top-color: #4a6cf7;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            vertical-align: middle;
-            margin-right: 8px;
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid #ddd; border-top-color: #4a6cf7;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            vertical-align: middle; margin-right: 8px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Tab Navigation --- */
+        .tab-nav {
+            display: flex; gap: 8px; justify-content: center;
+            margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #fff; color: #555; border: 2px solid #e0e0e0;
+            padding: 10px 24px; border-radius: 24px; font-size: 14px;
+            font-weight: 600; cursor: pointer; transition: all 0.2s; width: auto;
+        }
+        .tab-btn:hover { border-color: #4a6cf7; color: #4a6cf7; background: #f0f4ff; }
+        .tab-btn.active { background: #4a6cf7; color: #fff; border-color: #4a6cf7; }
+        .tab-btn.active:hover { background: #3a5ce5; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* --- Status Badges --- */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .status-badge::before {
+            content: ''; width: 6px; height: 6px; border-radius: 50%;
+        }
+        .status-badge.pending { background: #f3f4f6; color: #6b7280; }
+        .status-badge.pending::before { background: #9ca3af; }
+        .status-badge.crawling { background: #dbeafe; color: #1d4ed8; }
+        .status-badge.crawling::before { background: #3b82f6; animation: pulse-dot 1.5s infinite; }
+        .status-badge.crawled { background: #dcfce7; color: #15803d; }
+        .status-badge.crawled::before { background: #22c55e; }
+        .status-badge.analyzing { background: #fef3c7; color: #a16207; }
+        .status-badge.analyzing::before { background: #f59e0b; animation: pulse-dot 1.5s infinite; }
+        .status-badge.analyzed { background: #ccfbf1; color: #0d9488; }
+        .status-badge.analyzed::before { background: #14b8a6; }
+        .status-badge.failed { background: #fee2e2; color: #dc2626; }
+        .status-badge.failed::before { background: #ef4444; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* --- Small / Inline Buttons --- */
+        .btn-sm {
+            padding: 5px 14px; font-size: 12px; border-radius: 6px;
+            width: auto; display: inline-block;
+        }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+
+        /* --- Site Cards --- */
+        .site-card {
+            background: #fff; border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid #eef0f4;
+            transition: box-shadow 0.2s, transform 0.15s;
+        }
+        .site-card:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+            transform: translateY(-1px);
+        }
+        .site-card-top {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid #f0f2f5;
+            background: linear-gradient(135deg, #fafbff 0%, #f5f7fa 100%);
+        }
+        .site-card-header {
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .site-card-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, #4a6cf7, #7c3aed);
+            flex-shrink: 0; text-transform: uppercase;
+        }
+        .site-card-info { flex: 1; min-width: 0; }
+        .site-card-info .domain { font-size: 18px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.3px; }
+        .site-card-info .url-text { font-size: 13px; color: #9ca3af; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .site-card-meta {
+            display: flex; gap: 12px; align-items: center; flex-shrink: 0;
+        }
+        .meta-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            background: #f0f4ff; color: #4a6cf7;
+        }
+        .meta-chip svg { width: 14px; height: 14px; }
+        .site-card-body { padding: 20px 28px 24px; }
+        .site-card-controls {
+            display: flex; gap: 10px; align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .site-card-controls input { width: 220px; margin-bottom: 0; }
+        .site-card-controls button { width: auto; }
+        .control-group {
+            display: flex; gap: 10px; align-items: flex-end;
+            flex-wrap: wrap; padding: 14px 0;
+        }
+        .control-group + .control-group { border-top: 1px solid #f0f2f5; }
+        .control-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #9ca3af; margin-bottom: 6px;
+        }
+
+        /* --- Analysis History Cards --- */
+        .analysis-history {
+            margin-top: 4px; padding-top: 16px;
+            border-top: 1px solid #f0f2f5;
+        }
+        .analysis-history-title {
+            font-size: 12px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #9ca3af; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .analysis-history-title .count-badge {
+            background: #e9ecef; color: #6c757d; font-size: 11px;
+            padding: 1px 8px; border-radius: 10px; font-weight: 700;
+        }
+        .analysis-entry {
+            display: flex; align-items: center; gap: 16px;
+            padding: 14px 16px; margin-bottom: 8px;
+            border-radius: 10px; background: #f8f9fc;
+            border: 1px solid #eef0f4;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .analysis-entry:hover { background: #f0f4ff; border-color: #d0d7f7; }
+        .analysis-entry:last-child { margin-bottom: 0; }
+        .analysis-entry-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+            background: linear-gradient(135deg, #d2f4ea, #a7f3d0); color: #0d6e5e;
+        }
+        .analysis-entry-info { flex: 1; min-width: 0; }
+        .analysis-entry-info .ae-company { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+        .analysis-entry-info .ae-meta {
+            display: flex; gap: 16px; margin-top: 4px;
+            font-size: 12px; color: #9ca3af; flex-wrap: wrap;
+        }
+        .analysis-entry-info .ae-meta span { display: inline-flex; align-items: center; gap: 4px; }
+        .analysis-entry-actions { flex-shrink: 0; }
+
+        /* --- Benchmark Inline Result --- */
+        .benchmark-inline-result { margin-top: 20px; }
+
         @media (max-width: 600px) {
             .row { flex-direction: column; }
             .row > .small { flex: 1; }
             body { padding: 12px; }
             .card { padding: 16px; }
+            .tab-nav { display: grid; grid-template-columns: 1fr 1fr; }
+            .tab-btn { text-align: center; }
+            .site-card-top { padding: 16px 18px 14px; }
+            .site-card-body { padding: 14px 18px 18px; }
+            .site-card-controls { flex-direction: column; }
+            .site-card-controls input { width: 100%; }
+            .site-card-controls button { width: 100%; }
+            .site-card-meta { flex-wrap: wrap; }
+            .analysis-entry { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .analysis-entry-info .ae-meta { flex-direction: column; gap: 4px; }
         }
 
         /* --- Dashboard Variables --- */
-        :root {
-            --color-a: #4a6cf7;
-            --color-b: #f7844a;
-            --color-tie: #adb5bd;
-        }
+        :root { --color-a: #4a6cf7; --color-b: #f7844a; --color-tie: #adb5bd; }
 
         /* --- Hero Winner Banner --- */
         .hero-banner {
-            background: linear-gradient(135deg, #4a6cf7, #7c3aed);
-            color: #fff;
-            border-radius: 12px;
-            padding: 32px 24px;
-            text-align: center;
-            margin-bottom: 24px;
-            animation: slideIn 0.6s ease-out;
+            background: linear-gradient(135deg, #4a6cf7, #7c3aed); color: #fff;
+            border-radius: 12px; padding: 32px 24px; text-align: center;
+            margin-bottom: 24px; animation: slideIn 0.6s ease-out;
         }
         .hero-banner .matchup { font-size: 14px; opacity: 0.85; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
         .hero-banner .scoreboard { font-size: 48px; font-weight: 800; margin: 12px 0; letter-spacing: 4px; }
@@ -167,11 +278,8 @@
         /* --- Metric Cards --- */
         .metric-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
         .metric-card {
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px 16px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            background: #fff; border-radius: 10px; padding: 20px 16px;
+            text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         .metric-card .metric-value { font-size: 32px; font-weight: 800; color: #1a1a2e; }
         .metric-card .metric-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
@@ -195,12 +303,7 @@
 
         /* --- Sentiment Gauges --- */
         .sentiment-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .sentiment-card {
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
+        .sentiment-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .sentiment-card .sent-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .sentiment-card .sent-company { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; }
         .sentiment-card .sent-value { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
@@ -219,12 +322,7 @@
 
         /* --- Perception Panels --- */
         .perception-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .perception-card {
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
+        .perception-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .perception-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
         .perception-card .perc-section { margin-bottom: 10px; }
         .perception-card .perc-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 6px; }
@@ -234,11 +332,8 @@
 
         /* --- Key Insights --- */
         .insights-box {
-            background: #fffbeb;
-            border-left: 4px solid #f59e0b;
-            border-radius: 0 10px 10px 0;
-            padding: 20px 24px;
-            margin-bottom: 24px;
+            background: #fffbeb; border-left: 4px solid #f59e0b;
+            border-radius: 0 10px 10px 0; padding: 20px 24px; margin-bottom: 24px;
         }
         .insights-box .insights-header { font-size: 16px; font-weight: 700; color: #92400e; margin-bottom: 10px; }
         .insights-box ul { list-style: disc; padding-left: 20px; }
@@ -277,412 +372,759 @@
 </head>
 <body>
     <div class="container">
-        <h1>Falcon IQ Analyzer</h1>
-        <p class="subtitle">Crawl websites and analyze product offerings using AI</p>
+        <div style="text-align:center;margin-bottom:8px;">
+            <h1 style="background:linear-gradient(135deg,#4a6cf7,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;letter-spacing:-0.5px;">Falcon IQ Analyzer</h1>
+        </div>
+        <p class="subtitle">Crawl websites, analyze offerings, and benchmark competitive positioning</p>
 
-        <!-- Step 1: Crawl -->
-        <div class="card" id="step1">
-            <h2><span class="step">Step 1 &mdash;</span> Select or Crawl a Site</h2>
-
-            <label for="siteSelect">Previously crawled sites</label>
-            <select id="siteSelect">
-                <option value="">-- Loading sites... --</option>
-            </select>
-
-            <div class="divider">or crawl a new site</div>
-
-            <div class="row">
-                <div>
-                    <label for="urlInput">Website URL</label>
-                    <input type="url" id="urlInput" placeholder="https://example.com">
-                </div>
-                <div class="small">
-                    <label for="maxPages">Max pages</label>
-                    <input type="number" id="maxPages" value="100" min="1" max="10000">
-                </div>
-            </div>
-            <button id="crawlBtn" onclick="startCrawl()">Crawl</button>
-
-            <div id="crawlProgress" class="hidden">
-                <div class="progress-bar"><div class="fill" id="crawlFill"></div></div>
-                <p class="status-text" id="crawlStatus"><span class="spinner"></span>Starting...</p>
-            </div>
-            <p class="error hidden" id="crawlError"></p>
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('websites')">Websites</button>
+            <button class="tab-btn" onclick="switchTab('benchmark')">Benchmark</button>
+            <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
         </div>
 
-        <!-- Step 2: Analyze -->
-        <div class="card hidden" id="step2">
-            <h2><span class="step">Step 2 &mdash;</span> Analyze</h2>
-
-            <div class="site-info" id="siteInfoDisplay"></div>
-
-            <label for="companyName">Company name</label>
-            <input type="text" id="companyName" placeholder="Company name">
-
-            <button id="analyzeBtn" onclick="startAnalysis()">Analyze</button>
-
-            <div id="analyzeProgress" class="hidden">
-                <div class="progress-bar"><div class="fill" id="analyzeFill"></div></div>
-                <p class="status-text" id="analyzeStatus"><span class="spinner"></span>Starting...</p>
-            </div>
-            <p class="error hidden" id="analyzeError"></p>
-        </div>
-
-        <!-- Step 3: Report -->
-        <div class="card hidden" id="step3">
-            <h2><span class="step">Step 3 &mdash;</span> Report</h2>
-            <div class="report-content" id="reportContent"></div>
-            <br>
-            <button class="btn-success" onclick="downloadReport()">Download Report</button>
-        </div>
-
-        <!-- Step 4: Benchmark -->
-        <div class="card" id="step4">
-            <h2><span class="step">Step 4 &mdash;</span> LLM Benchmark</h2>
-            <p style="font-size:13px;color:#666;margin-bottom:16px;">Compare how LLMs perceive two companies. Requires two completed analyses.</p>
-
-            <label for="benchSelect">Previous benchmarks</label>
-            <select id="benchSelect" onchange="loadExistingBenchmark(this.value)">
-                <option value="">-- Run a new benchmark --</option>
-            </select>
-
-            <div class="divider">or run a new benchmark</div>
-
-            <div class="row">
-                <div>
-                    <label for="benchJobA">Company A</label>
-                    <select id="benchJobA">
-                        <option value="">-- Select analysis --</option>
-                    </select>
+        <!-- Tab 1: Websites (add + crawl + analyze) -->
+        <div class="tab-panel active" id="tab-websites">
+            <div class="card" style="border: 2px dashed #d0d7f7; background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%); box-shadow: none;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#4a6cf7,#7c3aed);display:flex;align-items:center;justify-content:center;">
+                        <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="9" y1="3" x2="9" y2="15"/><line x1="3" y1="9" x2="15" y2="9"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size:16px;font-weight:700;color:#1a1a2e;">Add Website</div>
+                        <div style="font-size:13px;color:#9ca3af;">Enter a URL to crawl and analyze</div>
+                    </div>
                 </div>
-                <div>
-                    <label for="benchJobB">Company B</label>
-                    <select id="benchJobB">
-                        <option value="">-- Select analysis --</option>
-                    </select>
-                </div>
-                <div class="small">
-                    <label for="numPrompts">Prompts</label>
-                    <input type="number" id="numPrompts" value="15" min="1" max="50">
+                <div class="row">
+                    <div>
+                        <label for="addUrlInput">Website URL</label>
+                        <input type="url" id="addUrlInput" placeholder="https://example.com" style="border-color:#d0d7f7;">
+                    </div>
+                    <div class="small">
+                        <label for="addMaxPages">Max pages</label>
+                        <input type="number" id="addMaxPages" value="100" min="1" max="10000" style="border-color:#d0d7f7;">
+                    </div>
+                    <div class="small" style="flex:0 0 100px;">
+                        <label>&nbsp;</label>
+                        <button onclick="addWebsite()" style="width:100%;padding:10px 0;border-radius:10px;">Add Site</button>
+                    </div>
                 </div>
             </div>
-            <button id="benchmarkBtn" onclick="startBenchmark()">Run Benchmark</button>
-
-            <div id="benchmarkProgress" class="hidden">
-                <div class="progress-bar"><div class="fill" id="benchmarkFill"></div></div>
-                <p class="status-text" id="benchmarkStatus"><span class="spinner"></span>Starting...</p>
+            <div id="siteCardsContainer">
+                <div style="text-align:center;padding:48px 24px;color:#b0b8d1;">
+                    <div style="font-size:48px;margin-bottom:12px;opacity:0.5;">&#127760;</div>
+                    <div style="font-size:15px;font-weight:600;color:#8890a4;">No websites yet</div>
+                    <div style="font-size:13px;margin-top:4px;">Add a URL above or wait for previously crawled sites to load</div>
+                </div>
             </div>
-            <p class="error hidden" id="benchmarkError"></p>
         </div>
 
-        <!-- Step 5: Benchmark Report Dashboard -->
-        <div class="hidden" id="step5">
-            <div id="benchmarkReportContent"></div>
-            <div class="card">
-                <button class="btn-success" onclick="downloadBenchmarkReport()">Download Benchmark Report (Markdown)</button>
+        <!-- Tab 2: Benchmark -->
+        <div class="tab-panel" id="tab-benchmark">
+            <!-- New Benchmark Card -->
+            <div class="card" style="border: 2px dashed #d0d7f7; background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%); box-shadow: none;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#4a6cf7,#7c3aed);display:flex;align-items:center;justify-content:center;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size:16px;font-weight:700;color:#1a1a2e;">New Benchmark</div>
+                        <div style="font-size:13px;color:#9ca3af;">Compare how LLMs perceive two companies</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div>
+                        <label for="benchJobANew">Company A</label>
+                        <select id="benchJobANew" style="border-color:#d0d7f7;">
+                            <option value="">-- Select analysis --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="benchJobBNew">Company B</label>
+                        <select id="benchJobBNew" style="border-color:#d0d7f7;">
+                            <option value="">-- Select analysis --</option>
+                        </select>
+                    </div>
+                    <div class="small">
+                        <label for="numPromptsNew">Prompts</label>
+                        <input type="number" id="numPromptsNew" value="15" min="1" max="50" style="border-color:#d0d7f7;">
+                    </div>
+                </div>
+                <button id="benchmarkBtnNew" onclick="startBenchmarkNew()" style="border-radius:10px;">&#9656; Run Benchmark</button>
+
+                <div id="benchmarkProgressNew" class="hidden" style="margin-top:16px;">
+                    <div class="progress-bar"><div class="fill" id="benchmarkFillNew"></div></div>
+                    <p class="status-text" id="benchmarkStatusNew"><span class="spinner"></span>Starting...</p>
+                </div>
+                <p class="error hidden" id="benchmarkErrorNew"></p>
             </div>
+
+            <!-- Benchmark History -->
+            <div id="benchmarkHistoryContainer">
+                <div style="text-align:center;padding:40px 24px;color:#b0b8d1;">
+                    <div style="font-size:48px;margin-bottom:12px;opacity:0.5;">&#128202;</div>
+                    <div style="font-size:15px;font-weight:600;color:#8890a4;">No benchmarks yet</div>
+                    <div style="font-size:13px;margin-top:4px;">Run a benchmark above to compare two companies</div>
+                </div>
+            </div>
+
+            <div id="benchmarkInlineResult" class="hidden benchmark-inline-result"></div>
+        </div>
+
+        <!-- Tab 3: Reports -->
+        <div class="tab-panel" id="tab-reports">
+            <div class="site-card">
+                <div class="site-card-top">
+                    <div class="site-card-header">
+                        <div class="site-card-icon" style="background:linear-gradient(135deg,#28a745,#20c997);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        </div>
+                        <div class="site-card-info">
+                            <div class="domain">Reports</div>
+                            <div class="url-text">View and download benchmark and analysis reports</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="site-card-body">
+                    <div class="row" style="align-items:flex-end;">
+                        <div>
+                            <label for="reportTypeSelect">Report type</label>
+                            <select id="reportTypeSelect" onchange="onReportTypeChange()">
+                                <option value="benchmark">Benchmark Reports</option>
+                                <option value="analysis">Analysis Reports</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="reportSelect">Select report</label>
+                            <select id="reportSelect" onchange="onReportSelected()">
+                                <option value="">-- Select a report --</option>
+                            </select>
+                        </div>
+                        <div style="flex:0 0 auto;">
+                            <label>&nbsp;</label>
+                            <button class="btn-sm btn-success" onclick="downloadCurrentReport()" id="downloadReportBtn" disabled style="padding:10px 20px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="reportDisplayArea" class="hidden"></div>
         </div>
     </div>
 
 <script>
-    let currentSite = null;   // { domain, directory, page_count }
-    let analyzeJobId = null;
-    let completedJobIds = [];  // track completed analysis job IDs for benchmark
-    let benchmarkJobId = null;
-    let benchmarkMarkdown = null;
+    // =============================================
+    // App State
+    // =============================================
+    const AppState = {
+        sites: [],           // [{ url, domain, directory, page_count, status, maxPages }]
+        crawlJobs: {},       // { siteIndex: { jobId, status, progress, progress_pct, error } }
+        analyzeJobs: {},     // { siteIndex: { jobId, status, progress, progress_pct, result, companyName } }
+        analyses: [],        // from GET /analyses
+        benchmarks: [],      // from GET /benchmarks
+        currentBenchmarkReport: null,
+        currentAnalysisReport: null,
+        activeTab: 'websites'
+    };
 
-    // --- Init ---
-    loadSites();
-    loadAnalyses();
-    loadBenchmarksList();
+    // =============================================
+    // Tab Navigation
+    // =============================================
+    function switchTab(name) {
+        AppState.activeTab = name;
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        const tabNames = ['websites', 'benchmark', 'reports'];
+        const btns = document.querySelectorAll('.tab-btn');
+        btns[tabNames.indexOf(name)].classList.add('active');
+        onTabEnter(name);
+    }
 
-    async function loadSites() {
-        try {
-            const res = await fetch('/sites');
-            const sites = await res.json();
-            const sel = document.getElementById('siteSelect');
-            sel.innerHTML = '<option value="">-- Select a crawled site --</option>';
-            sites.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = JSON.stringify(s);
-                opt.textContent = `${s.domain} (${s.page_count} pages)`;
-                sel.appendChild(opt);
-            });
-        } catch (e) {
-            console.error('Failed to load sites', e);
-            document.getElementById('siteSelect').innerHTML =
-                '<option value="">-- No sites available --</option>';
+    function onTabEnter(name) {
+        if (name === 'websites') {
+            loadSitesFromAPI();
+        } else if (name === 'benchmark') {
+            refreshAnalysesList();
+            refreshBenchmarksList();
+        } else if (name === 'reports') {
+            refreshBenchmarksList();
+            refreshAnalysesList();
+            onReportTypeChange();
         }
     }
 
-    document.getElementById('siteSelect').addEventListener('change', function() {
-        if (!this.value) return;
-        const site = JSON.parse(this.value);
-        selectSite(site);
-    });
-
-    function selectSite(site) {
-        currentSite = site;
-        document.getElementById('siteInfoDisplay').innerHTML =
-            `<strong>${site.domain}</strong> &mdash; ${site.page_count} pages in <code>${site.directory}</code>`;
-        document.getElementById('companyName').value =
-            site.domain.replace(/^www\./, '').split('.')[0];
-        show('step2');
-        hide('step3');
+    // =============================================
+    // Websites Tab: Add, Crawl, Analyze — all inline
+    // =============================================
+    async function loadSitesFromAPI() {
+        try {
+            const res = await fetch('/sites');
+            const sites = await res.json();
+            sites.forEach(s => {
+                const exists = AppState.sites.find(
+                    existing => existing.domain === s.domain && existing.directory === s.directory
+                );
+                if (!exists) {
+                    AppState.sites.push({
+                        url: 'https://' + s.domain,
+                        domain: s.domain,
+                        directory: s.directory,
+                        page_count: s.page_count,
+                        status: 'crawled',
+                        maxPages: s.page_count
+                    });
+                }
+            });
+        } catch (e) {
+            console.error('Failed to load sites', e);
+        }
+        // Also fetch analyses to show per-site
+        try {
+            const res = await fetch('/analyses');
+            AppState.analyses = await res.json();
+        } catch (e) {
+            console.error('Failed to load analyses', e);
+        }
+        renderSiteCards();
     }
 
-    // --- Crawl ---
-    async function startCrawl() {
-        const url = document.getElementById('urlInput').value.trim();
+    function addWebsite() {
+        const urlInput = document.getElementById('addUrlInput');
+        const maxInput = document.getElementById('addMaxPages');
+        const url = urlInput.value.trim();
         if (!url) return alert('Please enter a URL');
 
-        const maxPages = parseInt(document.getElementById('maxPages').value) || 100;
-        const btn = document.getElementById('crawlBtn');
-        btn.disabled = true;
+        try { new URL(url); } catch { return alert('Please enter a valid URL'); }
 
-        show('crawlProgress');
-        hideError('crawlError');
-        updateStatus('crawlStatus', 'Starting crawl...');
-        updateFill('crawlFill', 5);
+        const domain = extractDomain(url);
+        const exists = AppState.sites.find(s => s.domain === domain);
+        if (exists) return alert('This domain is already in the list');
+
+        const maxPages = parseInt(maxInput.value) || 100;
+        AppState.sites.push({
+            url,
+            domain,
+            directory: null,
+            page_count: 0,
+            status: 'pending',
+            maxPages
+        });
+        urlInput.value = '';
+        maxInput.value = '100';
+        renderSiteCards();
+    }
+
+    async function removeSite(index) {
+        if (AppState.crawlJobs[index] && AppState.crawlJobs[index].status === 'running') {
+            return alert('Cannot remove a site that is currently being crawled');
+        }
+        if (AppState.analyzeJobs[index] && AppState.analyzeJobs[index].status === 'running') {
+            return alert('Cannot remove a site that is currently being analyzed');
+        }
+
+        const site = AppState.sites[index];
+
+        // Delete from backend if the site has been crawled
+        if (site.status !== 'pending' && site.domain) {
+            try {
+                const res = await fetch(`/sites/${encodeURIComponent(site.domain)}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const data = await res.json();
+                    return alert('Failed to delete: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                return alert('Failed to delete: ' + e.message);
+            }
+        }
+
+        AppState.sites.splice(index, 1);
+        // Rebuild jobs maps with shifted indices
+        const newCrawlJobs = {};
+        const newAnalyzeJobs = {};
+        for (const [k, v] of Object.entries(AppState.crawlJobs)) {
+            const ki = parseInt(k);
+            if (ki < index) newCrawlJobs[ki] = v;
+            else if (ki > index) newCrawlJobs[ki - 1] = v;
+        }
+        for (const [k, v] of Object.entries(AppState.analyzeJobs)) {
+            const ki = parseInt(k);
+            if (ki < index) newAnalyzeJobs[ki] = v;
+            else if (ki > index) newAnalyzeJobs[ki - 1] = v;
+        }
+        AppState.crawlJobs = newCrawlJobs;
+        AppState.analyzeJobs = newAnalyzeJobs;
+        renderSiteCards();
+    }
+
+    // ---- Render site cards with inline crawl/analyze controls ----
+    function renderSiteCards() {
+        const container = document.getElementById('siteCardsContainer');
+        if (AppState.sites.length === 0) {
+            container.innerHTML = `<div style="text-align:center;padding:48px 24px;color:#b0b8d1;">
+                <div style="font-size:48px;margin-bottom:12px;opacity:0.5;">&#127760;</div>
+                <div style="font-size:15px;font-weight:600;color:#8890a4;">No websites yet</div>
+                <div style="font-size:13px;margin-top:4px;">Add a URL above or wait for previously crawled sites to load</div>
+            </div>`;
+            return;
+        }
+
+        let html = '';
+        AppState.sites.forEach((site, i) => {
+            const crawlJob = AppState.crawlJobs[i] || {};
+            const analyzeJob = AppState.analyzeJobs[i] || {};
+            const initial = (site.domain || '?').replace(/^www\./, '').charAt(0).toUpperCase();
+
+            html += `<div class="site-card" id="site-card-${i}">`;
+
+            // ---- Card Top: Header ----
+            html += `<div class="site-card-top">
+                <div class="site-card-header">
+                    <div class="site-card-icon">${escapeHtml(initial)}</div>
+                    <div class="site-card-info">
+                        <div class="domain">${escapeHtml(site.domain)}</div>
+                        <div class="url-text">${escapeHtml(site.url)}</div>
+                    </div>
+                    <div class="site-card-meta">
+                        <span class="status-badge ${site.status}">${site.status}</span>
+                        ${site.page_count ? `<span class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>${site.page_count} pages</span>` : ''}
+                        <button class="btn-sm btn-danger" onclick="removeSite(${i})" style="padding:5px 12px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+
+            // ---- Card Body ----
+            html += `<div class="site-card-body">`;
+
+            // --- Crawl controls: always shown unless currently crawling/analyzing ---
+            if (site.status !== 'crawling' && site.status !== 'analyzing') {
+                const isCrawling = crawlJob.status === 'running';
+                html += `<div class="control-group">
+                    <div class="control-label">Crawl</div>
+                    <div class="site-card-controls">
+                        <input type="number" id="maxPages-${i}" value="${site.maxPages || 100}" min="1" max="10000" placeholder="Max pages" style="width:120px;">
+                        <button class="btn-sm" onclick="startCrawlForSite(${i})" ${isCrawling ? 'disabled' : ''}>${isCrawling ? '<span class="spinner"></span> Crawling...' : '&#9656; Crawl'}</button>
+                    </div>
+                </div>`;
+                if (crawlJob.error) {
+                    html += `<p class="error">${escapeHtml(crawlJob.error)}</p>`;
+                }
+            }
+
+            // --- Crawling in progress ---
+            if (site.status === 'crawling') {
+                html += `<div style="padding:8px 0;">
+                    <div class="control-label">Crawling in progress</div>
+                    <div class="progress-bar" style="margin:8px 0 4px;"><div class="fill" id="crawlFill-${i}" style="width:${crawlJob.progress_pct || 0}%"></div></div>
+                    <p class="status-text" id="crawlStatus-${i}" style="text-align:left;margin-top:4px;"><span class="spinner"></span>${escapeHtml(crawlJob.progress || 'Crawling...')}</p>
+                </div>`;
+            }
+
+            // --- Analyze controls: shown when crawled or analyzed ---
+            if (site.status === 'crawled' || site.status === 'analyzed') {
+                const isAnalyzing = analyzeJob.status === 'running';
+                const defaultName = site.domain.replace(/^www\./, '').split('.')[0];
+                const companyVal = analyzeJob.companyName || defaultName;
+
+                html += `<div class="control-group">
+                    <div class="control-label">Analyze</div>
+                    <div class="site-card-controls">
+                        <input type="text" id="companyName-${i}" value="${escapeHtml(companyVal)}" placeholder="Company name">
+                        <button class="btn-sm btn-success" onclick="startAnalysisForSite(${i})" ${isAnalyzing ? 'disabled' : ''}>${isAnalyzing ? '<span class="spinner"></span> Analyzing...' : '&#9656; Analyze'}</button>
+                    </div>
+                </div>`;
+                if (analyzeJob.error) {
+                    html += `<p class="error">${escapeHtml(analyzeJob.error)}</p>`;
+                }
+            }
+
+            // --- Analyzing in progress ---
+            if (site.status === 'analyzing') {
+                html += `<div style="padding:8px 0;">
+                    <div class="control-label">Analysis in progress</div>
+                    <div class="progress-bar" style="margin:8px 0 4px;"><div class="fill" id="analyzeFill-${i}" style="width:${analyzeJob.progress_pct || 0}%"></div></div>
+                    <p class="status-text" id="analyzeStatus-${i}" style="text-align:left;margin-top:4px;"><span class="spinner"></span>${escapeHtml(analyzeJob.progress || 'Analyzing...')}</p>
+                </div>`;
+            }
+
+            // --- Analysis result from current session: collapsible ---
+            if (analyzeJob.result && analyzeJob.result.markdown_report) {
+                html += `<details style="margin-top:12px;padding:12px 16px;background:#f0f4ff;border-radius:10px;border:1px solid #d0d7f7;">
+                    <summary style="cursor:pointer;font-size:13px;font-weight:600;color:#4a6cf7;list-style:none;display:flex;align-items:center;gap:6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a6cf7" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                        View Latest Analysis Report
+                    </summary>
+                    <div class="report-content" style="margin-top:12px;padding-top:12px;border-top:1px solid #d0d7f7;">${marked.parse(analyzeJob.result.markdown_report)}</div>
+                </details>`;
+            }
+
+            // --- Past analyses: card-style entries ---
+            const siteDomain = (site.domain || '').replace(/^www\./, '').toLowerCase();
+            const siteAnalyses = AppState.analyses.filter(a => {
+                // Match by domain field (most reliable)
+                if (a.domain && siteDomain) {
+                    const aDomain = a.domain.replace(/^www\./, '').toLowerCase();
+                    if (aDomain === siteDomain) return true;
+                }
+                // Try directory match
+                if (directoriesMatch(a.crawl_directory, site.directory)) return true;
+                // Fallback: crawl_directory path contains the domain
+                if (!siteDomain) return false;
+                const crawlDir = (a.crawl_directory || '').toLowerCase();
+                return crawlDir.includes(siteDomain);
+            });
+            if (siteAnalyses.length > 0) {
+                html += `<div class="analysis-history">
+                    <div class="analysis-history-title">
+                        Analysis History <span class="count-badge">${siteAnalyses.length}</span>
+                    </div>`;
+                siteAnalyses.forEach(a => {
+                    const dateStr = a.created_at ? new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                    const timeStr = a.created_at ? new Date(a.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+                    html += `<div class="analysis-entry">
+                        <div class="analysis-entry-icon">&#128202;</div>
+                        <div class="analysis-entry-info">
+                            <div class="ae-company">${escapeHtml(a.company_name)}</div>
+                            <div class="ae-meta">
+                                <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${dateStr} ${timeStr}</span>
+                                <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> ${a.total_pages || '—'} pages</span>
+                                <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg> ${a.product_pages_analyzed || '—'} products</span>
+                                <span style="color:#ccc;font-size:11px;">${escapeHtml(a.job_id)}</span>
+                            </div>
+                        </div>
+                        <div class="analysis-entry-actions">
+                            <button class="btn-sm btn-danger" onclick="deleteAnalysis('${escapeHtml(a.job_id)}')" title="Delete analysis" style="padding:6px 10px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`; // close site-card-body
+            html += `</div>`; // close site-card
+        });
+        container.innerHTML = html;
+    }
+
+    // ---- Crawl ----
+    async function startCrawlForSite(i) {
+        const site = AppState.sites[i];
+        if (!site) return;
+
+        // Read max pages from the per-site input
+        const maxPagesInput = document.getElementById(`maxPages-${i}`);
+        const maxPages = maxPagesInput ? (parseInt(maxPagesInput.value) || 100) : (site.maxPages || 100);
+        site.maxPages = maxPages;
+
+        site.status = 'crawling';
+        AppState.crawlJobs[i] = { jobId: null, status: 'running', progress: 'Starting crawl...', progress_pct: 5, error: null };
+        renderSiteCards();
 
         try {
             const res = await fetch('/crawl', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, max_pages: maxPages }),
+                body: JSON.stringify({ url: site.url, max_pages: maxPages }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Crawl failed');
 
-            pollCrawl(data.job_id, data.output_dir, maxPages);
+            AppState.crawlJobs[i].jobId = data.job_id;
+            pollCrawlForSite(i, data.job_id);
         } catch (e) {
-            showError('crawlError', e.message);
-            btn.disabled = false;
-            hide('crawlProgress');
+            site.status = 'failed';
+            AppState.crawlJobs[i] = { jobId: null, status: 'failed', progress: '', progress_pct: 0, error: e.message };
+            renderSiteCards();
         }
     }
 
-    async function pollCrawl(jobId, outputDir, maxPages) {
+    function pollCrawlForSite(i, jobId) {
+        const site = AppState.sites[i];
         const poll = async () => {
             try {
                 const res = await fetch(`/crawl/${jobId}`);
                 const data = await res.json();
 
-                const pct = Math.min(95, (data.page_count / maxPages) * 100);
-                updateFill('crawlFill', data.status === 'completed' ? 100 : pct);
-                updateStatus('crawlStatus', data.progress || data.status);
+                const pct = site.maxPages > 0 ? Math.min(95, (data.page_count / site.maxPages) * 100) : 10;
+                AppState.crawlJobs[i].progress = data.progress || data.status;
+                AppState.crawlJobs[i].progress_pct = data.status === 'completed' ? 100 : pct;
+
+                // Update inline progress without full re-render
+                const fillEl = document.getElementById(`crawlFill-${i}`);
+                const statusEl = document.getElementById(`crawlStatus-${i}`);
+                if (fillEl) fillEl.style.width = AppState.crawlJobs[i].progress_pct + '%';
+                if (statusEl) statusEl.innerHTML = '<span class="spinner"></span>' + escapeHtml(AppState.crawlJobs[i].progress);
 
                 if (data.status === 'completed') {
-                    updateFill('crawlFill', 100);
-                    document.getElementById('crawlBtn').disabled = false;
-
-                    // Refresh sites list
-                    await loadSites();
-
-                    selectSite({
-                        domain: extractDomain(document.getElementById('urlInput').value),
-                        directory: outputDir,
-                        page_count: data.page_count,
-                    });
+                    site.status = 'crawled';
+                    site.directory = data.output_dir;
+                    site.page_count = data.page_count;
+                    AppState.crawlJobs[i].status = 'completed';
+                    renderSiteCards();
                     return;
                 }
                 if (data.status === 'failed') {
-                    showError('crawlError', data.error || 'Crawl failed');
-                    document.getElementById('crawlBtn').disabled = false;
-                    hide('crawlProgress');
+                    site.status = 'failed';
+                    AppState.crawlJobs[i] = { jobId, status: 'failed', progress: '', progress_pct: 0, error: data.error || 'Crawl failed' };
+                    renderSiteCards();
                     return;
                 }
-
                 setTimeout(poll, 2000);
             } catch (e) {
-                showError('crawlError', e.message);
-                document.getElementById('crawlBtn').disabled = false;
+                AppState.crawlJobs[i].error = e.message;
+                renderSiteCards();
             }
         };
         setTimeout(poll, 2000);
     }
 
-    // --- Analyze ---
-    async function startAnalysis() {
-        if (!currentSite) return;
-        const companyName = document.getElementById('companyName').value.trim();
+    // ---- Analyze ----
+    async function startAnalysisForSite(i) {
+        const site = AppState.sites[i];
+        if (!site || !site.directory) return alert('Site has not been crawled yet');
+
+        const nameInput = document.getElementById(`companyName-${i}`);
+        const companyName = nameInput ? nameInput.value.trim() : '';
         if (!companyName) return alert('Please enter a company name');
 
-        const btn = document.getElementById('analyzeBtn');
-        btn.disabled = true;
-        show('analyzeProgress');
-        hideError('analyzeError');
-        hide('step3');
-        updateStatus('analyzeStatus', 'Starting analysis...');
-        updateFill('analyzeFill', 5);
+        site.status = 'analyzing';
+        AppState.analyzeJobs[i] = { jobId: null, status: 'running', progress: 'Starting analysis...', progress_pct: 5, result: null, companyName, error: null };
+        renderSiteCards();
 
         try {
             const res = await fetch('/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    crawl_directory: currentSite.directory,
+                    crawl_directory: site.directory,
                     company_name: companyName,
+                    domain: site.domain,
                 }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Analysis failed');
 
-            analyzeJobId = data.job_id;
-            pollAnalysis(data.job_id);
+            AppState.analyzeJobs[i].jobId = data.job_id;
+            pollAnalysisForSite(i, data.job_id);
         } catch (e) {
-            showError('analyzeError', e.message);
-            btn.disabled = false;
-            hide('analyzeProgress');
+            site.status = 'crawled';
+            AppState.analyzeJobs[i] = { jobId: null, status: 'failed', progress: '', progress_pct: 0, result: null, companyName, error: e.message };
+            renderSiteCards();
         }
     }
 
-    async function pollAnalysis(jobId) {
+    function pollAnalysisForSite(i, jobId) {
         const stepPattern = /step\s*(\d+)/i;
-
         const poll = async () => {
             try {
                 const res = await fetch(`/analyze/${jobId}`);
                 const data = await res.json();
 
                 let pct = 10;
-                const match = data.progress.match(stepPattern);
-                if (match) pct = Math.min(95, (parseInt(match[1]) / 6) * 100);
+                if (data.progress) {
+                    const match = data.progress.match(stepPattern);
+                    if (match) pct = Math.min(95, (parseInt(match[1]) / 6) * 100);
+                }
 
-                updateFill('analyzeFill', data.status === 'completed' ? 100 : pct);
-                updateStatus('analyzeStatus', data.progress || data.status);
+                AppState.analyzeJobs[i].progress = data.progress || data.status;
+                AppState.analyzeJobs[i].progress_pct = data.status === 'completed' ? 100 : pct;
+
+                const fillEl = document.getElementById(`analyzeFill-${i}`);
+                const statusEl = document.getElementById(`analyzeStatus-${i}`);
+                if (fillEl) fillEl.style.width = AppState.analyzeJobs[i].progress_pct + '%';
+                if (statusEl) statusEl.innerHTML = '<span class="spinner"></span>' + escapeHtml(AppState.analyzeJobs[i].progress);
 
                 if (data.status === 'completed') {
-                    updateFill('analyzeFill', 100);
-                    document.getElementById('analyzeBtn').disabled = false;
-
-                    if (data.result && data.result.markdown_report) {
-                        showReport(data.result.markdown_report);
-                    }
-
-                    // Refresh benchmark dropdowns with new analysis
-                    await loadAnalyses();
+                    AppState.sites[i].status = 'analyzed';
+                    AppState.analyzeJobs[i].status = 'completed';
+                    AppState.analyzeJobs[i].result = data.result;
+                    await refreshAnalysesList();
+                    renderSiteCards();
                     return;
                 }
                 if (data.status === 'failed') {
-                    showError('analyzeError', data.error || 'Analysis failed');
-                    document.getElementById('analyzeBtn').disabled = false;
-                    hide('analyzeProgress');
+                    AppState.sites[i].status = 'crawled';
+                    AppState.analyzeJobs[i] = {
+                        jobId, status: 'failed', progress: '', progress_pct: 0,
+                        result: null, companyName: AppState.analyzeJobs[i].companyName,
+                        error: data.error || 'Analysis failed'
+                    };
+                    renderSiteCards();
                     return;
                 }
-
                 setTimeout(poll, 3000);
             } catch (e) {
-                showError('analyzeError', e.message);
-                document.getElementById('analyzeBtn').disabled = false;
+                AppState.analyzeJobs[i].error = e.message;
+                renderSiteCards();
             }
         };
         setTimeout(poll, 3000);
     }
 
-    // --- Report ---
-    function showReport(markdown) {
-        document.getElementById('reportContent').innerHTML = marked.parse(markdown);
-        show('step3');
-        document.getElementById('step3').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    async function downloadReport() {
-        if (!analyzeJobId) return;
+    // ---- Delete Analysis ----
+    async function deleteAnalysis(jobId) {
+        if (!confirm('Delete this analysis? This cannot be undone.')) return;
         try {
-            const res = await fetch(`/report/${analyzeJobId}`);
-            if (!res.ok) throw new Error('Failed to download');
-            const text = await res.text();
-            const blob = new Blob([text], { type: 'text/markdown' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `report-${analyzeJobId}.md`;
-            a.click();
-            URL.revokeObjectURL(a.href);
+            const res = await fetch(`/analyses/${encodeURIComponent(jobId)}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const data = await res.json();
+                return alert('Failed to delete: ' + (data.detail || 'Unknown error'));
+            }
+            // Remove from AppState and re-render
+            AppState.analyses = AppState.analyses.filter(a => a.job_id !== jobId);
+            renderSiteCards();
+            refreshAnalysesList();
         } catch (e) {
-            alert('Download failed: ' + e.message);
+            alert('Failed to delete: ' + e.message);
         }
     }
 
-    // --- Benchmark ---
-    async function loadAnalyses() {
+    // =============================================
+    // Benchmark Tab
+    // =============================================
+    async function refreshAnalysesList() {
         try {
             const res = await fetch('/analyses');
-            const analyses = await res.json();
-            const selA = document.getElementById('benchJobA');
-            const selB = document.getElementById('benchJobB');
+            AppState.analyses = await res.json();
+        } catch (e) {
+            console.error('Failed to load analyses', e);
+            return;
+        }
+        const selA = document.getElementById('benchJobANew');
+        const selB = document.getElementById('benchJobBNew');
+        if (selA && selB) {
             const defaultOpt = '<option value="">-- Select analysis --</option>';
             selA.innerHTML = defaultOpt;
             selB.innerHTML = defaultOpt;
-            analyses.forEach(a => {
-                const optA = document.createElement('option');
-                optA.value = a.job_id;
-                optA.textContent = `${a.company_name} (${a.job_id})`;
-                selA.appendChild(optA);
-                const optB = document.createElement('option');
-                optB.value = a.job_id;
-                optB.textContent = `${a.company_name} (${a.job_id})`;
-                selB.appendChild(optB);
+            AppState.analyses.forEach(a => {
+                const html = `<option value="${escapeHtml(a.job_id)}">${escapeHtml(a.company_name)} (${escapeHtml(a.job_id)})</option>`;
+                selA.innerHTML += html;
+                selB.innerHTML += html;
             });
-        } catch (e) {
-            console.error('Failed to load analyses', e);
         }
     }
 
-    async function loadBenchmarksList() {
+    async function refreshBenchmarksList() {
         try {
             const res = await fetch('/benchmarks');
-            const benchmarks = await res.json();
-            const sel = document.getElementById('benchSelect');
-            sel.innerHTML = '<option value="">-- Run a new benchmark --</option>';
-            benchmarks.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b.job_id;
-                opt.textContent = `${b.company_a} vs ${b.company_b} (${b.total_prompts} prompts) — ${b.job_id}`;
-                sel.appendChild(opt);
-            });
+            AppState.benchmarks = await res.json();
         } catch (e) {
-            console.error('Failed to load benchmarks list', e);
+            console.error('Failed to load benchmarks', e);
+            return;
+        }
+        renderBenchmarkHistory();
+        const reportType = document.getElementById('reportTypeSelect');
+        if (reportType && reportType.value === 'benchmark') {
+            populateReportDropdown();
         }
     }
 
-    async function loadExistingBenchmark(jobId) {
+    function renderBenchmarkHistory() {
+        const container = document.getElementById('benchmarkHistoryContainer');
+        if (!container) return;
+
+        if (AppState.benchmarks.length === 0) {
+            container.innerHTML = `<div style="text-align:center;padding:40px 24px;color:#b0b8d1;">
+                <div style="font-size:48px;margin-bottom:12px;opacity:0.5;">&#128202;</div>
+                <div style="font-size:15px;font-weight:600;color:#8890a4;">No benchmarks yet</div>
+                <div style="font-size:13px;margin-top:4px;">Run a benchmark above to compare two companies</div>
+            </div>`;
+            return;
+        }
+
+        let html = `<div class="site-card">
+            <div class="site-card-top">
+                <div class="site-card-header">
+                    <div class="site-card-icon" style="background:linear-gradient(135deg,#f7844a,#e74c3c);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    </div>
+                    <div class="site-card-info">
+                        <div class="domain">Benchmark History</div>
+                        <div class="url-text">${AppState.benchmarks.length} completed benchmark${AppState.benchmarks.length !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="site-card-body">`;
+
+        AppState.benchmarks.forEach(b => {
+            const aW = b.company_a_wins || 0;
+            const bW = b.company_b_wins || 0;
+            const scoreStr = `${aW} — ${bW}`;
+            let winnerHtml = '';
+            if (aW > bW) winnerHtml = `<span style="color:#22c55e;font-weight:700;font-size:12px;">&#127942; ${escapeHtml(b.company_a)} wins</span>`;
+            else if (bW > aW) winnerHtml = `<span style="color:#22c55e;font-weight:700;font-size:12px;">&#127942; ${escapeHtml(b.company_b)} wins</span>`;
+            else winnerHtml = `<span style="color:#9ca3af;font-weight:600;font-size:12px;">Tie</span>`;
+            const dateStr = b.created_at ? new Date(b.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+            html += `<div class="analysis-entry" style="cursor:pointer;" onclick="loadExistingBenchmarkNew('${escapeHtml(b.job_id)}')">
+                <div class="analysis-entry-icon" style="background:linear-gradient(135deg,#fde6d8,#fdd0b5);color:#e74c3c;">&#9878;</div>
+                <div class="analysis-entry-info">
+                    <div class="ae-company">${escapeHtml(b.company_a)} vs ${escapeHtml(b.company_b)}</div>
+                    <div class="ae-meta">
+                        <span style="font-weight:700;color:#1a1a2e;">${scoreStr}</span>
+                        ${winnerHtml}
+                        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg> ${b.total_prompts} prompts</span>
+                        ${dateStr ? `<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${dateStr}</span>` : ''}
+                        <span style="color:#ccc;font-size:11px;">${escapeHtml(b.job_id)}</span>
+                    </div>
+                </div>
+                <div class="analysis-entry-actions" style="display:flex;gap:8px;">
+                    <button class="btn-sm" onclick="event.stopPropagation();loadExistingBenchmarkNew('${escapeHtml(b.job_id)}')" style="padding:6px 12px;font-size:11px;">View</button>
+                    <button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteBenchmark('${escapeHtml(b.job_id)}')" title="Delete benchmark" style="padding:6px 10px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    </button>
+                </div>
+            </div>`;
+        });
+
+        html += `</div></div>`;
+        container.innerHTML = html;
+    }
+
+    async function loadExistingBenchmarkNew(jobId) {
         if (!jobId) {
-            hide('step5');
+            document.getElementById('benchmarkInlineResult').classList.add('hidden');
             return;
         }
         try {
             const res = await fetch(`/benchmark/${jobId}`);
             const data = await res.json();
             if (data.status === 'completed' && data.result) {
-                benchmarkJobId = jobId;
-                benchmarkMarkdown = data.result.markdown_report || '';
+                const container = document.getElementById('benchmarkInlineResult');
                 if (data.result.summary) {
-                    renderBenchmarkDashboard(data.result);
-                } else {
-                    document.getElementById('benchmarkReportContent').innerHTML = marked.parse(benchmarkMarkdown);
+                    renderBenchmarkDashboard(data.result, 'benchmarkInlineResult');
+                } else if (data.result.markdown_report) {
+                    container.innerHTML = `<div class="card"><div class="report-content">${marked.parse(data.result.markdown_report)}</div></div>`;
                 }
-                show('step5');
-                document.getElementById('step5').scrollIntoView({ behavior: 'smooth' });
+                container.classList.remove('hidden');
+                container.scrollIntoView({ behavior: 'smooth' });
             }
         } catch (e) {
             alert('Failed to load benchmark: ' + e.message);
         }
     }
 
-    async function startBenchmark() {
-        const jobA = document.getElementById('benchJobA').value;
-        const jobB = document.getElementById('benchJobB').value;
+    async function startBenchmarkNew() {
+        const jobA = document.getElementById('benchJobANew').value;
+        const jobB = document.getElementById('benchJobBNew').value;
         if (!jobA || !jobB) return alert('Please select both analyses');
+        if (jobA === jobB) return alert('Please select two different analyses');
 
-        const numPrompts = parseInt(document.getElementById('numPrompts').value) || 15;
-        const btn = document.getElementById('benchmarkBtn');
+        const numPrompts = parseInt(document.getElementById('numPromptsNew').value) || 15;
+        const btn = document.getElementById('benchmarkBtnNew');
         btn.disabled = true;
-        show('benchmarkProgress');
-        hideError('benchmarkError');
-        hide('step5');
-        updateStatus('benchmarkStatus', 'Starting benchmark...');
-        updateFill('benchmarkFill', 5);
+        showEl('benchmarkProgressNew');
+        hideEl('benchmarkErrorNew');
+        hideEl('benchmarkInlineResult');
+        updateStatusText('benchmarkStatusNew', 'Starting benchmark...');
+        updateFillWidth('benchmarkFillNew', 5);
 
         try {
             const res = await fetch('/benchmark', {
@@ -693,75 +1135,188 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Benchmark failed');
 
-            benchmarkJobId = data.job_id;
-            pollBenchmark(data.job_id, numPrompts);
+            pollBenchmarkNew(data.job_id, numPrompts);
         } catch (e) {
-            showError('benchmarkError', e.message);
+            showErrorText('benchmarkErrorNew', e.message);
             btn.disabled = false;
-            hide('benchmarkProgress');
+            hideEl('benchmarkProgressNew');
         }
     }
 
-    async function pollBenchmark(jobId, numPrompts) {
+    function pollBenchmarkNew(jobId, numPrompts) {
         const stepPattern = /Step\s+(\d+)\/(\d+)/;
-
         const poll = async () => {
             try {
                 const res = await fetch(`/benchmark/${jobId}`);
                 const data = await res.json();
 
                 let pct = 10;
-                const match = data.progress.match(stepPattern);
-                if (match) pct = Math.min(95, (parseInt(match[1]) / parseInt(match[2])) * 100);
+                if (data.progress) {
+                    const match = data.progress.match(stepPattern);
+                    if (match) pct = Math.min(95, (parseInt(match[1]) / parseInt(match[2])) * 100);
+                }
 
-                updateFill('benchmarkFill', data.status === 'completed' ? 100 : pct);
-                updateStatus('benchmarkStatus', data.progress || data.status);
+                updateFillWidth('benchmarkFillNew', data.status === 'completed' ? 100 : pct);
+                updateStatusText('benchmarkStatusNew', data.progress || data.status);
 
                 if (data.status === 'completed') {
-                    updateFill('benchmarkFill', 100);
-                    document.getElementById('benchmarkBtn').disabled = false;
+                    updateFillWidth('benchmarkFillNew', 100);
+                    document.getElementById('benchmarkBtnNew').disabled = false;
 
                     if (data.result) {
-                        benchmarkMarkdown = data.result.markdown_report || '';
+                        const container = document.getElementById('benchmarkInlineResult');
                         if (data.result.summary) {
-                            renderBenchmarkDashboard(data.result);
-                        } else {
-                            document.getElementById('benchmarkReportContent').innerHTML = marked.parse(benchmarkMarkdown);
+                            renderBenchmarkDashboard(data.result, 'benchmarkInlineResult');
+                        } else if (data.result.markdown_report) {
+                            container.innerHTML = `<div class="card"><div class="report-content">${marked.parse(data.result.markdown_report)}</div></div>`;
                         }
-                        show('step5');
-                        document.getElementById('step5').scrollIntoView({ behavior: 'smooth' });
-                        await loadBenchmarksList();
+                        container.classList.remove('hidden');
+                        container.scrollIntoView({ behavior: 'smooth' });
+                        await refreshBenchmarksList();
                     }
                     return;
                 }
                 if (data.status === 'failed') {
-                    showError('benchmarkError', data.error || 'Benchmark failed');
-                    document.getElementById('benchmarkBtn').disabled = false;
-                    hide('benchmarkProgress');
+                    showErrorText('benchmarkErrorNew', data.error || 'Benchmark failed');
+                    document.getElementById('benchmarkBtnNew').disabled = false;
+                    hideEl('benchmarkProgressNew');
                     return;
                 }
-
                 setTimeout(poll, 3000);
             } catch (e) {
-                showError('benchmarkError', e.message);
-                document.getElementById('benchmarkBtn').disabled = false;
+                showErrorText('benchmarkErrorNew', e.message);
+                document.getElementById('benchmarkBtnNew').disabled = false;
             }
         };
         setTimeout(poll, 3000);
     }
 
-    function downloadBenchmarkReport() {
-        if (!benchmarkMarkdown) return;
-        const blob = new Blob([benchmarkMarkdown], { type: 'text/markdown' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `benchmark-${benchmarkJobId}.md`;
-        a.click();
-        URL.revokeObjectURL(a.href);
+    // ---- Delete Benchmark ----
+    async function deleteBenchmark(jobId) {
+        if (!confirm('Delete this benchmark? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/benchmarks/${encodeURIComponent(jobId)}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const data = await res.json();
+                return alert('Failed to delete: ' + (data.detail || 'Unknown error'));
+            }
+            AppState.benchmarks = AppState.benchmarks.filter(b => b.job_id !== jobId);
+            renderBenchmarkHistory();
+            // Hide inline result if it was showing this benchmark
+            document.getElementById('benchmarkInlineResult').classList.add('hidden');
+        } catch (e) {
+            alert('Failed to delete: ' + e.message);
+        }
     }
 
-    // --- Benchmark Dashboard Renderer ---
-    function renderBenchmarkDashboard(result) {
+    // =============================================
+    // Reports Tab
+    // =============================================
+    function onReportTypeChange() {
+        populateReportDropdown();
+        document.getElementById('reportDisplayArea').classList.add('hidden');
+        document.getElementById('reportDisplayArea').innerHTML = '';
+        document.getElementById('downloadReportBtn').disabled = true;
+        AppState.currentBenchmarkReport = null;
+        AppState.currentAnalysisReport = null;
+    }
+
+    function populateReportDropdown() {
+        const type = document.getElementById('reportTypeSelect').value;
+        const sel = document.getElementById('reportSelect');
+        sel.innerHTML = '<option value="">-- Select a report --</option>';
+
+        if (type === 'benchmark') {
+            AppState.benchmarks.forEach(b => {
+                sel.innerHTML += `<option value="${escapeHtml(b.job_id)}">${escapeHtml(b.company_a)} vs ${escapeHtml(b.company_b)} (${b.total_prompts} prompts)</option>`;
+            });
+        } else {
+            AppState.analyses.forEach(a => {
+                sel.innerHTML += `<option value="${escapeHtml(a.job_id)}">${escapeHtml(a.company_name)} (${escapeHtml(a.job_id)})</option>`;
+            });
+        }
+    }
+
+    async function onReportSelected() {
+        const type = document.getElementById('reportTypeSelect').value;
+        const jobId = document.getElementById('reportSelect').value;
+        const area = document.getElementById('reportDisplayArea');
+        const dlBtn = document.getElementById('downloadReportBtn');
+
+        if (!jobId) {
+            area.classList.add('hidden');
+            area.innerHTML = '';
+            dlBtn.disabled = true;
+            AppState.currentBenchmarkReport = null;
+            AppState.currentAnalysisReport = null;
+            return;
+        }
+
+        area.innerHTML = '<p style="text-align:center;padding:24px;"><span class="spinner"></span> Loading report...</p>';
+        area.classList.remove('hidden');
+
+        try {
+            if (type === 'benchmark') {
+                const res = await fetch(`/benchmark/${jobId}`);
+                const data = await res.json();
+                if (data.status === 'completed' && data.result) {
+                    AppState.currentBenchmarkReport = data.result;
+                    AppState.currentAnalysisReport = null;
+                    if (data.result.summary) {
+                        renderBenchmarkDashboard(data.result, 'reportDisplayArea');
+                    } else if (data.result.markdown_report) {
+                        area.innerHTML = `<div class="card"><div class="report-content">${marked.parse(data.result.markdown_report)}</div></div>`;
+                    }
+                    dlBtn.disabled = false;
+                } else {
+                    area.innerHTML = '<p style="text-align:center;color:#aaa;padding:24px;">Report not available.</p>';
+                    dlBtn.disabled = true;
+                }
+            } else {
+                const res = await fetch(`/analyze/${jobId}`);
+                const data = await res.json();
+                if (data.status === 'completed' && data.result && data.result.markdown_report) {
+                    AppState.currentAnalysisReport = { jobId, markdown: data.result.markdown_report, companyName: data.result.company_name };
+                    AppState.currentBenchmarkReport = null;
+                    area.innerHTML = `<div class="card"><div class="report-content">${marked.parse(data.result.markdown_report)}</div></div>`;
+                    dlBtn.disabled = false;
+                } else {
+                    area.innerHTML = '<p style="text-align:center;color:#aaa;padding:24px;">Report not available.</p>';
+                    dlBtn.disabled = true;
+                }
+            }
+        } catch (e) {
+            area.innerHTML = `<p class="error" style="padding:24px;">Failed to load report: ${escapeHtml(e.message)}</p>`;
+            dlBtn.disabled = true;
+        }
+    }
+
+    function downloadCurrentReport() {
+        if (AppState.currentBenchmarkReport) {
+            const md = AppState.currentBenchmarkReport.markdown_report || '';
+            if (!md) return alert('No markdown report available');
+            const blob = new Blob([md], { type: 'text/markdown' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'benchmark-report.md';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } else if (AppState.currentAnalysisReport) {
+            const md = AppState.currentAnalysisReport.markdown;
+            if (!md) return alert('No markdown report available');
+            const blob = new Blob([md], { type: 'text/markdown' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${AppState.currentAnalysisReport.companyName || 'analysis'}-report.md`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+    }
+
+    // =============================================
+    // Benchmark Dashboard Renderer (parameterized)
+    // =============================================
+    function renderBenchmarkDashboard(result, containerId) {
         const s = result.summary;
         const evals = result.evaluations || [];
         const cA = s.company_a;
@@ -774,35 +1329,33 @@
         const bPct = Math.round((bWins / total) * 100);
         const tPct = 100 - aPct - bPct;
 
-        let winner, loser, winnerWins, loserWins;
-        if (aWins > bWins) { winner = cA; loser = cB; winnerWins = aWins; loserWins = bWins; }
-        else if (bWins > aWins) { winner = cB; loser = cA; winnerWins = bWins; loserWins = aWins; }
+        let winner;
+        if (aWins > bWins) { winner = cA; }
+        else if (bWins > aWins) { winner = cB; }
         else { winner = null; }
 
-        // 1. Hero Banner
         let heroHTML = `<div class="hero-banner">
-            <div class="matchup">${cA} vs ${cB}</div>
+            <div class="matchup">${escapeHtml(cA)} vs ${escapeHtml(cB)}</div>
             <div class="scoreboard">${aWins} &mdash; ${bWins}</div>`;
         if (winner) {
-            heroHTML += `<div class="winner-label"><span class="trophy">&#127942;</span> ${winner} WINS</div>`;
+            heroHTML += `<div class="winner-label"><span class="trophy">&#127942;</span> ${escapeHtml(winner)} WINS</div>`;
         } else {
             heroHTML += `<div class="winner-label">It's a Tie!</div>`;
         }
         heroHTML += `</div>`;
 
-        // 2. Metric Cards
         const metricsHTML = `<div class="metric-cards">
             <div class="metric-card">
                 <div class="metric-label">Total Prompts</div>
                 <div class="metric-value">${total}</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">${cA} Wins</div>
+                <div class="metric-label">${escapeHtml(cA)} Wins</div>
                 <div class="metric-value" style="color:var(--color-a)">${aWins}</div>
                 <div class="mini-bar"><div class="mini-fill" style="width:${aPct}%;background:var(--color-a)"></div></div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">${cB} Wins</div>
+                <div class="metric-label">${escapeHtml(cB)} Wins</div>
                 <div class="metric-value" style="color:var(--color-b)">${bWins}</div>
                 <div class="mini-bar"><div class="mini-fill" style="width:${bPct}%;background:var(--color-b)"></div></div>
             </div>
@@ -812,7 +1365,6 @@
             </div>
         </div>`;
 
-        // 3. Win Rate Bar
         const winrateHTML = `<div class="winrate-bar-wrap card">
             <h3>Win Rate Distribution</h3>
             <div class="winrate-bar">
@@ -821,13 +1373,12 @@
                 ${bPct > 0 ? `<div class="seg seg-b" style="width:${bPct}%">${bPct}%</div>` : ''}
             </div>
             <div class="winrate-legend">
-                <span class="leg-a">${cA}</span>
+                <span class="leg-a">${escapeHtml(cA)}</span>
                 <span class="leg-tie">Tie</span>
-                <span class="leg-b">${cB}</span>
+                <span class="leg-b">${escapeHtml(cB)}</span>
             </div>
         </div>`;
 
-        // 4. Sentiment Comparison
         function sentimentColor(v) {
             if (v >= 0.5) return '#22c55e';
             if (v >= 0.2) return '#84cc16';
@@ -840,7 +1391,7 @@
             const col = sentimentColor(value);
             return `<div class="sentiment-card">
                 <div class="sent-label">Avg Sentiment</div>
-                <div class="sent-company">${company}</div>
+                <div class="sent-company">${escapeHtml(company)}</div>
                 <div class="sent-value" style="color:${col}">${value.toFixed(2)}</div>
                 <div class="sent-track">
                     <div class="sent-fill" style="width:${pct}%;background:linear-gradient(90deg,#ef4444,#eab308,#22c55e);opacity:0.3"></div>
@@ -854,7 +1405,6 @@
             ${sentimentGauge(cB, s.company_b_avg_sentiment)}
         </div>`;
 
-        // 5. Category Breakdown
         const categories = {};
         evals.forEach(ev => {
             const cat = ev.category || 'other';
@@ -869,7 +1419,7 @@
             const aW = Math.round((counts.a / catTotal) * 100);
             const bW = Math.round((counts.b / catTotal) * 100);
             catRows += `<tr>
-                <td class="cat-name">${cat.replace(/_/g, ' ')}</td>
+                <td class="cat-name">${escapeHtml(cat.replace(/_/g, ' '))}</td>
                 <td>${counts.total}</td>
                 <td>${counts.a}</td>
                 <td>${counts.b}</td>
@@ -882,19 +1432,18 @@
         const categoryHTML = `<div class="card">
             <h3 style="font-size:14px;color:#555;margin-bottom:8px;font-weight:600">Category Breakdown</h3>
             <table class="category-table">
-                <thead><tr><th>Category</th><th>Prompts</th><th>${cA}</th><th>${cB}</th><th>Distribution</th></tr></thead>
+                <thead><tr><th>Category</th><th>Prompts</th><th>${escapeHtml(cA)}</th><th>${escapeHtml(cB)}</th><th>Distribution</th></tr></thead>
                 <tbody>${catRows}</tbody>
             </table>
         </div>`;
 
-        // 6. Perception Panels
         function pillList(items, cls) {
             if (!items || items.length === 0) return '<span style="font-size:12px;color:#aaa">None noted</span>';
-            return items.map(i => `<span class="pill ${cls}">${i}</span>`).join('');
+            return items.map(i => `<span class="pill ${cls}">${escapeHtml(i)}</span>`).join('');
         }
         const perceptionHTML = `<div class="perception-row">
             <div class="perception-card" style="border-top:3px solid var(--color-a)">
-                <h4 style="color:var(--color-a)">${cA}</h4>
+                <h4 style="color:var(--color-a)">${escapeHtml(cA)}</h4>
                 <div class="perc-section">
                     <div class="perc-section-label">Strengths</div>
                     ${pillList(s.company_a_top_strengths, 'pill-green')}
@@ -905,7 +1454,7 @@
                 </div>
             </div>
             <div class="perception-card" style="border-top:3px solid var(--color-b)">
-                <h4 style="color:var(--color-b)">${cB}</h4>
+                <h4 style="color:var(--color-b)">${escapeHtml(cB)}</h4>
                 <div class="perc-section">
                     <div class="perc-section-label">Strengths</div>
                     ${pillList(s.company_b_top_strengths, 'pill-green')}
@@ -917,29 +1466,25 @@
             </div>
         </div>`;
 
-        // 7. Key Insights
         let insightsHTML = '';
         if (s.key_insights && s.key_insights.length > 0) {
             insightsHTML = `<div class="insights-box">
                 <div class="insights-header">&#128161; Key Insights</div>
-                <ul>${s.key_insights.map(i => `<li>${i}</li>`).join('')}</ul>
+                <ul>${s.key_insights.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>
             </div>`;
         }
 
-        // 8. Detailed Evaluations Accordion
         let accordionHTML = '<div class="eval-accordion"><h3 style="font-size:14px;color:#555;margin-bottom:12px;font-weight:600">Detailed Evaluations</h3>';
         evals.forEach((ev, idx) => {
-            const winBadge = ev.winner === 'company_a' ? `<span class="badge badge-a">${cA}</span>`
-                : ev.winner === 'company_b' ? `<span class="badge badge-b">${cB}</span>`
+            const winBadge = ev.winner === 'company_a' ? `<span class="badge badge-a">${escapeHtml(cA)}</span>`
+                : ev.winner === 'company_b' ? `<span class="badge badge-b">${escapeHtml(cB)}</span>`
                 : `<span class="badge badge-tie">Tie</span>`;
-
             const mA = ev.company_a_mention || {};
             const mB = ev.company_b_mention || {};
-
             accordionHTML += `<div class="eval-item">
                 <div class="eval-header" onclick="this.parentElement.classList.toggle('open')">
                     <span class="eval-num">#${idx + 1}</span>
-                    <span class="badge badge-category">${(ev.category || '').replace(/_/g, ' ')}</span>
+                    <span class="badge badge-category">${escapeHtml((ev.category || '').replace(/_/g, ' '))}</span>
                     ${winBadge}
                     <span class="eval-prompt-preview">${escapeHtml(ev.prompt_text || '')}</span>
                     <span class="chevron">&#9654;</span>
@@ -951,16 +1496,16 @@
                     </div>
                     <div class="eval-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                         <div>
-                            <div class="eval-section-label">${cA} Sentiment</div>
+                            <div class="eval-section-label">${escapeHtml(cA)} Sentiment</div>
                             <strong style="color:${sentimentColor(mA.sentiment || 0)}">${(mA.sentiment || 0).toFixed(2)}</strong>
-                            ${mA.strengths_mentioned && mA.strengths_mentioned.length ? '<br>' + mA.strengths_mentioned.map(s => `<span class="pill pill-green">${s}</span>`).join('') : ''}
-                            ${mA.weaknesses_mentioned && mA.weaknesses_mentioned.length ? '<br>' + mA.weaknesses_mentioned.map(s => `<span class="pill pill-red">${s}</span>`).join('') : ''}
+                            ${mA.strengths_mentioned && mA.strengths_mentioned.length ? '<br>' + mA.strengths_mentioned.map(x => `<span class="pill pill-green">${escapeHtml(x)}</span>`).join('') : ''}
+                            ${mA.weaknesses_mentioned && mA.weaknesses_mentioned.length ? '<br>' + mA.weaknesses_mentioned.map(x => `<span class="pill pill-red">${escapeHtml(x)}</span>`).join('') : ''}
                         </div>
                         <div>
-                            <div class="eval-section-label">${cB} Sentiment</div>
+                            <div class="eval-section-label">${escapeHtml(cB)} Sentiment</div>
                             <strong style="color:${sentimentColor(mB.sentiment || 0)}">${(mB.sentiment || 0).toFixed(2)}</strong>
-                            ${mB.strengths_mentioned && mB.strengths_mentioned.length ? '<br>' + mB.strengths_mentioned.map(s => `<span class="pill pill-green">${s}</span>`).join('') : ''}
-                            ${mB.weaknesses_mentioned && mB.weaknesses_mentioned.length ? '<br>' + mB.weaknesses_mentioned.map(s => `<span class="pill pill-red">${s}</span>`).join('') : ''}
+                            ${mB.strengths_mentioned && mB.strengths_mentioned.length ? '<br>' + mB.strengths_mentioned.map(x => `<span class="pill pill-green">${escapeHtml(x)}</span>`).join('') : ''}
+                            ${mB.weaknesses_mentioned && mB.weaknesses_mentioned.length ? '<br>' + mB.weaknesses_mentioned.map(x => `<span class="pill pill-red">${escapeHtml(x)}</span>`).join('') : ''}
                         </div>
                     </div>
                     ${ev.analysis_notes ? `<div class="eval-section"><div class="eval-section-label">Analysis Notes</div><p>${escapeHtml(ev.analysis_notes)}</p></div>` : ''}
@@ -970,34 +1515,70 @@
         });
         accordionHTML += '</div>';
 
-        document.getElementById('benchmarkReportContent').innerHTML =
+        document.getElementById(containerId).innerHTML =
             heroHTML + metricsHTML + winrateHTML + sentimentHTML + categoryHTML + perceptionHTML + insightsHTML + accordionHTML;
     }
 
+    // =============================================
+    // Helpers
+    // =============================================
     function escapeHtml(text) {
         const d = document.createElement('div');
         d.textContent = text;
         return d.innerHTML;
     }
 
-    // --- Helpers ---
     function extractDomain(url) {
         try { return new URL(url).hostname; } catch { return url; }
     }
-    function show(id) { document.getElementById(id).classList.remove('hidden'); }
-    function hide(id) { document.getElementById(id).classList.add('hidden'); }
-    function showError(id, msg) {
+
+    function directoriesMatch(dir1, dir2) {
+        if (!dir1 || !dir2) return false;
+        if (dir1 === dir2) return true;
+        const n1 = dir1.replace(/\/+$/, '');
+        const n2 = dir2.replace(/\/+$/, '');
+        return n1 === n2 || n1.endsWith('/' + n2) || n2.endsWith('/' + n1);
+    }
+
+    function showEl(id) { document.getElementById(id).classList.remove('hidden'); }
+    function hideEl(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function showErrorText(id, msg) {
         const el = document.getElementById(id);
         el.textContent = msg;
         el.classList.remove('hidden');
     }
-    function hideError(id) { document.getElementById(id).classList.add('hidden'); }
-    function updateStatus(id, text) {
-        document.getElementById(id).innerHTML = '<span class="spinner"></span>' + text;
+
+    function updateStatusText(id, text) {
+        document.getElementById(id).innerHTML = '<span class="spinner"></span>' + escapeHtml(text);
     }
-    function updateFill(id, pct) {
+
+    function updateFillWidth(id, pct) {
         document.getElementById(id).style.width = pct + '%';
     }
+
+    // =============================================
+    // Expose functions for onclick in dynamic HTML
+    // =============================================
+    window.switchTab = switchTab;
+    window.addWebsite = addWebsite;
+    window.removeSite = removeSite;
+    window.startCrawlForSite = startCrawlForSite;
+    window.startAnalysisForSite = startAnalysisForSite;
+    window.deleteAnalysis = deleteAnalysis;
+    window.startBenchmarkNew = startBenchmarkNew;
+    window.loadExistingBenchmarkNew = loadExistingBenchmarkNew;
+    window.deleteBenchmark = deleteBenchmark;
+    window.onReportTypeChange = onReportTypeChange;
+    window.onReportSelected = onReportSelected;
+    window.downloadCurrentReport = downloadCurrentReport;
+
+    // =============================================
+    // Init
+    // =============================================
+    loadSitesFromAPI();
+    refreshAnalysesList();
+    refreshBenchmarksList();
 </script>
 </body>
 </html>

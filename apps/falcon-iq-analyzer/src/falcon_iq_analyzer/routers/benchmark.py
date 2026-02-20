@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from fastapi import APIRouter, HTTPException
 
@@ -22,11 +23,16 @@ async def list_benchmarks() -> list[dict]:
     results = []
     for j in jobs:
         r = j.benchmark_result
+        s = r.summary if r else None
         results.append({
             "job_id": j.job_id,
             "company_a": r.company_a if r else "",
             "company_b": r.company_b if r else "",
-            "total_prompts": r.summary.total_prompts if r and r.summary else 0,
+            "total_prompts": s.total_prompts if s else 0,
+            "company_a_wins": s.company_a_wins if s else 0,
+            "company_b_wins": s.company_b_wins if s else 0,
+            "ties": s.ties if s else 0,
+            "created_at": j.created_at,
         })
     return results
 
@@ -74,3 +80,27 @@ async def get_benchmark_status(job_id: str) -> BenchmarkJobStatus:
         result=job.benchmark_result,
         error=job.error,
     )
+
+
+@router.delete("/benchmarks/{job_id}")
+async def delete_benchmark(job_id: str) -> dict:
+    """Delete a completed benchmark and its persisted files."""
+    job = benchmark_job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Benchmark not found")
+
+    from falcon_iq_analyzer.storage import create_storage_service
+
+    storage = create_storage_service()
+    try:
+        result_files = storage.list_files(f"benchmarks/benchmark-result-{job_id}.json")
+        report_files = storage.list_files(f"benchmarks/benchmark-report-{job_id}.md")
+        for rel_path in result_files + report_files:
+            full_path = os.path.join(settings.results_dir, rel_path)
+            if os.path.isfile(full_path):
+                os.remove(full_path)
+    except Exception:
+        pass  # Best effort
+
+    benchmark_job_manager.delete_job(job_id)
+    return {"status": "deleted", "job_id": job_id}

@@ -49,6 +49,11 @@ async def run_analysis(
 ) -> None:
     """Run the full 6-step analysis pipeline."""
     try:
+        # Store crawl_directory on the job for later lookups
+        job = job_manager.get_job(job_id)
+        if job:
+            job.crawl_directory = crawl_directory
+
         cache = DiskCache(crawl_directory)
         storage = create_storage_service()
 

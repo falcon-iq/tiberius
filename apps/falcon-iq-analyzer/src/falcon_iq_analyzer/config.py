@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     s3_bucket_name: str = ""
     aws_region: str = "us-east-1"
     results_dir: str = "results"
-    crawled_sites_dir: str = "crawled_sites"
+    crawled_sites_dir: str = "../falcon-iq-crawler/crawled_pages"
 
     model_config = {
         "env_prefix": "WEB_ANALYZER_",

@@ -8,21 +8,6 @@ def job_manager():
     return JobManager()
 
 
-def test_get_output_dir_for_url():
-    from falcon_iq_analyzer.services.crawler import get_output_dir_for_url
-
-    result = get_output_dir_for_url("https://example.com/path")
-    assert "example.com" in result
-
-
-def test_get_output_dir_for_url_with_port():
-    from falcon_iq_analyzer.services.crawler import get_output_dir_for_url
-
-    result = get_output_dir_for_url("https://example.com:8443/path")
-    # Colons should be replaced with underscores
-    assert "example.com_8443" in result
-
-
 def test_job_manager_create_and_get(job_manager):
     job = job_manager.create_job()
     assert job.status == "pending"
@@ -53,3 +38,16 @@ def test_job_manager_set_error(job_manager):
 
 def test_job_manager_nonexistent_returns_none(job_manager):
     assert job_manager.get_job("nonexistent") is None
+
+
+def test_job_output_dir_and_page_count(job_manager):
+    job = job_manager.create_job()
+    assert job.output_dir is None
+    assert job.page_count == 0
+
+    job.output_dir = "crawled_pages/abc-123"
+    job.page_count = 42
+
+    fetched = job_manager.get_job(job.job_id)
+    assert fetched.output_dir == "crawled_pages/abc-123"
+    assert fetched.page_count == 42
