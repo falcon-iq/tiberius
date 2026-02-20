@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@theme inline {
+  --color-primary: #4a6cf7;
+  --color-primary-hover: #3a5ce5;
+  --color-secondary: #f7844a;
+  --color-app-bg: #f5f7fa;
+  --color-card: #ffffff;
+  --color-company-a: #4a6cf7;
+  --color-company-b: #f7844a;
+  --color-tie: #adb5bd;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+  }
+}
+
+@layer components {
+  /* Spinner used in progress states */
+  .spinner-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ddd;
+    border-top-color: #4a6cf7;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  /* Markdown report styles */
+  .report-content {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .report-content h1 {
+    text-align: left;
+    font-size: 24px;
+    margin: 20px 0 12px;
+    color: #1a1a2e;
+  }
+  .report-content h2 {
+    font-size: 20px;
+    margin: 20px 0 10px;
+    color: #1a1a2e;
+  }
+  .report-content h3 {
+    font-size: 16px;
+    margin: 16px 0 8px;
+    color: #1a1a2e;
+  }
+  .report-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+  }
+  .report-content th,
+  .report-content td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 13px;
+  }
+  .report-content th {
+    background: #f8f9fa;
+    font-weight: 600;
+  }
+  .report-content ul,
+  .report-content ol {
+    padding-left: 24px;
+    margin: 8px 0;
+  }
+  .report-content p {
+    margin: 8px 0;
+  }
+  .report-content code {
+    background: #f5f7fa;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .report-content pre {
+    background: #f5f7fa;
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 12px;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes growWidth {
+  from {
+    width: 0%;
+  }
+}
