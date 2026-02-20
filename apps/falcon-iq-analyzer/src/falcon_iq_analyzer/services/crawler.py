@@ -1,6 +1,7 @@
 import asyncio
+import json
 import logging
-from urllib.parse import urlparse
+import os
 
 import httpx
 
@@ -40,8 +41,18 @@ async def run_crawl(
                 job_manager.set_error(job_id, "Crawler API did not return a crawlId")
                 return None
 
+            # Compute the actual output directory based on crawl_id
+            output_dir = os.path.join(settings.crawled_sites_dir, crawl_id)
+
             logger.info("Crawl started: crawlId=%s for %s", crawl_id, url)
-            job_manager.update_status(job_id, "running", f"Crawling... (crawlId={crawl_id})")
+            job_manager.update_status(
+                job_id, "running", f"Crawling... (crawlId={crawl_id})"
+            )
+
+            # Store output_dir on the job immediately so status endpoint can return it
+            job = job_manager.get_job(job_id)
+            if job:
+                job.output_dir = output_dir
 
             # Poll for completion
             while True:
@@ -54,12 +65,30 @@ async def run_crawl(
                 crawl_status = status_data.get("status", "").upper()
                 pages_crawled = status_data.get("pagesDownloaded", 0)
 
+                # Update page_count on the job during polling
+                if job:
+                    job.page_count = pages_crawled
+
                 if crawl_status == "COMPLETED":
                     job_manager.update_status(
                         job_id, "completed",
                         f"Crawl complete: {pages_crawled} pages",
                     )
-                    logger.info("Crawl completed: %d pages for %s", pages_crawled, url)
+                    if job:
+                        job.page_count = pages_crawled
+                    logger.info("Crawl completed: %d pages for %s (dir: %s)", pages_crawled, url, output_dir)
+
+                    # Write metadata so GET /sites can map directory back to domain
+                    try:
+                        from urllib.parse import urlparse
+                        domain = urlparse(url).hostname or url
+                        os.makedirs(output_dir, exist_ok=True)
+                        meta_path = os.path.join(output_dir, "_metadata.json")
+                        with open(meta_path, "w") as f:
+                            json.dump({"domain": domain, "url": url, "crawl_id": crawl_id}, f)
+                    except Exception:
+                        logger.warning("Failed to write crawl metadata for %s", output_dir, exc_info=True)
+
                     return crawl_id
 
                 elif crawl_status == "FAILED":
@@ -71,7 +100,7 @@ async def run_crawl(
                 else:
                     job_manager.update_status(
                         job_id, "running",
-                        f"Crawling... {pages_crawled} pages downloaded",
+                        f"Crawling... {pages_crawled} pages downloaded (crawlId={crawl_id})",
                     )
 
     except httpx.HTTPError as e:
@@ -82,11 +111,3 @@ async def run_crawl(
         logger.exception("Crawler failed")
         job_manager.set_error(job_id, str(e))
         return None
-
-
-def get_output_dir_for_url(url: str) -> str:
-    """Return the crawl output directory for a given URL."""
-    domain = urlparse(url).netloc or urlparse(url).path
-    domain = domain.replace(":", "_")
-    base_dir = settings.crawled_sites_dir
-    return f"{base_dir}/{domain}"

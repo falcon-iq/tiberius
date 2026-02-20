@@ -1,7 +1,8 @@
 import json
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from falcon_iq_analyzer.models.domain import AnalysisResult, BenchmarkResult
@@ -17,6 +18,11 @@ class Job:
     result: Optional[AnalysisResult] = None
     benchmark_result: Optional[BenchmarkResult] = None
     error: Optional[str] = None
+    output_dir: Optional[str] = None
+    page_count: int = 0
+    crawl_directory: Optional[str] = None
+    domain: Optional[str] = None
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class JobManager:
@@ -65,6 +71,13 @@ class JobManager:
             job.status = "failed"
             job.error = error
 
+    def delete_job(self, job_id: str) -> bool:
+        """Remove a job from the in-memory store. Returns True if found and removed."""
+        if job_id in self._jobs:
+            del self._jobs[job_id]
+            return True
+        return False
+
     def load_persisted_results(self) -> None:
         """Load persisted analysis results from storage."""
         from falcon_iq_analyzer.storage import create_storage_service
@@ -86,7 +99,24 @@ class JobManager:
                         continue
                     data = json.loads(content)
                     result = AnalysisResult(**data)
-                    job = Job(job_id=job_id, status="completed", result=result)
+
+                    # Extract crawl_directory from file path: "crawl_dir/reports/result-xxx.json"
+                    crawl_directory = None
+                    domain = None
+                    if "/reports/" in result_file:
+                        crawl_directory = result_file.rsplit("/reports/", 1)[0]
+                        # Try to extract domain from last path segment (e.g., "crawled_sites/www.example.com")
+                        last_seg = crawl_directory.rsplit("/", 1)[-1] if "/" in crawl_directory else crawl_directory
+                        if "." in last_seg and not last_seg.replace("-", "").replace("_", "").isalnum():
+                            domain = last_seg.replace("www.", "")
+
+                    job = Job(
+                        job_id=job_id,
+                        status="completed",
+                        result=result,
+                        crawl_directory=crawl_directory,
+                        domain=domain,
+                    )
                     self._jobs[job_id] = job
                     loaded += 1
                 except Exception:

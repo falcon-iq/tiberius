@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -5,6 +7,7 @@ class AnalyzeRequest(BaseModel):
     crawl_directory: str
     company_name: str
     locale_filter: str = "en"
+    domain: Optional[str] = None
 
 
 class CompareRequest(BaseModel):
