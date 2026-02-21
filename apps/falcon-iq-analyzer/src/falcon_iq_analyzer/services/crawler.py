@@ -42,7 +42,12 @@ async def run_crawl(
                 return None
 
             # Compute the actual output directory based on crawl_id
-            output_dir = os.path.join(settings.crawled_sites_dir, crawl_id)
+            # In S3 mode, use just the crawl_id (S3 prefix is crawls/{crawl_id}/)
+            # In local mode, use the full filesystem path
+            if settings.storage_type == "s3":
+                output_dir = crawl_id
+            else:
+                output_dir = os.path.join(settings.crawled_sites_dir, crawl_id)
 
             logger.info("Crawl started: crawlId=%s for %s", crawl_id, url)
             job_manager.update_status(
@@ -82,10 +87,22 @@ async def run_crawl(
                     try:
                         from urllib.parse import urlparse
                         domain = urlparse(url).hostname or url
-                        os.makedirs(output_dir, exist_ok=True)
-                        meta_path = os.path.join(output_dir, "_metadata.json")
-                        with open(meta_path, "w") as f:
-                            json.dump({"domain": domain, "url": url, "crawl_id": crawl_id}, f)
+                        metadata = {"domain": domain, "url": url, "crawl_id": crawl_id}
+
+                        if settings.storage_type == "s3":
+                            import boto3
+                            s3 = boto3.client("s3", region_name=settings.aws_region)
+                            s3.put_object(
+                                Bucket=settings.s3_bucket_name,
+                                Key=f"crawls/{crawl_id}/_metadata.json",
+                                Body=json.dumps(metadata),
+                                ContentType="application/json",
+                            )
+                        else:
+                            os.makedirs(output_dir, exist_ok=True)
+                            meta_path = os.path.join(output_dir, "_metadata.json")
+                            with open(meta_path, "w") as f:
+                                json.dump(metadata, f)
                     except Exception:
                         logger.warning("Failed to write crawl metadata for %s", output_dir, exc_info=True)
 
