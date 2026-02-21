@@ -56,6 +56,13 @@ async def get_crawl_status(job_id: str) -> CrawlStatus:
 @router.get("/sites", response_model=List[SiteInfo])
 async def list_sites() -> List[SiteInfo]:
     """List already-crawled sites, reading _metadata.json for domain info."""
+    if settings.storage_type == "s3":
+        return _list_sites_s3()
+    return _list_sites_local()
+
+
+def _list_sites_local() -> List[SiteInfo]:
+    """List crawled sites from local filesystem."""
     base_dir = settings.crawled_sites_dir
     sites: List[SiteInfo] = []
 
@@ -87,27 +94,80 @@ async def list_sites() -> List[SiteInfo]:
     return sites
 
 
+def _list_sites_s3() -> List[SiteInfo]:
+    """List crawled sites from S3 bucket under crawls/ prefix."""
+    import boto3
+
+    s3 = boto3.client("s3", region_name=settings.aws_region)
+    bucket = settings.s3_bucket_name
+    sites: List[SiteInfo] = []
+
+    # List all "directories" under crawls/
+    paginator = s3.get_paginator("list_objects_v2")
+    crawl_ids: set[str] = set()
+
+    for page in paginator.paginate(Bucket=bucket, Prefix="crawls/", Delimiter="/"):
+        for prefix_obj in page.get("CommonPrefixes", []):
+            # prefix_obj["Prefix"] looks like "crawls/<crawl_id>/"
+            crawl_id = prefix_obj["Prefix"].split("/")[1]
+            if crawl_id:
+                crawl_ids.add(crawl_id)
+
+    for crawl_id in sorted(crawl_ids):
+        # Count HTML files
+        page_count = 0
+        for page in paginator.paginate(Bucket=bucket, Prefix=f"crawls/{crawl_id}/"):
+            for obj in page.get("Contents", []):
+                if obj["Key"].endswith((".html", ".htm")):
+                    page_count += 1
+
+        if page_count == 0:
+            continue
+
+        domain = crawl_id  # fallback
+        # Try to read _metadata.json
+        try:
+            meta_response = s3.get_object(
+                Bucket=bucket, Key=f"crawls/{crawl_id}/_metadata.json"
+            )
+            meta = json.loads(meta_response["Body"].read().decode("utf-8"))
+            domain = meta.get("domain", crawl_id)
+        except Exception:
+            pass
+
+        sites.append(
+            SiteInfo(
+                domain=domain,
+                directory=crawl_id,
+                page_count=page_count,
+            )
+        )
+
+    return sites
+
+
 @router.delete("/sites/{domain}")
 async def delete_site(domain: str) -> dict:
-    """Delete a crawled site directory by domain name.
+    """Delete a crawled site directory by domain name."""
+    if settings.storage_type == "s3":
+        return _delete_site_s3(domain)
+    return _delete_site_local(domain)
 
-    Searches all directories for a matching _metadata.json domain,
-    falls back to matching the directory name directly.
-    """
+
+def _delete_site_local(domain: str) -> dict:
+    """Delete a crawled site from local filesystem."""
     base_dir = settings.crawled_sites_dir
     base_real = os.path.realpath(base_dir)
 
     if not os.path.isdir(base_dir):
         raise HTTPException(status_code=404, detail="Site not found")
 
-    # Search for the directory matching this domain
     target_dir = None
     for entry in os.listdir(base_dir):
         site_dir = os.path.join(base_dir, entry)
         if not os.path.isdir(site_dir):
             continue
 
-        # Check _metadata.json first
         meta_path = os.path.join(site_dir, "_metadata.json")
         if os.path.isfile(meta_path):
             try:
@@ -119,7 +179,6 @@ async def delete_site(domain: str) -> dict:
             except Exception:
                 pass
 
-        # Fallback: directory name matches domain
         if entry == domain:
             target_dir = site_dir
             break
@@ -127,12 +186,55 @@ async def delete_site(domain: str) -> dict:
     if not target_dir:
         raise HTTPException(status_code=404, detail="Site not found")
 
-    # Ensure the path is actually under the base directory
     target_real = os.path.realpath(target_dir)
     if not target_real.startswith(base_real + os.sep):
         raise HTTPException(status_code=400, detail="Invalid domain")
 
     shutil.rmtree(target_real)
+    return {"status": "deleted", "domain": domain}
+
+
+def _delete_site_s3(domain: str) -> dict:
+    """Delete a crawled site from S3."""
+    import boto3
+
+    s3 = boto3.client("s3", region_name=settings.aws_region)
+    bucket = settings.s3_bucket_name
+
+    # Find the crawl_id matching this domain
+    target_crawl_id = None
+    paginator = s3.get_paginator("list_objects_v2")
+
+    for page in paginator.paginate(Bucket=bucket, Prefix="crawls/", Delimiter="/"):
+        for prefix_obj in page.get("CommonPrefixes", []):
+            crawl_id = prefix_obj["Prefix"].split("/")[1]
+            if not crawl_id:
+                continue
+
+            # Check metadata
+            try:
+                meta_response = s3.get_object(
+                    Bucket=bucket, Key=f"crawls/{crawl_id}/_metadata.json"
+                )
+                meta = json.loads(meta_response["Body"].read().decode("utf-8"))
+                if meta.get("domain") == domain:
+                    target_crawl_id = crawl_id
+                    break
+            except Exception:
+                if crawl_id == domain:
+                    target_crawl_id = crawl_id
+                    break
+
+    if not target_crawl_id:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    # Delete all objects under crawls/{crawl_id}/
+    prefix = f"crawls/{target_crawl_id}/"
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        objects = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+        if objects:
+            s3.delete_objects(Bucket=bucket, Delete={"Objects": objects})
+
     return {"status": "deleted", "domain": domain}
 
 

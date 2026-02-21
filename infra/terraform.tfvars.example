@@ -1,0 +1,40 @@
+# =============================================================================
+# Falcon IQ Terraform Variables
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in the values.
+#
+# IMPORTANT: Set the OpenAI API key via environment variable, NOT in this file:
+#   export TF_VAR_openai_api_key="sk-..."
+# =============================================================================
+
+# General
+project     = "falcon-iq"
+environment = "development" # Must be: development, staging, or production
+aws_region  = "us-east-1"
+
+# VPC
+vpc_cidr             = "10.0.0.0/16"
+availability_zones   = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
+
+# S3 (must be globally unique)
+s3_bucket_name = "falcon-iq-data-CHANGE-ME"
+
+# Crawler
+crawler_image_tag             = "latest"
+crawler_cpu                   = 512
+crawler_memory                = 1024
+crawler_desired_count         = 1
+crawler_max_concurrent_crawls = 3
+
+# Analyzer
+analyzer_image_tag    = "latest"
+analyzer_cpu          = 1024
+analyzer_memory       = 2048
+analyzer_desired_count = 1
+analyzer_llm_provider  = "openai"
+analyzer_openai_model  = "gpt-4o-mini"
+
+# Logging
+log_retention_days = 30

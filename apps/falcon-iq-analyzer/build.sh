@@ -14,7 +14,7 @@ SHOULD_PUSH="${2}"
 echo "Building Falcon IQ Analyzer Docker image..."
 
 echo "Building image: ${IMAGE_NAME}:${TAG}"
-docker build -t ${IMAGE_NAME}:${TAG} .
+docker buildx build --platform linux/amd64 --load -t ${IMAGE_NAME}:${TAG} .
 
 if [ ! -z "$REGISTRY" ]; then
     echo "Tagging for registry: ${REGISTRY}/${IMAGE_NAME}:${TAG}"
