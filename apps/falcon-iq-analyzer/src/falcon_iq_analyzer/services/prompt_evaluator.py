@@ -13,8 +13,8 @@ from falcon_iq_analyzer.llm.prompts import (
 from falcon_iq_analyzer.models.domain import (
     BenchmarkSummary,
     CompanyMention,
-    PromptEvaluation,
     GeneratedPrompt,
+    PromptEvaluation,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,9 +84,17 @@ async def summarize_evaluations(
         details_lines.append(f"Prompt ({e.category}): {e.prompt_text}")
         details_lines.append(f"  Winner: {e.winner}")
         if e.company_a_mention:
-            details_lines.append(f"  {company_a}: sentiment={e.company_a_mention.sentiment}, strengths={e.company_a_mention.strengths_mentioned}, weaknesses={e.company_a_mention.weaknesses_mentioned}")
+            m = e.company_a_mention
+            details_lines.append(
+                f"  {company_a}: sentiment={m.sentiment}, "
+                f"strengths={m.strengths_mentioned}, weaknesses={m.weaknesses_mentioned}"
+            )
         if e.company_b_mention:
-            details_lines.append(f"  {company_b}: sentiment={e.company_b_mention.sentiment}, strengths={e.company_b_mention.strengths_mentioned}, weaknesses={e.company_b_mention.weaknesses_mentioned}")
+            m = e.company_b_mention
+            details_lines.append(
+                f"  {company_b}: sentiment={m.sentiment}, "
+                f"strengths={m.strengths_mentioned}, weaknesses={m.weaknesses_mentioned}"
+            )
         details_lines.append("")
 
     user_prompt = BENCHMARK_SUMMARIZE_USER.format(
@@ -107,8 +115,12 @@ async def summarize_evaluations(
         data = {}
 
     # Calculate average sentiments
-    a_sentiments = [e.company_a_mention.sentiment for e in evaluations if e.company_a_mention and e.company_a_mention.mentioned]
-    b_sentiments = [e.company_b_mention.sentiment for e in evaluations if e.company_b_mention and e.company_b_mention.mentioned]
+    a_sentiments = [
+        e.company_a_mention.sentiment for e in evaluations if e.company_a_mention and e.company_a_mention.mentioned
+    ]
+    b_sentiments = [
+        e.company_b_mention.sentiment for e in evaluations if e.company_b_mention and e.company_b_mention.mentioned
+    ]
 
     return BenchmarkSummary(
         company_a=company_a,

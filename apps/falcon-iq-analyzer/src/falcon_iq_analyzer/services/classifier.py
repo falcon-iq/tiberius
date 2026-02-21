@@ -35,9 +35,7 @@ async def classify_page(llm: LLMClient, page: PageInfo) -> PageClassification:
         return PageClassification(page_type="other", confidence=0.0, reasoning="classification error")
 
 
-async def classify_pages(
-    llm: LLMClient, pages: List[PageInfo]
-) -> Dict[str, PageClassification]:
+async def classify_pages(llm: LLMClient, pages: List[PageInfo]) -> Dict[str, PageClassification]:
     """Classify all pages concurrently. Returns mapping of filepath -> classification."""
     # Test LLM connectivity with the first page before classifying all
     if pages:

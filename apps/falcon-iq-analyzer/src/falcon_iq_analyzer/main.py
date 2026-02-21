@@ -3,6 +3,7 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from falcon_iq_analyzer.config import settings
@@ -38,9 +39,20 @@ async def health() -> dict:
     }
 
 
+# Serve the React web app build output
+_repo_root = Path(__file__).parents[4]
+static_dir = _repo_root / "apps" / "falcon-iq-analyzer-web-app" / "dist"
+
+
+# SPA catch-all: must be registered BEFORE the StaticFiles mount so that
+# unknown paths (e.g. /benchmark on hard refresh) return the SPA shell.
+@app.get("/{full_path:path}")
+async def spa_fallback(full_path: str) -> FileResponse:
+    index = static_dir / "index.html"
+    return FileResponse(str(index))
+
+
 # Mount static files last so API routes take priority
-static_dir = Path(__file__).parent / "static"
-static_dir.mkdir(exist_ok=True)
 app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
 
 

@@ -1,0 +1,48 @@
+{
+  "name": "falcon-iq-analyzer-web-app",
+  "projectType": "application",
+  "root": "apps/falcon-iq-analyzer-web-app",
+  "sourceRoot": "apps/falcon-iq-analyzer-web-app/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx run falcon-iq-analyzer:serve",
+          "nx run falcon-iq-crawler:serve",
+          "cd apps/falcon-iq-analyzer-web-app && npx vite"
+        ],
+        "parallel": true
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-analyzer-web-app",
+        "command": "npx vite build"
+      },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-analyzer-web-app",
+        "command": "eslint --ext .ts,.tsx ."
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-analyzer-web-app",
+        "command": "tsc --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/falcon-iq-analyzer-web-app",
+        "command": "npx jest"
+      }
+    }
+  }
+}

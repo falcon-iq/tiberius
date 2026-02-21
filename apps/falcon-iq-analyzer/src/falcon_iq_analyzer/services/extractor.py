@@ -30,9 +30,7 @@ async def extract_page(llm: LLMClient, page: PageInfo) -> PageExtraction:
         return PageExtraction(filepath=page.filepath, url_path=page.url_path)
 
 
-async def extract_pages(
-    llm: LLMClient, pages: list[PageInfo]
-) -> list[PageExtraction]:
+async def extract_pages(llm: LLMClient, pages: list[PageInfo]) -> list[PageExtraction]:
     """Extract offerings from all product/industry pages concurrently."""
     tasks = [extract_page(llm, page) for page in pages]
     return await asyncio.gather(*tasks)

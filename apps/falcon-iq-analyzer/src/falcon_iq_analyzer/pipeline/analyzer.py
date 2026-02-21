@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from collections import Counter
 
 from falcon_iq_analyzer.cache.store import DiskCache
@@ -60,7 +59,9 @@ async def run_analysis(
         # Step 1: Load pages
         job_manager.update_status(job_id, "running", "Step 1/6: Loading pages")
         all_pages = load_pages(crawl_directory, locale_filter)
-        total_pages_on_disk = len(load_pages(crawl_directory, locale_filter="__all__")) if locale_filter != "__all__" else len(all_pages)
+        total_pages_on_disk = (
+            len(load_pages(crawl_directory, locale_filter="__all__")) if locale_filter != "__all__" else len(all_pages)
+        )
         logger.info("Step 1: Loaded %d pages (total on disk: %d)", len(all_pages), total_pages_on_disk)
 
         # Step 2: Clean HTML
@@ -78,11 +79,15 @@ async def run_analysis(
             try:
                 raw_html = _read_html(page.filepath, settings)
                 page = clean_page(page, raw_html, max_chars=settings.max_clean_text_chars)
-                cache.set(page.filename, "clean", {
-                    "title": page.title,
-                    "meta_description": page.meta_description,
-                    "clean_text": page.clean_text,
-                })
+                cache.set(
+                    page.filename,
+                    "clean",
+                    {
+                        "title": page.title,
+                        "meta_description": page.meta_description,
+                        "clean_text": page.clean_text,
+                    },
+                )
                 cleaned_pages.append(page)
             except Exception:
                 logger.exception("Failed to clean %s", page.filepath)
@@ -113,8 +118,11 @@ async def run_analysis(
 
         # Step 4: Extract offerings from product/industry pages
         product_pages = [
-            p for p in cleaned_pages
-            if classifications.get(p.filepath, PageClassification(page_type="other", confidence=0, reasoning="")).page_type
+            p
+            for p in cleaned_pages
+            if classifications.get(
+                p.filepath, PageClassification(page_type="other", confidence=0, reasoning="")
+            ).page_type
             in ("product", "industry")
         ]
         job_manager.update_status(job_id, "running", f"Step 4/6: Extracting offerings from {len(product_pages)} pages")

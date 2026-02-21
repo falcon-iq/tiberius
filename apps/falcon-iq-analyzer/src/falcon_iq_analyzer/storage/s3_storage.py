@@ -65,7 +65,7 @@ class S3StorageService(StorageService):
                     # Strip the key prefix to return relative paths
                     rel_key = obj["Key"]
                     if rel_key.startswith(self._key_prefix):
-                        rel_key = rel_key[len(self._key_prefix):]
+                        rel_key = rel_key[len(self._key_prefix) :]
                     matches.append(rel_key)
         except ClientError:
             logger.warning("Failed to list files from S3 with prefix: %s", search_prefix, exc_info=True)
