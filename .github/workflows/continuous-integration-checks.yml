@@ -113,7 +113,7 @@ jobs:
         if: steps.affected.outputs['falcon-iq-analyzer'] == 'true'
         run: |
           cd apps/falcon-iq-analyzer
-          pip install -e ".[dev]"
+          uv sync --extra dev
 
       - name: Run lint, format, test, and build on affected projects
         run: |
