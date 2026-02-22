@@ -41,7 +41,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "apps/falcon-iq-analyzer-web-app",
-        "command": "npx jest"
+        "command": "npx jest --config jest.config.js"
       }
     }
   }
