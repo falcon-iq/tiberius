@@ -11,14 +11,6 @@
         "command": "uv run ruff check --config pyproject.toml src/"
       }
     },
-    "format": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["build"],
-      "options": {
-        "cwd": "apps/falcon-iq-analyzer",
-        "command": "uv run ruff format --check --config pyproject.toml src/"
-      }
-    },
     "test": {
       "executor": "nx:run-commands",
       "dependsOn": ["build"],
