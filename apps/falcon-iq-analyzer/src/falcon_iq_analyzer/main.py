@@ -39,21 +39,19 @@ async def health() -> dict:
     }
 
 
-# Serve the React web app build output
+# Serve the React web app build output (only when dist has been built)
 _repo_root = Path(__file__).parents[4]
-static_dir = _repo_root / "apps" / "falcon-iq-analyzer-web-app" / "dist"
+_static_dir = _repo_root / "apps" / "falcon-iq-analyzer-web-app" / "dist"
 
+if _static_dir.exists():
+    # SPA catch-all: must be registered BEFORE the StaticFiles mount so that
+    # unknown paths (e.g. /benchmark on hard refresh) return the SPA shell.
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str) -> FileResponse:
+        return FileResponse(str(_static_dir / "index.html"))
 
-# SPA catch-all: must be registered BEFORE the StaticFiles mount so that
-# unknown paths (e.g. /benchmark on hard refresh) return the SPA shell.
-@app.get("/{full_path:path}")
-async def spa_fallback(full_path: str) -> FileResponse:
-    index = static_dir / "index.html"
-    return FileResponse(str(index))
-
-
-# Mount static files last so API routes take priority
-app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+    # Mount static files last so API routes take priority
+    app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
 
 
 if __name__ == "__main__":
