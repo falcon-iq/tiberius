@@ -8,7 +8,7 @@
       "dependsOn": ["build"],
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "uv run ruff check src/"
+        "command": "uv run ruff check --config pyproject.toml src/"
       }
     },
     "format": {
@@ -16,7 +16,7 @@
       "dependsOn": ["build"],
       "options": {
         "cwd": "apps/falcon-iq-analyzer",
-        "command": "uv run ruff format --check src/"
+        "command": "uv run ruff format --check --config pyproject.toml src/"
       }
     },
     "test": {
