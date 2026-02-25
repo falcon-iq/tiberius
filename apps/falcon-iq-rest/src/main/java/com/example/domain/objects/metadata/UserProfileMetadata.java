@@ -29,6 +29,17 @@ public class UserProfileMetadata implements GenericBeanMetadata {
             .filterSupported(true)
             .build();
 
+
+    public static final GenericBeanFieldMetadata<String> EMAIL = GenericBeanFieldMetadataBuilder.<String>builder()
+            .name("email")
+            .label("Email")
+            .type(FieldType.STRING)
+            .updateAllowed(false)
+            .required(true)
+            .sortSupported(true)
+            .filterSupported(true)
+            .build();
+
     @Override
     public List<GenericBeanFieldMetadata<?>> getFields() {
         return List.of(ID, NAME);
