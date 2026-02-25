@@ -6,7 +6,7 @@ import com.example.fiq.generic.GenericBeanMetadata;
 import com.example.fiq.generic.GenericBeanType;
 
 public class UserProfileBeanDescriptor implements GenericBeanDescriptor<UserProfile> {
-            
+
     @Override
     public String getMongoCollectionName() {
         return "user_profile";
@@ -14,7 +14,7 @@ public class UserProfileBeanDescriptor implements GenericBeanDescriptor<UserProf
 
     @Override
     public String getMongoDatabaseName() {
-        return "okrsdb";
+        return "company_db";
     }
 
     @Override

@@ -4,19 +4,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.example.db.MongoRepository;
-import com.example.domain.objects.metadata.OKRBeanDescriptor;
-import com.example.domain.objects.metadata.OKRStatusBeanDescriptor;
 import com.example.domain.objects.metadata.UserProfileBeanDescriptor;
 
 public class GenericBeanDescriptorFactory {
     private static final GenericBeanDescriptorFactory INSTANCE = new GenericBeanDescriptorFactory();
 
     static {
-        GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.OKR, new OKRBeanDescriptor());
-        GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.OKR_STATUS, new OKRStatusBeanDescriptor());
-        GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.USER_PROFILE, new UserProfileBeanDescriptor());
+        GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.USER_PROFILE,
+                new UserProfileBeanDescriptor());
     }
-    
+
     private final Map<GenericBeanType, GenericBeanDescriptor<?>> descriptors = new ConcurrentHashMap<>();
     // cache services so we don't create a new GenericMongoCRUDService on each
     // request
