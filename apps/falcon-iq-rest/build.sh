@@ -12,35 +12,35 @@ REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 TAG="${1:-latest}"
 SHOULD_PUSH="${2}"
 
-echo "🚀 Building Falcon IQ REST API Docker image..."
+echo "Building Falcon IQ REST API Docker image..."
 
-# Build the image
-echo "📦 Building image: ${IMAGE_NAME}:${TAG}"
-docker build -t ${IMAGE_NAME}:${TAG} .
+# Build the image (cross-platform for ARM Mac -> x86 Fargate)
+echo "Building image: ${IMAGE_NAME}:${TAG}"
+docker buildx build --platform linux/amd64 --load -t ${IMAGE_NAME}:${TAG} .
 
 # Tag for registry
 if [ ! -z "$REGISTRY" ]; then
-    echo "🏷️  Tagging for registry: ${REGISTRY}/${IMAGE_NAME}:${TAG}"
+    echo "Tagging for registry: ${REGISTRY}/${IMAGE_NAME}:${TAG}"
     docker tag ${IMAGE_NAME}:${TAG} ${REGISTRY}/${IMAGE_NAME}:${TAG}
 fi
 
-echo "✅ Build completed successfully!"
+echo "Build completed successfully!"
 
 # Push if requested
 if [ "$SHOULD_PUSH" = "push" ]; then
     if [ -z "$REGISTRY" ]; then
-        echo "❌ Cannot push: AWS_ACCOUNT_ID and AWS_REGION environment variables must be set"
+        echo "Cannot push: AWS_ACCOUNT_ID and AWS_REGION environment variables must be set"
         exit 1
     fi
-    
-    echo "📤 Logging into ECR..."
+
+    echo "Logging into ECR..."
     aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REGISTRY}
-    
-    echo "📤 Pushing image to ECR..."
+
+    echo "Pushing image to ECR..."
     docker push ${REGISTRY}/${IMAGE_NAME}:${TAG}
-    
-    echo "✅ Image pushed successfully!"
-    echo "📍 Image URI: ${REGISTRY}/${IMAGE_NAME}:${TAG}"
+
+    echo "Image pushed successfully!"
+    echo "Image URI: ${REGISTRY}/${IMAGE_NAME}:${TAG}"
 fi
 
-echo "🎉 Done!"
+echo "Done!"

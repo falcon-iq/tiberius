@@ -3,8 +3,9 @@
 # =============================================================================
 # Copy this file to terraform.tfvars and fill in the values.
 #
-# IMPORTANT: Set the OpenAI API key via environment variable, NOT in this file:
+# IMPORTANT: Set secrets via environment variables, NOT in this file:
 #   export TF_VAR_openai_api_key="sk-..."
+#   export TF_VAR_mongo_uri="mongodb+srv://user:pass@cluster.mongodb.net/dbname"
 # =============================================================================
 
 # General
@@ -35,6 +36,12 @@ analyzer_memory       = 2048
 analyzer_desired_count = 1
 analyzer_llm_provider  = "openai"
 analyzer_openai_model  = "gpt-4o-mini"
+
+# REST API
+rest_image_tag    = "latest"
+rest_cpu          = 512
+rest_memory       = 1024
+rest_desired_count = 1
 
 # Logging
 log_retention_days = 30

@@ -89,3 +89,31 @@ resource "aws_vpc_security_group_egress_rule" "crawler_all" {
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
+
+# -----------------------------------------------------------------------------
+# REST API Security Group
+# -----------------------------------------------------------------------------
+
+resource "aws_security_group" "rest" {
+  name        = "${local.name_prefix}-rest-sg"
+  description = "Allow inbound from ALB to REST API"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${local.name_prefix}-rest-sg"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "rest_from_alb" {
+  security_group_id            = aws_security_group.rest.id
+  referenced_security_group_id = aws_security_group.alb.id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "rest_all" {
+  security_group_id = aws_security_group.rest.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}

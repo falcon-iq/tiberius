@@ -33,7 +33,10 @@ data "aws_iam_policy_document" "execution_secrets" {
     actions = [
       "secretsmanager:GetSecretValue",
     ]
-    resources = [aws_secretsmanager_secret.openai_api_key.arn]
+    resources = [
+      aws_secretsmanager_secret.openai_api_key.arn,
+      aws_secretsmanager_secret.mongo_uri.arn,
+    ]
   }
 }
 
@@ -121,4 +124,18 @@ resource "aws_iam_role_policy" "analyzer_s3" {
   name   = "${local.name_prefix}-analyzer-s3"
   role   = aws_iam_role.analyzer_task.id
   policy = data.aws_iam_policy_document.analyzer_s3.json
+}
+
+# -----------------------------------------------------------------------------
+# REST API Task Role
+# Minimal role (no S3 needed) - just allows ECS tasks to assume the role
+# -----------------------------------------------------------------------------
+
+resource "aws_iam_role" "rest_task" {
+  name               = "${local.name_prefix}-rest-task-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
+
+  tags = {
+    Name = "${local.name_prefix}-rest-task-role"
+  }
 }

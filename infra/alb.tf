@@ -48,6 +48,40 @@ resource "aws_lb_target_group" "analyzer" {
 # HTTP to HTTPS.
 # -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# REST API Target Group
+# -----------------------------------------------------------------------------
+
+resource "aws_lb_target_group" "rest" {
+  name        = "${local.name_prefix}-rest-tg"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+  health_check {
+    enabled             = true
+    path                = "/api/health"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    timeout             = 10
+    interval            = 30
+    matcher             = "200"
+  }
+
+  tags = {
+    Name = "${local.name_prefix}-rest-tg"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# HTTP Listener
+# For production, add an HTTPS listener with an ACM certificate and redirect
+# HTTP to HTTPS.
+# -----------------------------------------------------------------------------
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.analyzer.arn
   port              = 80
@@ -56,5 +90,25 @@ resource "aws_lb_listener" "http" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.analyzer.arn
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Path-based routing: /api/* -> REST API
+# -----------------------------------------------------------------------------
+
+resource "aws_lb_listener_rule" "rest_api" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.rest.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*"]
+    }
   }
 }
