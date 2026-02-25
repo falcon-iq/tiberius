@@ -128,11 +128,45 @@ variable "analyzer_openai_model" {
 }
 
 # -----------------------------------------------------------------------------
+# REST API
+# -----------------------------------------------------------------------------
+
+variable "rest_image_tag" {
+  description = "Docker image tag for the REST API service"
+  type        = string
+  default     = "latest"
+}
+
+variable "rest_cpu" {
+  description = "CPU units for REST API task (1024 = 1 vCPU)"
+  type        = number
+  default     = 512
+}
+
+variable "rest_memory" {
+  description = "Memory (MiB) for REST API task"
+  type        = number
+  default     = 1024
+}
+
+variable "rest_desired_count" {
+  description = "Number of REST API tasks to run"
+  type        = number
+  default     = 1
+}
+
+# -----------------------------------------------------------------------------
 # Secrets
 # -----------------------------------------------------------------------------
 
 variable "openai_api_key" {
   description = "OpenAI API key. Set via TF_VAR_openai_api_key env var rather than in tfvars."
+  type        = string
+  sensitive   = true
+}
+
+variable "mongo_uri" {
+  description = "MongoDB connection URI. Set via TF_VAR_mongo_uri env var rather than in tfvars."
   type        = string
   sensitive   = true
 }

@@ -79,6 +79,13 @@ if [ -z "${TF_VAR_openai_api_key:-}" ]; then
 fi
 log "OpenAI API key is set"
 
+if [ -z "${TF_VAR_mongo_uri:-}" ]; then
+  error "TF_VAR_mongo_uri not set."
+  echo "  Run: export TF_VAR_mongo_uri=\"mongodb+srv://user:pass@cluster.mongodb.net/dbname\""
+  exit 1
+fi
+log "MongoDB URI is set"
+
 cd "$INFRA_DIR"
 
 if [ ! -f terraform.tfvars ]; then
@@ -98,7 +105,7 @@ log "AWS Region: $AWS_REGION"
 # -------------------------------------------------------
 if [ "$SKIP_INFRA" = false ]; then
   echo ""
-  info "Step 1/4: Deploying infrastructure with Terraform..."
+  info "Step 1/5: Deploying infrastructure with Terraform..."
   echo ""
 
   terraform init -input=false
@@ -127,7 +134,7 @@ fi
 # Step 2: Build Docker images
 # -------------------------------------------------------
 echo ""
-info "Step 2/4: Building Docker images..."
+info "Step 2/5: Building Docker images..."
 
 export AWS_ACCOUNT_ID
 export AWS_REGION
@@ -142,11 +149,16 @@ cd "$APPS_DIR/falcon-iq-analyzer"
 ./build.sh latest
 log "Analyzer image built"
 
+info "Building REST API..."
+cd "$APPS_DIR/falcon-iq-rest"
+./build.sh latest
+log "REST API image built"
+
 # -------------------------------------------------------
 # Step 3: Push to ECR
 # -------------------------------------------------------
 echo ""
-info "Step 3/4: Pushing images to ECR..."
+info "Step 3/5: Pushing images to ECR..."
 
 cd "$APPS_DIR/falcon-iq-crawler"
 ./build.sh latest push
@@ -156,21 +168,28 @@ cd "$APPS_DIR/falcon-iq-analyzer"
 ./build.sh latest push
 log "Analyzer image pushed"
 
+cd "$APPS_DIR/falcon-iq-rest"
+./build.sh latest push
+log "REST API image pushed"
+
 # -------------------------------------------------------
 # Step 4: Wait for services to stabilize
 # -------------------------------------------------------
 echo ""
-info "Step 4/4: Waiting for ECS services to stabilize..."
+info "Step 4/5: Waiting for ECS services to stabilize..."
 
 cd "$INFRA_DIR"
 CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
 CRAWLER_SERVICE="${CLUSTER_NAME%-cluster}-crawler"
 ANALYZER_SERVICE="${CLUSTER_NAME%-cluster}-analyzer"
+REST_SERVICE="${CLUSTER_NAME%-cluster}-rest"
 
 info "Forcing new deployment to pick up latest images..."
 aws ecs update-service --cluster "$CLUSTER_NAME" --service "$CRAWLER_SERVICE" \
   --force-new-deployment --no-cli-pager >/dev/null
 aws ecs update-service --cluster "$CLUSTER_NAME" --service "$ANALYZER_SERVICE" \
+  --force-new-deployment --no-cli-pager >/dev/null
+aws ecs update-service --cluster "$CLUSTER_NAME" --service "$REST_SERVICE" \
   --force-new-deployment --no-cli-pager >/dev/null
 
 info "Waiting for crawler to reach steady state (this may take a few minutes)..."
@@ -183,6 +202,11 @@ aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$ANALYZER_SER
   warn "Analyzer service did not stabilize within timeout. Check logs: make logs-analyzer"
 }
 
+info "Waiting for REST API to reach steady state..."
+aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$REST_SERVICE" 2>/dev/null || {
+  warn "REST API service did not stabilize within timeout. Check logs: make logs-rest"
+}
+
 # -------------------------------------------------------
 # Done
 # -------------------------------------------------------
@@ -192,13 +216,17 @@ log "Deployment complete!"
 echo "=========================================="
 echo ""
 ANALYZER_URL=$(terraform output -raw analyzer_url)
+REST_API_URL=$(terraform output -raw rest_api_url)
 echo -e "  Analyzer URL:  ${GREEN}${ANALYZER_URL}${NC}"
+echo -e "  REST API URL:  ${GREEN}${REST_API_URL}${NC}"
 echo -e "  Health check:  ${GREEN}${ANALYZER_URL}/health${NC}"
+echo -e "  REST health:   ${GREEN}${REST_API_URL}/health${NC}"
 echo ""
 echo "  Useful commands:"
 echo "    make status          - Check service health"
 echo "    make logs-crawler    - Tail crawler logs"
 echo "    make logs-analyzer   - Tail analyzer logs"
+echo "    make logs-rest       - Tail REST API logs"
 echo "    make redeploy        - Force new deployment"
 echo "    make destroy         - Tear down everything"
 echo ""

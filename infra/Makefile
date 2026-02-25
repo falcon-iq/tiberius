@@ -9,6 +9,7 @@
 #   make status       - Check ECS service health
 #   make logs-crawler - Tail crawler logs
 #   make logs-analyzer - Tail analyzer logs
+#   make logs-rest    - Tail REST API logs
 #   make redeploy     - Force new ECS deployment (after image push)
 #   make destroy      - Tear down all infrastructure
 #   make outputs      - Show Terraform outputs
@@ -94,9 +95,9 @@ check-aws:
 	@echo "AWS Account: $(AWS_ACCOUNT_ID)"
 
 .PHONY: build-push
-build-push: check-aws build-push-crawler build-push-analyzer ## Build and push both Docker images to ECR
+build-push: check-aws build-push-crawler build-push-analyzer build-push-rest ## Build and push all Docker images to ECR
 	@echo ""
-	@echo "$(GREEN)Both images pushed. Run 'make redeploy' to update ECS services.$(NC)"
+	@echo "$(GREEN)All images pushed. Run 'make redeploy' to update ECS services.$(NC)"
 
 .PHONY: build-push-crawler
 build-push-crawler: check-aws ## Build and push crawler image
@@ -114,6 +115,14 @@ build-push-analyzer: check-aws ## Build and push analyzer image
 		AWS_REGION=$(shell terraform output -raw 2>/dev/null | grep -v "^$$" || echo "us-east-1") \
 		./build.sh latest push
 
+.PHONY: build-push-rest
+build-push-rest: check-aws ## Build and push REST API image
+	@echo "$(GREEN)Building and pushing REST API...$(NC)"
+	cd $(APPS_DIR)/falcon-iq-rest && \
+		AWS_ACCOUNT_ID=$(AWS_ACCOUNT_ID) \
+		AWS_REGION=$(shell terraform output -raw 2>/dev/null | grep -v "^$$" || echo "us-east-1") \
+		./build.sh latest push
+
 # -----------------------------------------------------------------------------
 # ECS Operations
 # -----------------------------------------------------------------------------
@@ -123,13 +132,13 @@ status: ## Check ECS service health and running tasks
 	@echo "$(GREEN)ECS Service Status:$(NC)"
 	@aws ecs describe-services \
 		--cluster $(CLUSTER_NAME) \
-		--services $(CLUSTER_NAME:%-cluster=%-crawler) $(CLUSTER_NAME:%-cluster=%-analyzer) \
+		--services $(CLUSTER_NAME:%-cluster=%-crawler) $(CLUSTER_NAME:%-cluster=%-analyzer) $(CLUSTER_NAME:%-cluster=%-rest) \
 		--query 'services[].{Service:serviceName,Status:status,Running:runningCount,Desired:desiredCount,Pending:pendingCount}' \
 		--output table 2>/dev/null || echo "$(RED)Could not fetch status. Is infrastructure deployed?$(NC)"
 
 .PHONY: redeploy
-redeploy: redeploy-crawler redeploy-analyzer ## Force new deployment of both ECS services
-	@echo "$(GREEN)Both services redeploying. Run 'make status' to monitor.$(NC)"
+redeploy: redeploy-crawler redeploy-analyzer redeploy-rest ## Force new deployment of all ECS services
+	@echo "$(GREEN)All services redeploying. Run 'make status' to monitor.$(NC)"
 
 .PHONY: redeploy-crawler
 redeploy-crawler: ## Force new deployment of crawler service
@@ -151,6 +160,16 @@ redeploy-analyzer: ## Force new deployment of analyzer service
 		--query 'service.{Service:serviceName,Status:status}' \
 		--output table
 
+.PHONY: redeploy-rest
+redeploy-rest: ## Force new deployment of REST API service
+	@echo "$(GREEN)Redeploying REST API...$(NC)"
+	@aws ecs update-service \
+		--cluster $(CLUSTER_NAME) \
+		--service $(CLUSTER_NAME:%-cluster=%-rest) \
+		--force-new-deployment \
+		--query 'service.{Service:serviceName,Status:status}' \
+		--output table
+
 # -----------------------------------------------------------------------------
 # Logs
 # -----------------------------------------------------------------------------
@@ -162,6 +181,10 @@ logs-crawler: ## Tail crawler CloudWatch logs
 .PHONY: logs-analyzer
 logs-analyzer: ## Tail analyzer CloudWatch logs
 	aws logs tail $(shell terraform output -raw analyzer_log_group) --follow
+
+.PHONY: logs-rest
+logs-rest: ## Tail REST API CloudWatch logs
+	aws logs tail $(shell terraform output -raw rest_log_group) --follow
 
 # -----------------------------------------------------------------------------
 # Teardown

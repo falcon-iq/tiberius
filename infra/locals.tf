@@ -12,6 +12,7 @@ locals {
 
   crawler_ecr_image_uri  = "${local.account_id}.dkr.ecr.${local.region}.amazonaws.com/falcon-iq-crawler:${var.crawler_image_tag}"
   analyzer_ecr_image_uri = "${local.account_id}.dkr.ecr.${local.region}.amazonaws.com/falcon-iq-analyzer:${var.analyzer_image_tag}"
+  rest_ecr_image_uri     = "${local.account_id}.dkr.ecr.${local.region}.amazonaws.com/falcon-iq-rest:${var.rest_image_tag}"
 
   crawler_internal_url = "http://crawler.falcon-iq.local:8080"
 }
