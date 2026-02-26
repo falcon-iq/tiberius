@@ -15,7 +15,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 
-public class MongoRepository<T> {
+public class MongoRepository<T extends com.example.domain.objects.AbstractBaseDomainObject> {
   private String collectionName;
   private String databaseName;
   private Class<T> mongoClass;

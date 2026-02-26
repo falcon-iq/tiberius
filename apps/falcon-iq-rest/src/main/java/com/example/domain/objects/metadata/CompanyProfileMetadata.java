@@ -7,7 +7,7 @@ import com.example.fiq.generic.GenericBeanFieldMetadata;
 import com.example.fiq.generic.GenericBeanFieldMetadataBuilder;
 import com.example.fiq.generic.GenericBeanMetadata;
 
-public class UserProfileMetadata implements GenericBeanMetadata {
+public class CompanyProfileMetadata implements GenericBeanMetadata {
     private static final GenericBeanFieldMetadata<String> ID = GenericBeanFieldMetadataBuilder.<String>builder()
             .name("id")
             .label("Id")
@@ -19,9 +19,10 @@ public class UserProfileMetadata implements GenericBeanMetadata {
             .filterSupported(true)
             .build();
 
-    public static final GenericBeanFieldMetadata<String> NAME = GenericBeanFieldMetadataBuilder.<String>builder()
-            .name("name")
-            .label("Name")
+    public static final GenericBeanFieldMetadata<String> COMPANY_NAME = GenericBeanFieldMetadataBuilder
+            .<String>builder()
+            .name("companyName")
+            .label("Company Name")
             .type(FieldType.STRING)
             .updateAllowed(true)
             .required(true)
@@ -29,22 +30,11 @@ public class UserProfileMetadata implements GenericBeanMetadata {
             .filterSupported(true)
             .build();
 
-
-    public static final GenericBeanFieldMetadata<String> EMAIL = GenericBeanFieldMetadataBuilder.<String>builder()
-            .name("email")
-            .label("Email")
+    public static final GenericBeanFieldMetadata<String> VERTICAL = GenericBeanFieldMetadataBuilder.<String>builder()
+            .name("vertical")
+            .label("Vertical")
             .type(FieldType.STRING)
-            .updateAllowed(false)
-            .required(true)
-            .sortSupported(true)
-            .filterSupported(true)
-            .build();
-
-    public static final GenericBeanFieldMetadata<String> COMPANY_ID = GenericBeanFieldMetadataBuilder.<String>builder()
-            .name("companyId")
-            .label("Company Id")
-            .type(FieldType.STRING)
-            .updateAllowed(false)
+            .updateAllowed(true)
             .required(true)
             .sortSupported(true)
             .filterSupported(true)
@@ -72,6 +62,6 @@ public class UserProfileMetadata implements GenericBeanMetadata {
 
     @Override
     public List<GenericBeanFieldMetadata<?>> getFields() {
-        return List.of(ID, NAME, EMAIL, COMPANY_ID, CREATED_AT, MODIFIED_AT);
+        return List.of(ID, COMPANY_NAME, VERTICAL, CREATED_AT, MODIFIED_AT);
     }
 }
