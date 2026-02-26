@@ -3,6 +3,7 @@ package com.example.fiq.generic;
 import java.util.List;
 import com.example.db.MongoRepository;
 import com.example.db.MongoFilterBuilder;
+import com.example.domain.objects.AbstractBaseDomainObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -10,7 +11,7 @@ import org.bson.conversions.Bson;
 import com.mongodb.client.model.Updates;
 import java.util.ArrayList;
 
-public class GenericMongoCRUDService<StoredObject> {
+public class GenericMongoCRUDService<StoredObject extends AbstractBaseDomainObject> {
     private final MongoRepository<StoredObject> repository;
 
     public GenericMongoCRUDService(MongoRepository<StoredObject> repository) {
@@ -45,6 +46,8 @@ public class GenericMongoCRUDService<StoredObject> {
         if (sets.isEmpty())
             return false;
 
+        sets.add(Updates.set(AbstractBaseDomainObject.MODIFIED_AT, System.currentTimeMillis()));
+
         Bson combined = Updates.combine(sets);
         return repository.updateById(id, combined);
     }
@@ -55,6 +58,9 @@ public class GenericMongoCRUDService<StoredObject> {
     }
 
     public StoredObject create(StoredObject object) {
+        long now = System.currentTimeMillis();
+        object.setCreatedAt(now);
+        object.setModifiedAt(now);
         return repository.create(object);
     }
 

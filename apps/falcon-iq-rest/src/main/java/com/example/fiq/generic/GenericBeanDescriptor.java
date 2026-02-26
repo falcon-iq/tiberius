@@ -1,6 +1,8 @@
 package com.example.fiq.generic;
 
-public interface GenericBeanDescriptor<T> {
+import com.example.domain.objects.AbstractBaseDomainObject;
+
+public interface GenericBeanDescriptor<T extends AbstractBaseDomainObject> {
     String getMongoCollectionName();
 
     String getMongoDatabaseName();

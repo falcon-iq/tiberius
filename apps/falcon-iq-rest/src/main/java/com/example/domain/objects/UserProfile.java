@@ -1,29 +1,15 @@
 package com.example.domain.objects;
 
-import org.bson.BsonType;
-import org.bson.codecs.pojo.annotations.BsonId;
-import org.bson.codecs.pojo.annotations.BsonRepresentation;
-
-public class UserProfile {
-    public static final String ID = "id";
+public class UserProfile extends AbstractBaseDomainObject {
     public static final String NAME = "name";
     public static final String EMAIL = "email";
-
-    @BsonId
-    @BsonRepresentation(BsonType.OBJECT_ID)
-    private String id;
+    public static final String COMPANY_ID = "companyId";
 
     private String name;
 
     private String email;
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
+    private String companyId;
 
     public String getName() {
         return name;
@@ -41,4 +27,11 @@ public class UserProfile {
         this.email = email;
     }
 
+    public String getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(String companyId) {
+        this.companyId = companyId;
+    }
 }
