@@ -32,6 +32,13 @@ resource "aws_ecs_task_definition" "crawler" {
         { name = "MAX_CONCURRENT_CRAWLS", value = tostring(var.crawler_max_concurrent_crawls) },
       ]
 
+      secrets = [
+        {
+          name      = "MONGO_URI"
+          valueFrom = aws_secretsmanager_secret.mongo_uri.arn
+        }
+      ]
+
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"]
         interval    = 30

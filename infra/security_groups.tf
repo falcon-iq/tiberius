@@ -84,6 +84,14 @@ resource "aws_vpc_security_group_ingress_rule" "crawler_from_analyzer" {
   ip_protocol                  = "tcp"
 }
 
+resource "aws_vpc_security_group_ingress_rule" "crawler_from_rest" {
+  security_group_id            = aws_security_group.crawler.id
+  referenced_security_group_id = aws_security_group.rest.id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
 resource "aws_vpc_security_group_egress_rule" "crawler_all" {
   security_group_id = aws_security_group.crawler.id
   cidr_ipv4         = "0.0.0.0/0"

@@ -35,6 +35,11 @@ public class LocalStorageService implements StorageService {
     }
 
     @Override
+    public String getBasePath(String crawlId) {
+        return baseDir.resolve(crawlId).toString();
+    }
+
+    @Override
     public boolean isHealthy() {
         try {
             Files.createDirectories(baseDir);

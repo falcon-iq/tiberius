@@ -1,6 +1,7 @@
 package com.falconiq.crawler;
 
 import com.falconiq.crawler.core.CrawlManager;
+import com.falconiq.crawler.core.CrawlProgressReporter;
 import com.falconiq.crawler.storage.LocalStorageService;
 import com.falconiq.crawler.storage.S3StorageService;
 import com.falconiq.crawler.storage.StorageService;
@@ -21,7 +22,15 @@ public class Main {
         String storageType = env("STORAGE_TYPE", "local");
 
         StorageService storageService = createStorageService(storageType);
-        CrawlManager.initialize(storageService, maxConcurrentCrawls);
+
+        String mongoUri = System.getenv("MONGO_URI");
+        CrawlProgressReporter progressReporter = CrawlProgressReporter.create(mongoUri);
+        CrawlManager.initialize(storageService, maxConcurrentCrawls, progressReporter);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Shutting down CrawlProgressReporter...");
+            progressReporter.shutdown();
+        }));
 
         Server server = new Server(port);
 

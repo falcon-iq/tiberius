@@ -50,6 +50,11 @@ public class S3StorageService implements StorageService {
     }
 
     @Override
+    public String getBasePath(String crawlId) {
+        return "s3://" + bucketName + "/crawls/" + crawlId;
+    }
+
+    @Override
     public boolean isHealthy() {
         try {
             s3Client.headBucket(HeadBucketRequest.builder()

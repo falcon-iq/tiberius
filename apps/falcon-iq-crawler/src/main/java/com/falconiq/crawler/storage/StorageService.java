@@ -48,6 +48,13 @@ public interface StorageService {
         }
     }
 
+    /**
+     * Return the base path/URI for a crawl's stored pages.
+     */
+    default String getBasePath(String crawlId) {
+        return crawlId;
+    }
+
     private static String sha256Short(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");

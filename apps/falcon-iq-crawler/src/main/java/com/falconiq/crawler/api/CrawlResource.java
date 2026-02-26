@@ -25,6 +25,13 @@ public class CrawlResource {
                     .build();
         }
 
+        String websiteCrawlDetailId = (String) request.get("websiteCrawlDetailId");
+        if (websiteCrawlDetailId == null || websiteCrawlDetailId.isBlank()) {
+            return Response.status(400)
+                    .entity(Map.of("error", "websiteCrawlDetailId is required"))
+                    .build();
+        }
+
         int maxPages = getInt(request, "maxPages", 100);
         int threads = getInt(request, "threads", 5);
         long delayMs = getLong(request, "delayMs", 1000);
@@ -34,7 +41,7 @@ public class CrawlResource {
         CrawlManager manager = CrawlManager.getInstance();
         CrawlJob job;
         try {
-            job = manager.startCrawl(url, maxPages, threads, delayMs);
+            job = manager.startCrawl(url, maxPages, threads, delayMs, websiteCrawlDetailId);
         } catch (IllegalStateException e) {
             return Response.status(429)
                     .entity(Map.of("error", e.getMessage()))
