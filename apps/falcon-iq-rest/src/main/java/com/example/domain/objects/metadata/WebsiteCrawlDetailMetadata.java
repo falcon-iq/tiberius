@@ -124,9 +124,32 @@ public class WebsiteCrawlDetailMetadata implements GenericBeanMetadata {
             .filterSupported(true)
             .build();
 
+    public static final GenericBeanFieldMetadata<String> ERROR_MESSAGE = GenericBeanFieldMetadataBuilder
+            .<String>builder()
+            .name("errorMessage")
+            .label("Error Message")
+            .type(FieldType.STRING)
+            .updateAllowed(true)
+            .required(false)
+            .sortSupported(false)
+            .filterSupported(false)
+            .build();
+
+    public static final GenericBeanFieldMetadata<String> CRAWLED_PAGES_PATH = GenericBeanFieldMetadataBuilder
+            .<String>builder()
+            .name("crawledPagesPath")
+            .label("Crawled Pages Path")
+            .type(FieldType.STRING)
+            .updateAllowed(true)
+            .required(false)
+            .sortSupported(false)
+            .filterSupported(false)
+            .build();
+
     @Override
     public List<GenericBeanFieldMetadata<?>> getFields() {
         return List.of(ID, CREATED_AT, MODIFIED_AT, COMPANY_ID, USER_ID, WEBSITE_LINK, IS_COMPETITOR,
-                NUMBER_OF_PAGES_CRAWLED, NUMBER_OF_PAGES_ANALYZED, TOTAL_PAGES, STATUS);
+                NUMBER_OF_PAGES_CRAWLED, NUMBER_OF_PAGES_ANALYZED, TOTAL_PAGES, STATUS, ERROR_MESSAGE,
+                CRAWLED_PAGES_PATH);
     }
 }

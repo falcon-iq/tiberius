@@ -26,6 +26,7 @@ resource "aws_ecs_task_definition" "rest" {
 
       environment = [
         { name = "PORT", value = "8080" },
+        { name = "CRAWLER_API_URL", value = "http://crawler.falcon-iq.local:8080" },
       ]
 
       secrets = [

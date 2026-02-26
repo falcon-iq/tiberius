@@ -120,6 +120,13 @@
           <plugin>
             <artifactId>maven-jar-plugin</artifactId>
             <version>3.4.0</version>
+            <executions>
+              <execution>
+                <id>default-jar</id>
+                <phase>package</phase>
+                <goals><goal>jar</goal></goals>
+              </execution>
+            </executions>
           </plugin>
 
           <plugin>

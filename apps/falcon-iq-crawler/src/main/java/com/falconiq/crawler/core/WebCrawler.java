@@ -39,10 +39,21 @@ public class WebCrawler {
     private LinkExtractor linkExtractor;
     private PageFetcher pageFetcher;
     private final Set<String> disallowedPaths = ConcurrentHashMap.newKeySet();
+    private final CrawlProgressReporter progressReporter;
+    private final String websiteCrawlDetailId;
 
     public WebCrawler(String startUrl, int maxPages, int threadCount, long delayMs,
                       StorageService storageService, String crawlId,
                       AtomicInteger progressCounter) {
+        this(startUrl, maxPages, threadCount, delayMs, storageService, crawlId,
+                progressCounter, null, null);
+    }
+
+    public WebCrawler(String startUrl, int maxPages, int threadCount, long delayMs,
+                      StorageService storageService, String crawlId,
+                      AtomicInteger progressCounter,
+                      CrawlProgressReporter progressReporter,
+                      String websiteCrawlDetailId) {
         this.startUrl = startUrl;
         this.maxPages = maxPages;
         this.threadCount = threadCount;
@@ -50,6 +61,8 @@ public class WebCrawler {
         this.storageService = storageService;
         this.crawlId = crawlId;
         this.downloadedCount = progressCounter;
+        this.progressReporter = progressReporter;
+        this.websiteCrawlDetailId = websiteCrawlDetailId;
 
         URI uri = URI.create(startUrl);
         this.targetHost = uri.getHost();
@@ -138,6 +151,9 @@ public class WebCrawler {
         }
 
         results.add(new CrawlResult(url, result.storagePath(), result.statusCode()));
+        if (progressReporter != null) {
+            progressReporter.reportPageCrawled(websiteCrawlDetailId, count);
+        }
         logger.info("[" + count + "/" + maxPages + "] " + url);
 
         List<String> links = linkExtractor.extract(url, result.html());

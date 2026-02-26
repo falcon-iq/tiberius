@@ -80,6 +80,13 @@
       <artifactId>s3</artifactId>
     </dependency>
 
+    <!-- MongoDB Driver (for crawl progress reporting) -->
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongodb-driver-sync</artifactId>
+      <version>4.10.2</version>
+    </dependency>
+
     <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
