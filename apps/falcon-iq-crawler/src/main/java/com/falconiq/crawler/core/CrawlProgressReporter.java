@@ -78,7 +78,7 @@ public class CrawlProgressReporter {
                 MongoCollection<Document> collection = getCollection();
                 Bson filter = Filters.eq("_id", new ObjectId(websiteCrawlDetailId));
                 Bson update = Updates.combine(
-                        Updates.set("status", "COMPLETED"),
+                        Updates.set("status", "CRAWLING_COMPLETED"),
                         Updates.set("totalPages", (long) totalPages),
                         Updates.set("numberOfPagesCrawled", (long) totalPages),
                         Updates.set("crawledPagesPath", crawledPagesPath),

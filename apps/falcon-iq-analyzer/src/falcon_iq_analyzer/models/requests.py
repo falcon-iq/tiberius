@@ -10,6 +10,13 @@ class AnalyzeRequest(BaseModel):
     domain: Optional[str] = None
 
 
+class AnalyzeWebsiteRequest(BaseModel):
+    websiteCrawlDetailId: str
+    crawled_pages_path: str
+    url: str
+    locale_filter: str = "en"
+
+
 class CompareRequest(BaseModel):
     job_id_a: str
     job_id_b: str
