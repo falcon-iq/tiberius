@@ -146,10 +146,21 @@ public class WebsiteCrawlDetailMetadata implements GenericBeanMetadata {
             .filterSupported(false)
             .build();
 
+    public static final GenericBeanFieldMetadata<String> ANALYSIS_RESULTS_PATH = GenericBeanFieldMetadataBuilder
+            .<String>builder()
+            .name("analysisResultsPath")
+            .label("Analysis Results Path")
+            .type(FieldType.STRING)
+            .updateAllowed(true)
+            .required(false)
+            .sortSupported(false)
+            .filterSupported(false)
+            .build();
+
     @Override
     public List<GenericBeanFieldMetadata<?>> getFields() {
         return List.of(ID, CREATED_AT, MODIFIED_AT, COMPANY_ID, USER_ID, WEBSITE_LINK, IS_COMPETITOR,
                 NUMBER_OF_PAGES_CRAWLED, NUMBER_OF_PAGES_ANALYZED, TOTAL_PAGES, STATUS, ERROR_MESSAGE,
-                CRAWLED_PAGES_PATH);
+                CRAWLED_PAGES_PATH, ANALYSIS_RESULTS_PATH);
     }
 }

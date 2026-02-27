@@ -40,6 +40,10 @@ resource "aws_ecs_task_definition" "analyzer" {
         {
           name      = "WEB_ANALYZER_OPENAI_API_KEY"
           valueFrom = aws_secretsmanager_secret.openai_api_key.arn
+        },
+        {
+          name      = "WEB_ANALYZER_MONGO_URI"
+          valueFrom = aws_secretsmanager_secret.mongo_uri.arn
         }
       ]
 

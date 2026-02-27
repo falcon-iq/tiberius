@@ -30,6 +30,7 @@ resource "aws_ecs_task_definition" "crawler" {
         { name = "AWS_REGION", value = var.aws_region },
         { name = "PORT", value = "8080" },
         { name = "MAX_CONCURRENT_CRAWLS", value = tostring(var.crawler_max_concurrent_crawls) },
+        { name = "ANALYZER_API_URL", value = "http://${aws_lb.analyzer.dns_name}" },
       ]
 
       secrets = [

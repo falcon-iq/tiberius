@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # Crawler API
     crawler_api_url: str = "http://localhost:8080"
 
+    # MongoDB (for progress reporting)
+    mongo_uri: str = ""
+
     # Storage
     storage_type: str = "local"  # "local" or "s3"
     s3_bucket_name: str = ""

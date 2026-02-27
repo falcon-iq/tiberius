@@ -39,6 +39,7 @@ src/falcon_iq_analyzer/services/crawler.py
 src/falcon_iq_analyzer/services/extractor.py
 src/falcon_iq_analyzer/services/html_cleaner.py
 src/falcon_iq_analyzer/services/page_loader.py
+src/falcon_iq_analyzer/services/progress_reporter.py
 src/falcon_iq_analyzer/services/prompt_evaluator.py
 src/falcon_iq_analyzer/services/prompt_generator.py
 src/falcon_iq_analyzer/services/report_generator.py

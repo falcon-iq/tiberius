@@ -25,7 +25,8 @@ public class Main {
 
         String mongoUri = System.getenv("MONGO_URI");
         CrawlProgressReporter progressReporter = CrawlProgressReporter.create(mongoUri);
-        CrawlManager.initialize(storageService, maxConcurrentCrawls, progressReporter);
+        String analyzerApiUrl = env("ANALYZER_API_URL", "");
+        CrawlManager.initialize(storageService, maxConcurrentCrawls, progressReporter, analyzerApiUrl);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutting down CrawlProgressReporter...");

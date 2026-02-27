@@ -1,16 +1,19 @@
 import asyncio
 import os
+from pathlib import Path
 from typing import List, Optional
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from falcon_iq_analyzer.config import settings
 from falcon_iq_analyzer.llm.factory import create_llm_client
-from falcon_iq_analyzer.models.requests import AnalyzeRequest
+from falcon_iq_analyzer.models.requests import AnalyzeRequest, AnalyzeWebsiteRequest
 from falcon_iq_analyzer.models.responses import JobStatus
 from falcon_iq_analyzer.pipeline.analyzer import run_analysis
 from falcon_iq_analyzer.pipeline.job_manager import JobManager
+from falcon_iq_analyzer.services.progress_reporter import AnalysisProgressReporter
 
 router = APIRouter()
 job_manager = JobManager()
@@ -60,6 +63,51 @@ async def start_analysis(request: AnalyzeRequest) -> JobStatus:
             settings=settings,
             job_manager=job_manager,
             job_id=job.job_id,
+        )
+    )
+
+    return JobStatus(job_id=job.job_id, status="pending", progress="Job queued")
+
+
+@router.post("/analyze-website", response_model=JobStatus, status_code=202)
+async def start_website_analysis(request: AnalyzeWebsiteRequest) -> JobStatus:
+    """Start analysis triggered by crawler, with MongoDB progress reporting."""
+    parsed = urlparse(request.url)
+    company_name = parsed.hostname or request.url
+    if company_name.startswith("www."):
+        company_name = company_name[4:]
+
+    # Extract crawl ID from the crawler's path:
+    #   Local: "crawled_pages/<id>"  →  "<id>"
+    #   S3:    "s3://bucket/crawls/<id>"  →  "<id>"
+    crawled_pages_path = request.crawled_pages_path
+    crawl_id = Path(crawled_pages_path).name
+
+    if settings.storage_type == "local":
+        crawl_directory = os.path.join(settings.crawled_sites_dir, crawl_id)
+    else:
+        # S3 mode: load_pages_from_s3 expects just the crawl ID
+        crawl_directory = crawl_id
+
+    reporter = AnalysisProgressReporter(settings.mongo_uri)
+    reporter.report_analyzer_in_progress(request.websiteCrawlDetailId)
+
+    job = job_manager.create_job()
+    job.domain = company_name
+    llm = create_llm_client(settings)
+
+    asyncio.create_task(
+        run_analysis(
+            crawl_directory=crawl_directory,
+            company_name=company_name,
+            locale_filter=request.locale_filter,
+            llm=llm,
+            settings=settings,
+            job_manager=job_manager,
+            job_id=job.job_id,
+            progress_reporter=reporter,
+            website_crawl_detail_id=request.websiteCrawlDetailId,
+            crawled_pages_path=request.crawled_pages_path,
         )
     )
 

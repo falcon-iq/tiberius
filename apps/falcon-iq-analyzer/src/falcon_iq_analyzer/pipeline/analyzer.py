@@ -13,6 +13,7 @@ from falcon_iq_analyzer.models.domain import (
     PageInfo,
 )
 from falcon_iq_analyzer.pipeline.job_manager import JobManager
+from falcon_iq_analyzer.services.progress_reporter import AnalysisProgressReporter
 from falcon_iq_analyzer.services.classifier import classify_pages
 from falcon_iq_analyzer.services.extractor import extract_pages
 from falcon_iq_analyzer.services.html_cleaner import clean_page
@@ -45,8 +46,12 @@ async def run_analysis(
     settings: Settings,
     job_manager: JobManager,
     job_id: str,
+    progress_reporter: AnalysisProgressReporter | None = None,
+    website_crawl_detail_id: str | None = None,
+    crawled_pages_path: str | None = None,
 ) -> None:
     """Run the full 6-step analysis pipeline."""
+    _report = progress_reporter is not None and website_crawl_detail_id is not None
     try:
         # Store crawl_directory on the job for later lookups
         job = job_manager.get_job(job_id)
@@ -58,6 +63,8 @@ async def run_analysis(
 
         # Step 1: Load pages
         job_manager.update_status(job_id, "running", "Step 1/6: Loading pages")
+        if _report:
+            progress_reporter.report_step_progress(website_crawl_detail_id, "Step 1/6", "Loading pages")
         all_pages = load_pages(crawl_directory, locale_filter)
         total_pages_on_disk = (
             len(load_pages(crawl_directory, locale_filter="__all__")) if locale_filter != "__all__" else len(all_pages)
@@ -66,6 +73,10 @@ async def run_analysis(
 
         # Step 2: Clean HTML
         job_manager.update_status(job_id, "running", f"Step 2/6: Cleaning {len(all_pages)} pages")
+        if _report:
+            progress_reporter.report_step_progress(
+                website_crawl_detail_id, "Step 2/6", f"Cleaning {len(all_pages)} pages"
+            )
         cleaned_pages: list[PageInfo] = []
         for page in all_pages:
             cached = cache.get(page.filename, "clean")
@@ -96,6 +107,10 @@ async def run_analysis(
 
         # Step 3: Classify pages
         job_manager.update_status(job_id, "running", f"Step 3/6: Classifying {len(cleaned_pages)} pages")
+        if _report:
+            progress_reporter.report_step_progress(
+                website_crawl_detail_id, "Step 3/6", f"Classifying {len(cleaned_pages)} pages"
+            )
         classifications: dict[str, PageClassification] = {}
         uncached_pages: list[PageInfo] = []
 
@@ -115,6 +130,8 @@ async def run_analysis(
 
         classification_summary = Counter(c.page_type for c in classifications.values())
         logger.info("Step 3: Classification summary: %s", dict(classification_summary))
+        if _report:
+            progress_reporter.report_pages_analyzed(website_crawl_detail_id, len(classifications))
 
         # Step 4: Extract offerings from product/industry pages
         product_pages = [
@@ -126,6 +143,10 @@ async def run_analysis(
             in ("product", "industry")
         ]
         job_manager.update_status(job_id, "running", f"Step 4/6: Extracting offerings from {len(product_pages)} pages")
+        if _report:
+            progress_reporter.report_step_progress(
+                website_crawl_detail_id, "Step 4/6", f"Extracting offerings from {len(product_pages)} pages"
+            )
 
         extractions: list[PageExtraction] = []
         uncached_product_pages: list[PageInfo] = []
@@ -148,12 +169,18 @@ async def run_analysis(
 
         # Step 5: Synthesize top 5 offerings
         job_manager.update_status(job_id, "running", "Step 5/6: Synthesizing top offerings")
+        if _report:
+            progress_reporter.report_step_progress(
+                website_crawl_detail_id, "Step 5/6", "Synthesizing top offerings"
+            )
         non_empty = [e for e in extractions if e.offerings]
         top_offerings = await synthesize_offerings(llm, company_name, non_empty)
         logger.info("Step 5: Synthesized %d top offerings", len(top_offerings))
 
         # Step 6: Generate report
         job_manager.update_status(job_id, "running", "Step 6/6: Generating report")
+        if _report:
+            progress_reporter.report_step_progress(website_crawl_detail_id, "Step 6/6", "Generating report")
         result = AnalysisResult(
             company_name=company_name,
             total_pages=total_pages_on_disk,
@@ -176,6 +203,12 @@ async def run_analysis(
 
         job_manager.set_result(job_id, result)
 
+        if _report:
+            results_path = f"{crawled_pages_path}/reports/result-{job_id}.json" if crawled_pages_path else result_key
+            progress_reporter.report_completed(website_crawl_detail_id, results_path)
+
     except Exception as e:
         logger.exception("Analysis pipeline failed")
         job_manager.set_error(job_id, str(e))
+        if _report:
+            progress_reporter.report_failed(website_crawl_detail_id, str(e))

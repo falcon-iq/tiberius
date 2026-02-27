@@ -11,9 +11,10 @@ public class WebsiteCrawlDetail extends AbstractBaseDomainObject {
     public static final String STATUS = "status";
     public static final String ERROR_MESSAGE = "errorMessage";
     public static final String CRAWLED_PAGES_PATH = "crawledPagesPath";
+    public static final String ANALYSIS_RESULTS_PATH = "analysisResultsPath";
 
     public enum Status {
-        NOT_STARTED, CRAWL_IN_PROGRESS, ANALYZER_IN_PROGRESS, COMPLETED, FAILED
+        NOT_STARTED, CRAWL_IN_PROGRESS, CRAWLING_COMPLETED, ANALYZER_IN_PROGRESS, COMPLETED, FAILED
     }
 
     private String companyId;
@@ -35,6 +36,8 @@ public class WebsiteCrawlDetail extends AbstractBaseDomainObject {
     private String errorMessage;
 
     private String crawledPagesPath;
+
+    private String analysisResultsPath;
 
     public String getCompanyId() {
         return companyId;
@@ -114,5 +117,13 @@ public class WebsiteCrawlDetail extends AbstractBaseDomainObject {
 
     public void setCrawledPagesPath(String crawledPagesPath) {
         this.crawledPagesPath = crawledPagesPath;
+    }
+
+    public String getAnalysisResultsPath() {
+        return analysisResultsPath;
+    }
+
+    public void setAnalysisResultsPath(String analysisResultsPath) {
+        this.analysisResultsPath = analysisResultsPath;
     }
 }
