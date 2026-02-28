@@ -39,19 +39,35 @@ async def health() -> dict:
     }
 
 
-# Serve the React web app build output (only when dist has been built)
-_repo_root = Path(__file__).parents[4]
-_static_dir = _repo_root / "apps" / "falcon-iq-analyzer-web-app" / "dist"
+# Serve the React web app build output (only when dist has been built).
+# Walk up to the repo root (varies between local dev and Docker).
+_this = Path(__file__).resolve()
+_repo_root = next((p for p in _this.parents if (p / "nx.json").exists()), None)
+_static_dir = (_repo_root / "apps" / "falcon-iq-analyzer-web-app" / "dist") if _repo_root else None
 
-if _static_dir.exists():
-    # SPA catch-all: must be registered BEFORE the StaticFiles mount so that
-    # unknown paths (e.g. /benchmark on hard refresh) return the SPA shell.
+# Known API path prefixes — the SPA fallback must never intercept these.
+_API_PREFIXES = (
+    "health", "analyze", "compare", "report", "crawl",
+    "benchmark", "sites", "analyses", "benchmarks",
+)
+
+if _static_dir is not None and _static_dir.exists():
+    # Serve JS/CSS/images at /static so the mount never shadows API routes.
+    app.mount(
+        "/static",
+        StaticFiles(directory=str(_static_dir), html=False),
+        name="static",
+    )
+
+    # SPA catch-all: only for GET requests on non-API paths (e.g. /benchmark
+    # on hard refresh). API routes registered above take priority over this.
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str) -> FileResponse:
+        # If the path matches a real static file, serve it directly
+        candidate = _static_dir / full_path
+        if candidate.is_file():
+            return FileResponse(str(candidate))
         return FileResponse(str(_static_dir / "index.html"))
-
-    # Mount static files last so API routes take priority
-    app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
 
 
 if __name__ == "__main__":
