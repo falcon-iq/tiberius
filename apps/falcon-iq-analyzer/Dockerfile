@@ -21,7 +21,7 @@ WORKDIR /app
 COPY --from=builder /app /app
 
 # Create non-root user (AWS Fargate best practice)
-RUN groupadd -r falcon && useradd -r -g falcon falcon
+RUN groupadd -r falcon && useradd -r -g falcon -m falcon
 RUN mkdir -p /app/results && chown -R falcon:falcon /app
 
 # Default to S3 storage in container (override for local dev)
