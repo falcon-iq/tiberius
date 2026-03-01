@@ -1,0 +1,63 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  NX_DAEMON: "false" # disables NX daemon
+  NX_SKIP_NX_CACHE: "false" # enables NX cache
+  AWS_REGION: us-east-1
+
+permissions:
+  id-token: write
+  contents: write
+  actions: read
+  pull-requests: write
+
+jobs:
+  main:
+    name: preview deploy
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "package.json" # Automatically reads the engines field
+          cache: "npm"
+
+      - run: npm ci --legacy-peer-deps
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Show affected projects
+        run: |
+          echo "NX_BASE=$NX_BASE"
+          echo "NX_HEAD=$NX_HEAD"
+          npx nx show projects --affected
+        timeout-minutes: 10
+
+      - id: preview-deploy
+        name: Deploy previews
+        run: |
+          npx nx affected run-many -t deploy --configuration=preview
+
+      - name: Comment PR with preview link
+        if: ${{ steps.preview-deploy.outputs.preview_falconweb_url }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            # 🚀 Falcon Analyzer Preview deployed:
+            🏁🏁🏁🏁🏁🏁 [preview build](${{ steps.preview-deploy.outputs.preview_falconweb_url }}) is available at:
+             * ${{ steps.preview-deploy.outputs.preview_falconweb_url }}
