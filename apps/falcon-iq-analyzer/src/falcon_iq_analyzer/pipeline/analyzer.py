@@ -13,11 +13,11 @@ from falcon_iq_analyzer.models.domain import (
     PageInfo,
 )
 from falcon_iq_analyzer.pipeline.job_manager import JobManager
-from falcon_iq_analyzer.services.progress_reporter import AnalysisProgressReporter
 from falcon_iq_analyzer.services.classifier import classify_pages
 from falcon_iq_analyzer.services.extractor import extract_pages
 from falcon_iq_analyzer.services.html_cleaner import clean_page
 from falcon_iq_analyzer.services.page_loader import load_pages
+from falcon_iq_analyzer.services.progress_reporter import AnalysisProgressReporter
 from falcon_iq_analyzer.services.report_generator import generate_markdown_report
 from falcon_iq_analyzer.services.synthesizer import synthesize_offerings
 from falcon_iq_analyzer.storage import create_storage_service
