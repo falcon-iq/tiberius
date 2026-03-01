@@ -19,9 +19,12 @@ outputs:
   count:
     description: "Number of affected projects"
     value: ${{ steps.affected.outputs.count }}
-  affected_json:
+  json:
     description: "JSON array of affected projects"
-    value: ${{ steps.affected.outputs.affected_json }}
+    value: ${{ steps.affected.outputs.json }}
+  csv:
+    description: "Comma-separated list of affected projects"
+    value: ${{ steps.affected.outputs.csv }}
   summary_md:
     description: "Markdown summary (suitable for GITHUB_STEP_SUMMARY or PR comments)"
     value: ${{ steps.affected.outputs.summary_md }}
@@ -95,9 +98,11 @@ runs:
         cat "$SUMMARY_FILE" >> "$GITHUB_STEP_SUMMARY"
 
         # Expose stable outputs for callers
+        AFFECTED_CSV="$(echo "$AFFECTED" | jq -r '.[] | select(length > 0)' | paste -sd ',' -)"
         {
           echo "count=$count"
-          echo "affected_json<<EOF"
+          echo "csv=${AFFECTED_CSV}"
+          echo "json<<EOF"
           echo "$AFFECTED"
           echo "EOF"
           echo "summary_md<<EOF"
