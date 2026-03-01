@@ -42,17 +42,23 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - uses: nrwl/nx-set-shas@v4
 
-      - name: Show affected projects
-        run: |
-          echo "NX_BASE=$NX_BASE"
-          echo "NX_HEAD=$NX_HEAD"
-          npx nx show projects --affected
-        timeout-minutes: 10
+      - name: Compute affected projects + summary
+        id: affected
+        uses: ./.github/actions/nx-affected
+        with:
+          summary_title: "## 🧭 Nx affected projects (Preview Deploy)"
 
       - id: preview-deploy
         name: Deploy previews
         run: |
           npx nx affected run-many -t deploy --configuration=preview
+
+      - name: Comment affected projects on PR
+        if: github.event_name == 'pull_request' && steps.affected.outputs.count != '0'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: nx-affected
+          message: ${{ steps.affected.outputs.summary_md }}
 
       - name: Comment PR with preview link
         if: ${{ steps.preview-deploy.outputs.preview_falconweb_url }}
