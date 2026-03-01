@@ -88,5 +88,5 @@ jobs:
         if: github.event_name == 'pull_request' && steps.affected.outputs.count != '0'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          header: nx-affected-continuous-integration
+          header: nx-affected
           message: ${{ steps.affected.outputs.summary_md }}

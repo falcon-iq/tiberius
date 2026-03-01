@@ -53,13 +53,6 @@ jobs:
         run: |
           npx nx affected run-many -t deploy --configuration=preview
 
-      - name: Comment affected projects on PR
-        if: github.event_name == 'pull_request' && steps.affected.outputs.count != '0'
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: nx-affected
-          message: ${{ steps.affected.outputs.summary_md }}
-
       - name: Comment PR with preview link
         if: ${{ steps.preview-deploy.outputs.preview_falconweb_url }}
         uses: marocchino/sticky-pull-request-comment@v2
