@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 const BASE =
   'px-6 py-2.5 rounded-full text-[14px] font-semibold cursor-pointer transition-all border-2 bg-white text-[#555] border-[#e0e0e0]';
 const ACTIVE =
-  'px-6 py-2.5 rounded-full text-[14px] font-semibold cursor-pointer transition-all border-2 bg-[#4a6cf7] text-white border-[#4a6cf7]';
+  'px-6 py-2.5 rounded-full text-[14px] font-semibold cursor-pointer transition-all border-2 !bg-[#4a6cf7] !text-white !border-[#4a6cf7]';
 
 const tabs = [
   { to: '/' as const, label: 'Websites', exact: true },

@@ -7,8 +7,10 @@ import type {
   Benchmark,
 } from '@app-types/api';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(path, options);
+  const res = await fetch(`${API_BASE_URL}${path}`, options);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(

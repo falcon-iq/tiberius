@@ -43,6 +43,39 @@
         "cwd": "apps/falcon-iq-analyzer-web-app",
         "command": "npx jest --config jest.config.js"
       }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": {
+        "cwd": "apps/falcon-iq-analyzer-web-app",
+        "parallel": false,
+        "shell": "bash",
+        "forwardAllArgs": false
+      },
+      "configurations": {
+        "preview": {
+          "env": { "NODE_ENV": "staging" },
+          "command": [
+            "VERSION_ID=$(timeout 3m npx wrangler deploy -e preview 2>&1 | grep -m1 \"Current Version ID\" | cut -d\" \" -f4);",
+            "[ -n \"${VERSION_ID:-}\" ] || { echo \"Failed to extract Version ID\" >&2; exit 1; };",
+            "SHORT_ID=${VERSION_ID%%-*};",
+            "PREVIEW_URL=\"https://$SHORT_ID-falcon-iq-analyzer-web-app-preview.falconiq-preview.workers.dev\";",
+            "printf \"%s\\n\" \"$PREVIEW_URL\";",
+            "if [ -n \"${GITHUB_OUTPUT:-}\" ]; then",
+            "printf \"preview_falconweb_url=%s\\n\" \"$PREVIEW_URL\" >> \"$GITHUB_OUTPUT\";",
+            "fi"
+          ]
+        },
+        "staging": {
+          "env": { "NODE_ENV": "staging" },
+          "commands": ["timeout 3m npx wrangler deploy -e staging"]
+        },
+        "production": {
+          "commands": ["timeout 3m npx wrangler deploy -e production"]
+        }
+      }
     }
   }
 }
