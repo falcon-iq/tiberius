@@ -54,7 +54,7 @@ jobs:
           summary_title: "## 🧭 Nx affected projects (CI)"
 
       - name: Set up Java and Maven
-        if: steps.affected.outputs['falcon-iq-rest'] == 'true' || steps.affected.outputs['falcon-iq-crawler'] == 'true'
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-rest') || contains(steps.affected.outputs.csv, 'falcon-iq-crawler')
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
@@ -62,19 +62,19 @@ jobs:
           cache: "maven"
 
       - name: Set up Python
-        if: steps.affected.outputs['falcon-iq-analyzer'] == 'true'
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-analyzer')
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Set up uv
-        if: steps.affected.outputs['falcon-iq-analyzer'] == 'true'
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-analyzer')
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
       - name: Install Python dependencies
-        if: steps.affected.outputs['falcon-iq-analyzer'] == 'true'
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-analyzer')
         run: |
           cd apps/falcon-iq-analyzer
           uv sync --extra dev
