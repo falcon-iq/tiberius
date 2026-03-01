@@ -1,0 +1,107 @@
+name: "Nx affected projects summary"
+description: "Computes Nx affected projects, emits outputs per project, writes Step Summary, and outputs markdown for PR comments."
+
+inputs:
+  nx_command:
+    description: "Command that outputs a JSON array of affected project names"
+    required: false
+    default: "npx nx show projects --affected --json"
+  require_shas:
+    description: "Fail if NX_BASE/NX_HEAD are not set (recommended)."
+    required: false
+    default: "true"
+  summary_title:
+    description: "Markdown heading/title to use in the summary output"
+    required: false
+    default: "## 🧭 Nx affected projects"
+
+outputs:
+  count:
+    description: "Number of affected projects"
+    value: ${{ steps.affected.outputs.count }}
+  affected_json:
+    description: "JSON array of affected projects"
+    value: ${{ steps.affected.outputs.affected_json }}
+  summary_md:
+    description: "Markdown summary (suitable for GITHUB_STEP_SUMMARY or PR comments)"
+    value: ${{ steps.affected.outputs.summary_md }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Show and calculate affected projects
+      id: affected
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Fail fast if NX_BASE/NX_HEAD are not set (usually provided by nrwl/nx-set-shas@v4)
+        if [[ "${{ inputs.require_shas }}" == "true" ]]; then
+          if [[ -z "${NX_BASE:-}" || -z "${NX_HEAD:-}" ]]; then
+            echo "::error title=Nx SHAs not set::NX_BASE and/or NX_HEAD are missing. This action requires the base and head SHAs to compute Nx affected projects. Add the following step earlier in the job (and ensure checkout fetch-depth is 0):"
+            echo "::error::"
+            echo "::error::  - uses: actions/checkout@v4"
+            echo "::error::    with:"
+            echo "::error::      fetch-depth: 0"
+            echo "::error::"
+            echo "::error::  - uses: nrwl/nx-set-shas@v4"
+            echo "::error::"
+            echo "::error::Alternatively, set NX_BASE and NX_HEAD explicitly before running this action."
+            echo "::error::Event: ${GITHUB_EVENT_NAME:-<unknown>}, Ref: ${GITHUB_REF:-<unknown>}, SHA: ${GITHUB_SHA:-<unknown>}"
+            exit 1
+          fi
+        fi
+
+        echo "NX_BASE=${NX_BASE:-<unset>}"
+        echo "NX_HEAD=${NX_HEAD:-<unset>}"
+
+        # Run Nx command (expects JSON array output)
+        AFFECTED="$(${{ inputs.nx_command }})"
+
+        echo "::group::🧭 Nx affected projects"
+        count="$(echo "$AFFECTED" | jq 'length')"
+
+        if [ "$count" -eq 0 ]; then
+          echo -e "\033[33mℹ️  No affected projects\033[0m"
+        else
+          echo -e "\033[32m✅ Affected projects ($count):\033[0m"
+          echo "$AFFECTED" | jq -r '.[]' | while read -r proj; do
+            [ -n "$proj" ] || continue
+            echo -e "  \033[36m•\033[0m \033[1m$proj\033[0m"
+            # Per-project flags as outputs
+            echo "${proj}=true" >> "$GITHUB_OUTPUT"
+          done
+        fi
+        echo "::endgroup::"
+
+        # Build markdown once, reuse everywhere
+        SUMMARY_FILE="$(mktemp)"
+        {
+          echo "${{ inputs.summary_title }}"
+          echo
+          echo "**Count:** $count"
+          echo
+          if [ "$count" -eq 0 ]; then
+            echo "_No affected projects._"
+          else
+            echo "$AFFECTED" | jq -r '.[]' | while read -r proj; do
+              [ -n "$proj" ] || continue
+              echo "- ✅ **$proj**"
+            done
+          fi
+        } > "$SUMMARY_FILE"
+
+        # Write GitHub Actions step summary
+        cat "$SUMMARY_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+        # Expose stable outputs for callers
+        {
+          echo "count=$count"
+          echo "affected_json<<EOF"
+          echo "$AFFECTED"
+          echo "EOF"
+          echo "summary_md<<EOF"
+          cat "$SUMMARY_FILE"
+          echo
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
