@@ -3,8 +3,8 @@
 # -----------------------------------------------------------------------------
 
 output "analyzer_url" {
-  description = "URL of the analyzer service (ALB DNS name)"
-  value       = "http://${aws_lb.analyzer.dns_name}"
+  description = "URL of the analyzer service"
+  value       = "https://${var.api_domain}"
 }
 
 output "crawler_ecr_repository_url" {
@@ -48,8 +48,19 @@ output "rest_log_group" {
 }
 
 output "rest_api_url" {
-  description = "URL of the REST API (ALB DNS name + /api)"
-  value       = "http://${aws_lb.analyzer.dns_name}/api"
+  description = "URL of the REST API"
+  value       = "https://${var.api_domain}/api"
+}
+
+output "acm_validation_records" {
+  description = "CNAME records to add in Cloudflare DNS to validate the ACM certificate"
+  value = {
+    for opt in aws_acm_certificate.api.domain_validation_options : opt.domain_name => {
+      name  = opt.resource_record_name
+      type  = opt.resource_record_type
+      value = opt.resource_record_value
+    }
+  }
 }
 
 output "openai_secret_arn" {

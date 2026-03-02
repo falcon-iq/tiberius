@@ -19,6 +19,9 @@ availability_zones   = ["us-east-1a", "us-east-1b"]
 public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
 private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
 
+# Domain
+api_domain = "api.falconiq.ai"
+
 # S3 (must be globally unique)
 s3_bucket_name = "falcon-iq-data-CHANGE-ME"
 

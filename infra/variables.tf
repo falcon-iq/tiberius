@@ -156,6 +156,16 @@ variable "rest_desired_count" {
 }
 
 # -----------------------------------------------------------------------------
+# Domain
+# -----------------------------------------------------------------------------
+
+variable "api_domain" {
+  description = "Custom domain for the API (e.g. api.falconiq.ai). Used for ACM certificate and HTTPS listener."
+  type        = string
+  default     = "api.falconiq.ai"
+}
+
+# -----------------------------------------------------------------------------
 # Secrets
 # -----------------------------------------------------------------------------
 
@@ -178,6 +188,7 @@ variable "mongo_uri" {
 variable "s3_bucket_name" {
   description = "Name for the shared S3 bucket (must be globally unique)"
   type        = string
+  default     = "falcon-iq-data-186015733406"
 }
 
 # -----------------------------------------------------------------------------
