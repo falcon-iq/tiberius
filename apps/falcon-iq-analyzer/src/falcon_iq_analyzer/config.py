@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     ollama_model: str = "mistral"
     ollama_num_ctx: int = 32768
 
+    # CORS
+    cors_origins: list[str] = ["*"]
+
     # General
     max_concurrency: int = 10
     max_clean_text_chars: int = 4000

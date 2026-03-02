@@ -31,7 +31,7 @@ async def run_crawl(
             # Start the crawl
             response = await client.post(
                 f"{crawler_url}/api/crawl",
-                json={"url": url, "maxPages": max_pages},
+                json={"url": url, "maxPages": max_pages, "websiteCrawlDetailId": job_id},
             )
             response.raise_for_status()
             data = response.json()
