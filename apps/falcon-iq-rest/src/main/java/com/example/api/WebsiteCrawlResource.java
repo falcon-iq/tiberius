@@ -30,9 +30,7 @@ import java.util.logging.Logger;
 public class WebsiteCrawlResource {
 
     private static final Logger logger = Logger.getLogger(WebsiteCrawlResource.class.getName());
-    private static final String CRAWLER_API_URL = System.getenv("CRAWLER_API_URL") != null
-            ? System.getenv("CRAWLER_API_URL")
-            : "http://localhost:8080";
+    private static final String CRAWLER_API_URL = System.getenv("CRAWLER_API_URL");
 
     private final GenericMongoCRUDService<WebsiteCrawlDetail> crudService;
 
@@ -85,6 +83,13 @@ public class WebsiteCrawlResource {
         WebsiteCrawlDetail saved = crudService.create(detail);
 
         // Call crawler service
+        if (CRAWLER_API_URL == null || CRAWLER_API_URL.isBlank()) {
+            return Response.status(503)
+                    .entity(Map.of(
+                            "error", "CRAWLER_API_URL not configured",
+                            "websiteCrawlDetailId", saved.getId()))
+                    .build();
+        }
         try {
             HttpClient httpClient = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(10))

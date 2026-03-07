@@ -26,3 +26,8 @@ class BenchmarkRequest(BaseModel):
     job_id_a: str
     job_id_b: str
     num_prompts: int = 15
+
+
+class CompanyBenchmarkRequest(BaseModel):
+    companyBenchmarkReportId: str
+    num_prompts: int = 15

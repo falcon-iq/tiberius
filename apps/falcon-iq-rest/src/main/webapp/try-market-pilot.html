@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Try Market Pilot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e4e4e7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated gradient background */
+    .bg-glow {
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.04) 0%, transparent 70%);
+      animation: bgShift 20s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes bgShift {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-5%, 3%) rotate(3deg); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* Header */
+    .logo-section {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+    }
+
+    .logo-icon svg { width: 28px; height: 28px; }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #e0e7ff, #c4b5fd, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: #71717a;
+      font-weight: 400;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(24, 24, 32, 0.8);
+      border: 1px solid rgba(63, 63, 70, 0.5);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(12px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-icon svg { width: 20px; height: 20px; }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f4f4f5;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #71717a;
+      margin-top: 2px;
+    }
+
+    /* Form */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #a1a1aa;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="url"], input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(9, 9, 11, 0.6);
+      border: 1px solid rgba(63, 63, 70, 0.6);
+      border-radius: 10px;
+      color: #f4f4f5;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    input::placeholder { color: #52525b; }
+
+    /* Competitor list */
+    .competitor-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+      animation: fadeSlideIn 0.25s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .competitor-row input { flex: 1; }
+
+    .btn-remove {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.08);
+      color: #ef4444;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .btn-remove:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-add {
+      width: 100%;
+      padding: 10px;
+      border: 1px dashed rgba(99, 102, 241, 0.3);
+      border-radius: 10px;
+      background: transparent;
+      color: #818cf8;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      margin-top: 4px;
+    }
+
+    .btn-add:hover {
+      background: rgba(99, 102, 241, 0.06);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-add:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .competitor-count {
+      font-size: 12px;
+      color: #52525b;
+      text-align: right;
+      margin-top: 6px;
+    }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #7c3aed);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: inherit;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-submit:hover::before { left: 100%; }
+
+    .btn-submit:hover {
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Progress section */
+    .progress-section {
+      display: none;
+      margin-top: 32px;
+    }
+
+    .progress-section.active { display: block; }
+
+    .progress-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(99, 102, 241, 0.2);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #a1a1aa;
+    }
+
+    .progress-bar-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(63, 63, 70, 0.4);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #a855f7);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.6s ease;
+    }
+
+    .progress-message {
+      font-size: 13px;
+      color: #71717a;
+    }
+
+    /* Steps tracker */
+    .steps-tracker {
+      margin-top: 20px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(63, 63, 70, 0.2);
+      font-size: 13px;
+      color: #52525b;
+      transition: color 0.3s;
+    }
+
+    .step-item.active {
+      color: #a78bfa;
+    }
+
+    .step-item.done {
+      color: #4ade80;
+    }
+
+    .step-item.failed {
+      color: #ef4444;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3f3f46;
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+
+    .step-item.active .step-dot {
+      background: #a78bfa;
+      box-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
+      animation: pulseDot 1.5s ease-in-out infinite;
+    }
+
+    .step-item.done .step-dot {
+      background: #4ade80;
+    }
+
+    .step-item.failed .step-dot {
+      background: #ef4444;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Result section */
+    .result-section {
+      display: none;
+    }
+
+    .result-section.active { display: block; }
+
+    .result-success {
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .result-check {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(74, 222, 128, 0.1);
+      border: 2px solid rgba(74, 222, 128, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      animation: scaleIn 0.4s ease-out;
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .result-check svg { width: 32px; height: 32px; color: #4ade80; }
+
+    .result-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: 8px;
+    }
+
+    .result-desc {
+      font-size: 14px;
+      color: #71717a;
+      margin-bottom: 24px;
+    }
+
+    .btn-new {
+      padding: 12px 32px;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: 10px;
+      background: transparent;
+      color: #818cf8;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-new:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-view-report {
+      display: inline-block;
+      padding: 14px 32px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: inherit;
+      text-decoration: none;
+      margin-bottom: 16px;
+    }
+
+    .btn-view-report:hover {
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* Error */
+    .error-banner {
+      display: none;
+      padding: 12px 16px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 10px;
+      color: #fca5a5;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .error-banner.active { display: block; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(63, 63, 70, 0.3);
+    }
+
+    .footer p {
+      font-size: 12px;
+      color: #3f3f46;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container { padding: 32px 16px 64px; }
+      h1 { font-size: 28px; }
+      .card { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="logo-section">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <h1>Try Market Pilot</h1>
+      <p class="subtitle">See how AI perceives your brand vs. the competition</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card" id="formCard">
+      <div class="card-header">
+        <div class="card-icon" style="background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15));">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="card-title">Your Website</div>
+          <div class="card-desc">Enter the website you want to benchmark</div>
+        </div>
+      </div>
+
+      <label for="companyUrl">Website URL</label>
+      <input type="url" id="companyUrl" placeholder="https://yourcompany.com" autocomplete="off" />
+    </div>
+
+    <!-- Competitors Card -->
+    <div class="card" id="competitorsCard">
+      <div class="card-header">
+        <div class="card-icon" style="background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.15));">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div>
+          <div class="card-title">Competitors</div>
+          <div class="card-desc">Add 1 to 10 competitor websites to compare against</div>
+        </div>
+      </div>
+
+      <label>Competitor URLs</label>
+      <div id="competitorList">
+        <div class="competitor-row">
+          <input type="url" placeholder="https://competitor1.com" class="competitor-input" autocomplete="off" />
+        </div>
+      </div>
+
+      <button class="btn-add" id="btnAdd" onclick="addCompetitor()">+ Add Competitor</button>
+      <div class="competitor-count" id="competitorCount">1 of 10 competitors</div>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn-submit" id="btnSubmit" onclick="startBenchmark()">
+      Launch Benchmark Analysis
+    </button>
+
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Progress Card -->
+    <div class="card progress-section" id="progressSection">
+      <div class="progress-header">
+        <div class="spinner" id="progressSpinner"></div>
+        <span class="progress-label" id="progressLabel">Starting...</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-message" id="progressMessage">Initializing benchmark report...</div>
+
+      <div class="steps-tracker">
+        <div class="step-item" id="step-NOT_STARTED" data-step="NOT_STARTED">
+          <div class="step-dot"></div>
+          <span>Report created</span>
+        </div>
+        <div class="step-item" id="step-CRAWL_IN_PROGRESS" data-step="CRAWL_IN_PROGRESS">
+          <div class="step-dot"></div>
+          <span>Crawling websites</span>
+        </div>
+        <div class="step-item" id="step-CRAWL_COMPLETED" data-step="CRAWL_COMPLETED">
+          <div class="step-dot"></div>
+          <span>Crawling complete</span>
+        </div>
+        <div class="step-item" id="step-ANALYSIS_IN_PROGRESS" data-step="ANALYSIS_IN_PROGRESS">
+          <div class="step-dot"></div>
+          <span>Analyzing websites</span>
+        </div>
+        <div class="step-item" id="step-ANALYSIS_COMPLETED" data-step="ANALYSIS_COMPLETED">
+          <div class="step-dot"></div>
+          <span>Analysis complete</span>
+        </div>
+        <div class="step-item" id="step-BENCHMARK_REPORT_IN_PROGRESS" data-step="BENCHMARK_REPORT_IN_PROGRESS">
+          <div class="step-dot"></div>
+          <span>Generating benchmark report</span>
+        </div>
+        <div class="step-item" id="step-COMPLETED" data-step="COMPLETED">
+          <div class="step-dot"></div>
+          <span>Benchmark complete</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result Card -->
+    <div class="card result-section" id="resultSection">
+      <div class="result-success">
+        <div class="result-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="result-title">Benchmark Complete!</div>
+        <div class="result-desc" id="resultDesc">Your competitive analysis report has been generated.</div>
+        <a class="btn-view-report" id="btnViewReport" href="#" target="_blank" style="display:none;">View Report</a>
+        <br/>
+        <button class="btn-new" onclick="resetForm()">Run Another Benchmark</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Market Pilot &mdash; AI-Powered Competitive Intelligence</p>
+    </div>
+  </div>
+
+  <script>
+    // Determine API base URL: same origin, under /api
+    const API_BASE = window.location.origin + '/api';
+    const ANALYZER_BASE = 'http://localhost:8000';
+
+    let competitorCount = 1;
+    let pollTimer = null;
+    let currentReportId = null;
+
+    const STEP_ORDER = [
+      'NOT_STARTED',
+      'CRAWL_IN_PROGRESS',
+      'CRAWL_COMPLETED',
+      'ANALYSIS_IN_PROGRESS',
+      'ANALYSIS_COMPLETED',
+      'BENCHMARK_REPORT_IN_PROGRESS',
+      'COMPLETED',
+    ];
+
+    const STEP_PROGRESS = {
+      'NOT_STARTED': 5,
+      'CRAWL_IN_PROGRESS': 20,
+      'CRAWL_COMPLETED': 40,
+      'ANALYSIS_IN_PROGRESS': 55,
+      'ANALYSIS_COMPLETED': 70,
+      'BENCHMARK_REPORT_IN_PROGRESS': 85,
+      'COMPLETED': 100,
+    };
+
+    const STATUS_MESSAGES = {
+      'NOT_STARTED': 'Waiting to start...',
+      'CRAWL_IN_PROGRESS': 'Crawling websites to gather page data...',
+      'CRAWL_COMPLETED': 'Crawling finished. Preparing analysis...',
+      'ANALYSIS_IN_PROGRESS': 'AI is analyzing each website...',
+      'ANALYSIS_COMPLETED': 'Analysis complete. Generating benchmark...',
+      'BENCHMARK_REPORT_IN_PROGRESS': 'Generating your competitive benchmark report...',
+      'COMPLETED': 'Your benchmark report is ready!',
+      'FAILED': 'Something went wrong. Please try again.',
+    };
+
+    function addCompetitor() {
+      if (competitorCount >= 10) return;
+      competitorCount++;
+
+      const row = document.createElement('div');
+      row.className = 'competitor-row';
+      row.innerHTML = `
+        <input type="url" placeholder="https://competitor${competitorCount}.com" class="competitor-input" autocomplete="off" />
+        <button class="btn-remove" onclick="removeCompetitor(this)" title="Remove">&times;</button>
+      `;
+      document.getElementById('competitorList').appendChild(row);
+      updateCompetitorUI();
+      row.querySelector('input').focus();
+    }
+
+    function removeCompetitor(btn) {
+      const row = btn.closest('.competitor-row');
+      row.remove();
+      competitorCount--;
+      updateCompetitorUI();
+    }
+
+    function updateCompetitorUI() {
+      document.getElementById('competitorCount').textContent = competitorCount + ' of 10 competitors';
+      document.getElementById('btnAdd').disabled = competitorCount >= 10;
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('errorBanner');
+      banner.textContent = msg;
+      banner.classList.add('active');
+      setTimeout(() => banner.classList.remove('active'), 8000);
+    }
+
+    function hideError() {
+      document.getElementById('errorBanner').classList.remove('active');
+    }
+
+    function setFormDisabled(disabled) {
+      document.getElementById('companyUrl').disabled = disabled;
+      document.getElementById('btnSubmit').disabled = disabled;
+      document.getElementById('btnAdd').disabled = disabled || competitorCount >= 10;
+      document.querySelectorAll('.competitor-input').forEach(i => i.disabled = disabled);
+      document.querySelectorAll('.btn-remove').forEach(b => b.disabled = disabled);
+    }
+
+    async function startBenchmark() {
+      hideError();
+
+      const companyLink = document.getElementById('companyUrl').value.trim();
+      if (!companyLink) {
+        showError('Please enter your website URL.');
+        return;
+      }
+
+      const inputs = document.querySelectorAll('.competitor-input');
+      const otherCompanyLinks = [];
+      for (const input of inputs) {
+        const val = input.value.trim();
+        if (val) otherCompanyLinks.push(val);
+      }
+
+      if (otherCompanyLinks.length === 0) {
+        showError('Please enter at least one competitor URL.');
+        return;
+      }
+
+      if (otherCompanyLinks.length > 10) {
+        showError('Maximum 10 competitors allowed.');
+        return;
+      }
+
+      setFormDisabled(true);
+
+      try {
+        const res = await fetch(API_BASE + '/company-benchmark-report/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'market-pilot-web',
+            companyLink: companyLink,
+            otherCompanyLinks: otherCompanyLinks,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to start benchmark (HTTP ' + res.status + ')');
+        }
+
+        const data = await res.json();
+        currentReportId = data.id || data.companyBenchmarkReportId;
+
+        if (!currentReportId) {
+          throw new Error('No report ID returned from server.');
+        }
+
+        // Show progress
+        document.getElementById('formCard').style.display = 'none';
+        document.getElementById('competitorsCard').style.display = 'none';
+        document.getElementById('btnSubmit').style.display = 'none';
+        document.getElementById('progressSection').classList.add('active');
+
+        // Update first step
+        updateStepTracker('NOT_STARTED');
+
+        // Start polling
+        pollTimer = setInterval(pollStatus, 4000);
+        // Poll immediately
+        setTimeout(pollStatus, 1000);
+
+      } catch (err) {
+        showError(err.message);
+        setFormDisabled(false);
+      }
+    }
+
+    async function pollStatus() {
+      if (!currentReportId) return;
+
+      try {
+        const res = await fetch(API_BASE + '/company-benchmark-report/' + currentReportId);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to fetch status');
+        }
+
+        const data = await res.json();
+        const status = data.status;
+
+        // Update progress bar
+        const pct = STEP_PROGRESS[status] || 10;
+        document.getElementById('progressFill').style.width = pct + '%';
+
+        // Update message
+        const msg = STATUS_MESSAGES[status] || ('Status: ' + status);
+        document.getElementById('progressMessage').textContent = msg;
+        document.getElementById('progressLabel').textContent = status === 'COMPLETED' ? 'Done!' : 'Processing...';
+
+        // Update steps
+        updateStepTracker(status);
+
+        if (status === 'COMPLETED') {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          document.getElementById('progressSpinner').style.display = 'none';
+
+          // Show result
+          setTimeout(() => {
+            document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('resultSection').classList.add('active');
+            if (data.htmlReportUrl) {
+              document.getElementById('resultDesc').textContent =
+                'Your competitive analysis report has been generated and saved.';
+              const btn = document.getElementById('btnViewReport');
+              btn.href = ANALYZER_BASE + '/company-benchmark-report/' + currentReportId + '/report';
+              btn.style.display = 'inline-block';
+            }
+          }, 1500);
+        }
+
+        if (status === 'FAILED') {
+          clearInterval(pollTimer);
+          pollTimer = null;
+          document.getElementById('progressSpinner').style.display = 'none';
+          document.getElementById('progressLabel').textContent = 'Failed';
+          document.getElementById('progressLabel').style.color = '#ef4444';
+
+          const errMsg = data.errorMessage || 'An error occurred during processing.';
+          document.getElementById('progressMessage').textContent = errMsg;
+
+          // Mark current step as failed
+          const failStep = document.querySelector('.step-item.active');
+          if (failStep) {
+            failStep.classList.remove('active');
+            failStep.classList.add('failed');
+          }
+        }
+
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }
+
+    function updateStepTracker(currentStatus) {
+      const currentIdx = STEP_ORDER.indexOf(currentStatus);
+      if (currentIdx < 0) return;
+
+      STEP_ORDER.forEach((step, idx) => {
+        const el = document.getElementById('step-' + step);
+        if (!el) return;
+
+        el.classList.remove('active', 'done', 'failed');
+        if (idx < currentIdx) {
+          el.classList.add('done');
+        } else if (idx === currentIdx) {
+          el.classList.add(currentStatus === 'COMPLETED' ? 'done' : 'active');
+        }
+      });
+    }
+
+    function resetForm() {
+      // Reset state
+      currentReportId = null;
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+
+      // Reset UI
+      document.getElementById('formCard').style.display = '';
+      document.getElementById('competitorsCard').style.display = '';
+      document.getElementById('btnSubmit').style.display = '';
+      document.getElementById('progressSection').classList.remove('active');
+      document.getElementById('resultSection').classList.remove('active');
+      document.getElementById('progressSpinner').style.display = '';
+      document.getElementById('progressLabel').style.color = '';
+      document.getElementById('progressFill').style.width = '0%';
+      document.getElementById('btnViewReport').style.display = 'none';
+
+      // Reset steps
+      document.querySelectorAll('.step-item').forEach(el => {
+        el.classList.remove('active', 'done', 'failed');
+      });
+
+      // Reset form
+      document.getElementById('companyUrl').value = '';
+      document.getElementById('competitorList').innerHTML = `
+        <div class="competitor-row">
+          <input type="url" placeholder="https://competitor1.com" class="competitor-input" autocomplete="off" />
+        </div>
+      `;
+      competitorCount = 1;
+      updateCompetitorUI();
+      setFormDisabled(false);
+    }
+  </script>
+</body>
+</html>

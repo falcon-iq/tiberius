@@ -23,3 +23,9 @@ class BenchmarkJobStatus(BaseModel):
     progress: str = ""
     result: Optional[BenchmarkResult] = None
     error: Optional[str] = None
+
+
+class CompanyBenchmarkJobResponse(BaseModel):
+    companyBenchmarkReportId: str
+    status: str
+    message: str = ""
