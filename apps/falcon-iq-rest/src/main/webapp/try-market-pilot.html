@@ -634,7 +634,10 @@
   <script>
     // Determine API base URL: same origin, under /api
     const API_BASE = window.location.origin + '/api';
-    const ANALYZER_BASE = 'http://localhost:8000';
+    // Analyzer is on the same ALB origin in AWS; localhost:8000 for local dev
+    const ANALYZER_BASE = window.location.hostname === 'localhost'
+      ? 'http://localhost:8000'
+      : window.location.origin;
 
     let competitorCount = 1;
     let pollTimer = null;
