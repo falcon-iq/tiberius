@@ -110,6 +110,10 @@ public class CrawlProgressReporter {
         });
     }
 
+    public MongoCollection<Document> getMongoCollection(String collectionName) {
+        return mongoClient.getDatabase(DATABASE).getCollection(collectionName);
+    }
+
     public void shutdown() {
         executor.shutdown();
         try {
@@ -132,6 +136,11 @@ public class CrawlProgressReporter {
     private static class NoOpReporter extends CrawlProgressReporter {
         NoOpReporter() {
             super(null);
+        }
+
+        @Override
+        public MongoCollection<Document> getMongoCollection(String collectionName) {
+            return null;
         }
 
         @Override

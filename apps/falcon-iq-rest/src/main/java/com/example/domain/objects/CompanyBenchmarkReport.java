@@ -7,10 +7,18 @@ public class CompanyBenchmarkReport extends AbstractBaseDomainObject {
     public static final String COMPANY_CRAWL_DETAIL_ID = "companyCrawlDetailId";
     public static final String COMPETITION_CRAWL_DETAIL_IDS = "competitionCrawlDetailIds";
     public static final String REPORT_URL = "reportUrl";
+    public static final String HTML_REPORT_URL = "htmlReportUrl";
     public static final String STATUS = "status";
 
     public enum Status {
-        NOT_STARTED, CRAWL_IN_PROGRESS, BENCHMARK_REPORT_IN_PROGRESS
+        NOT_STARTED,
+        CRAWL_IN_PROGRESS,
+        CRAWL_COMPLETED,
+        ANALYSIS_IN_PROGRESS,
+        ANALYSIS_COMPLETED,
+        BENCHMARK_REPORT_IN_PROGRESS,
+        COMPLETED,
+        FAILED
     }
 
     private String userId;
@@ -20,6 +28,8 @@ public class CompanyBenchmarkReport extends AbstractBaseDomainObject {
     private List<String> competitionCrawlDetailIds;
 
     private String reportUrl;
+
+    private String htmlReportUrl;
 
     private Status status;
 
@@ -53,6 +63,14 @@ public class CompanyBenchmarkReport extends AbstractBaseDomainObject {
 
     public void setReportUrl(String reportUrl) {
         this.reportUrl = reportUrl;
+    }
+
+    public String getHtmlReportUrl() {
+        return htmlReportUrl;
+    }
+
+    public void setHtmlReportUrl(String htmlReportUrl) {
+        this.htmlReportUrl = htmlReportUrl;
     }
 
     public Status getStatus() {

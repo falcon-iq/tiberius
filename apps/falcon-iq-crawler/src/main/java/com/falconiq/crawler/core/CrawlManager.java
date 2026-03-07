@@ -102,6 +102,14 @@ public class CrawlManager {
         return activeCrawls.get();
     }
 
+    public CrawlProgressReporter getProgressReporter() {
+        return progressReporter;
+    }
+
+    public String getAnalyzerApiUrl() {
+        return analyzerApiUrl;
+    }
+
     public boolean isStorageHealthy() {
         return storageService.isHealthy();
     }

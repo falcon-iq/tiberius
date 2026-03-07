@@ -204,8 +204,7 @@ async def run_analysis(
         job_manager.set_result(job_id, result)
 
         if _report:
-            results_path = f"{crawled_pages_path}/reports/result-{job_id}.json" if crawled_pages_path else result_key
-            progress_reporter.report_completed(website_crawl_detail_id, results_path)
+            progress_reporter.report_completed(website_crawl_detail_id, result_key)
 
     except Exception as e:
         logger.exception("Analysis pipeline failed")
