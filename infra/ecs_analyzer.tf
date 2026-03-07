@@ -95,6 +95,10 @@ resource "aws_ecs_service" "analyzer" {
     container_port   = 8000
   }
 
+  service_registries {
+    registry_arn = aws_service_discovery_service.analyzer.arn
+  }
+
   depends_on = [
     aws_lb_listener.http,
     aws_ecs_service.crawler,
