@@ -1,0 +1,80 @@
+{
+  "name": "marketpilot-webapp",
+  "projectType": "application",
+  "root": "apps/marketpilot-webapp",
+  "sourceRoot": "apps/marketpilot-webapp/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx run falcon-iq-rest:dev",
+          "cd apps/marketpilot-webapp && npx vite"
+        ],
+        "parallel": true
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/marketpilot-webapp",
+        "command": "npx vite build"
+      },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/marketpilot-webapp",
+        "command": "eslint --ext .ts,.tsx ."
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/marketpilot-webapp",
+        "command": "tsc --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/marketpilot-webapp",
+        "command": "npx jest --config jest.config.js"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": {
+        "cwd": "apps/marketpilot-webapp",
+        "parallel": false,
+        "shell": "bash",
+        "forwardAllArgs": false
+      },
+      "configurations": {
+        "preview": {
+          "env": { "NODE_ENV": "staging" },
+          "command": [
+            "VERSION_ID=$(timeout 3m npx wrangler deploy -e preview 2>&1 | grep -m1 \"Current Version ID\" | cut -d\" \" -f4);",
+            "[ -n \"${VERSION_ID:-}\" ] || { echo \"Failed to extract Version ID\" >&2; exit 1; };",
+            "SHORT_ID=${VERSION_ID%%-*};",
+            "PREVIEW_URL=\"https://$SHORT_ID-marketpilot-webapp-preview.trymarketpilot-preview.workers.dev\";",
+            "printf \"%s\\n\" \"$PREVIEW_URL\";",
+            "if [ -n \"${GITHUB_OUTPUT:-}\" ]; then",
+            "printf \"preview_marketpilot_url=%s\\n\" \"$PREVIEW_URL\" >> \"$GITHUB_OUTPUT\";",
+            "fi"
+          ]
+        },
+        "staging": {
+          "env": { "NODE_ENV": "staging" },
+          "commands": ["timeout 3m npx wrangler deploy -e staging"]
+        },
+        "production": {
+          "commands": ["timeout 3m npx wrangler deploy -e production"]
+        }
+      }
+    }
+  }
+}

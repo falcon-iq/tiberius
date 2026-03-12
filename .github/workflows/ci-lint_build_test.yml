@@ -1,0 +1,92 @@
+name: CI (Lint, Test, Build)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+env:
+  NX_DAEMON: "false" # disables NX daemon
+  NX_NO_CLOUD: "true" # disables NX cloud
+  NX_SKIP_NX_CACHE: "false" # enables NX cache
+  AWS_REGION: us-east-1
+
+jobs:
+  main:
+    name: Lint, Format, Test & Build
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # - name: Set up Terraform
+      #   uses: hashicorp/setup-terraform@v3
+      #   with:
+      #     terraform_version: "1.10.5"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "package.json" # Automatically reads the engines field
+          cache: "npm"
+
+      - run: npm ci --legacy-peer-deps
+
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Compute affected projects + summary
+        id: affected
+        uses: ./.github/actions/nx-affected
+        with:
+          summary_title: "## 🧭 Nx affected projects (CI)"
+
+      - name: Set up Java and Maven
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-rest') || contains(steps.affected.outputs.csv, 'falcon-iq-crawler')
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Set up Python
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-analyzer')
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-analyzer')
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Python dependencies
+        if: contains(steps.affected.outputs.csv, 'falcon-iq-analyzer')
+        run: |
+          cd apps/falcon-iq-analyzer
+          uv sync --extra dev
+
+      - name: Run lint, format, test, and build on affected projects
+        run: |
+          npx nx affected -t lint format test build --parallel --maxParallel=2
+
+      - name: Comment affected projects on PR
+        if: github.event_name == 'pull_request' && steps.affected.outputs.count != '0'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: nx-affected
+          message: ${{ steps.affected.outputs.summary_md }}

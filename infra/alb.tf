@@ -153,22 +153,3 @@ resource "aws_lb_listener_rule" "rest_api" {
   }
 }
 
-# -----------------------------------------------------------------------------
-# Path-based routing: /try-market-pilot.html -> REST API
-# -----------------------------------------------------------------------------
-
-resource "aws_lb_listener_rule" "try_market_pilot" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 90
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.rest.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/try-market-pilot.html"]
-    }
-  }
-}
