@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@services/api';
 import type { BenchmarkStatus } from '@app-types/api';
 
-const ANALYZER_BASE_URL = import.meta.env.VITE_ANALYZER_BASE_URL ?? 'http://localhost:8000';
+const CDN_BASE_URL = import.meta.env.VITE_CDN_BASE_URL ?? 'https://cdn.trymarketpilot.com';
 
 const STEP_ORDER: BenchmarkStatus[] = [
   'NOT_STARTED',
@@ -71,12 +71,7 @@ export function BenchmarkProgress({ jobId, onReset }: BenchmarkProgressProps) {
   const progress = STEP_PROGRESS[status] ?? 10;
   const currentIdx = STEP_ORDER.indexOf(status);
 
-  const reportUrl =
-    data?.analyzerBaseUrl && data?.reportId
-      ? `${data.analyzerBaseUrl}/company-benchmark-report/${data.reportId}/report`
-      : data?.htmlReportUrl
-        ? data.htmlReportUrl
-        : `${ANALYZER_BASE_URL}/company-benchmark-report/${jobId}/report`;
+  const reportUrl = `${CDN_BASE_URL}/analyzer/company-benchmarks/benchmark-${jobId}.html`;
 
   return (
     <div

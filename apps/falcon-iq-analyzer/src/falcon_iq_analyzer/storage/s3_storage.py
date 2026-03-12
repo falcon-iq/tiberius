@@ -10,12 +10,27 @@ logger = logging.getLogger(__name__)
 
 
 class S3StorageService(StorageService):
-    """S3 storage backend for AWS Fargate deployment."""
+    """S3-compatible storage backend (AWS S3 or Cloudflare R2)."""
 
-    def __init__(self, bucket_name: str, region: str = "us-east-1"):
+    def __init__(
+        self,
+        bucket_name: str,
+        region: str = "us-east-1",
+        endpoint_url: str | None = None,
+        access_key_id: str | None = None,
+        secret_access_key: str | None = None,
+    ):
         self._bucket_name = bucket_name
         self._region = region
-        self._s3 = boto3.client("s3", region_name=region)
+
+        client_kwargs: dict = {"region_name": region}
+        if endpoint_url:
+            client_kwargs["endpoint_url"] = endpoint_url
+        if access_key_id and secret_access_key:
+            client_kwargs["aws_access_key_id"] = access_key_id
+            client_kwargs["aws_secret_access_key"] = secret_access_key
+
+        self._s3 = boto3.client("s3", **client_kwargs)
         self._key_prefix = "analyzer/"
 
     def _full_key(self, key: str) -> str:

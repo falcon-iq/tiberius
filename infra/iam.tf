@@ -36,6 +36,8 @@ data "aws_iam_policy_document" "execution_secrets" {
     resources = [
       aws_secretsmanager_secret.openai_api_key.arn,
       aws_secretsmanager_secret.mongo_uri.arn,
+      aws_secretsmanager_secret.r2_access_key_id.arn,
+      aws_secretsmanager_secret.r2_secret_access_key.arn,
     ]
   }
 }

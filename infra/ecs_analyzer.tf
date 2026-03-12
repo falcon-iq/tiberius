@@ -26,8 +26,10 @@ resource "aws_ecs_task_definition" "analyzer" {
 
       environment = [
         { name = "WEB_ANALYZER_STORAGE_TYPE", value = "s3" },
-        { name = "WEB_ANALYZER_S3_BUCKET_NAME", value = var.s3_bucket_name },
-        { name = "WEB_ANALYZER_AWS_REGION", value = var.aws_region },
+        { name = "WEB_ANALYZER_CRAWL_STORAGE_TYPE", value = "s3" },
+        { name = "WEB_ANALYZER_S3_BUCKET_NAME", value = "marketpilot-data" },
+        { name = "WEB_ANALYZER_AWS_REGION", value = "auto" },
+        { name = "WEB_ANALYZER_R2_ACCOUNT_ID", value = "ef29d1c724622a010ffbf2c6340ebed4" },
         { name = "WEB_ANALYZER_CRAWLER_API_URL", value = local.crawler_internal_url },
         { name = "WEB_ANALYZER_LLM_PROVIDER", value = var.analyzer_llm_provider },
         { name = "WEB_ANALYZER_OPENAI_MODEL", value = var.analyzer_openai_model },
@@ -44,6 +46,14 @@ resource "aws_ecs_task_definition" "analyzer" {
         {
           name      = "WEB_ANALYZER_MONGO_URI"
           valueFrom = aws_secretsmanager_secret.mongo_uri.arn
+        },
+        {
+          name      = "WEB_ANALYZER_R2_ACCESS_KEY_ID"
+          valueFrom = aws_secretsmanager_secret.r2_access_key_id.arn
+        },
+        {
+          name      = "WEB_ANALYZER_R2_SECRET_ACCESS_KEY"
+          valueFrom = aws_secretsmanager_secret.r2_secret_access_key.arn
         }
       ]
 
