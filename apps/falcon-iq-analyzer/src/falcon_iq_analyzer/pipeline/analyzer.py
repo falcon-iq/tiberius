@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def _read_html(filepath: str, settings: Settings) -> str:
     """Read raw HTML content from local filesystem or S3."""
-    if settings.storage_type == "s3":
+    if settings.crawl_storage_type == "s3":
         import boto3
 
         s3 = boto3.client("s3", region_name=settings.aws_region)

@@ -181,6 +181,18 @@ variable "mongo_uri" {
   sensitive   = true
 }
 
+variable "r2_access_key_id" {
+  description = "Cloudflare R2 Access Key ID. Set via TF_VAR_r2_access_key_id env var."
+  type        = string
+  sensitive   = true
+}
+
+variable "r2_secret_access_key" {
+  description = "Cloudflare R2 Secret Access Key. Set via TF_VAR_r2_secret_access_key env var."
+  type        = string
+  sensitive   = true
+}
+
 # -----------------------------------------------------------------------------
 # S3
 # -----------------------------------------------------------------------------

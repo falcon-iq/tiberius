@@ -29,12 +29,20 @@ class Settings(BaseSettings):
     # MongoDB (for progress reporting)
     mongo_uri: str = ""
 
-    # Storage
-    storage_type: str = "local"  # "local" or "s3"
+    # Storage — report output (where analysis results & benchmark reports are saved)
+    storage_type: str = "local"  # "local" or "s3" (or R2 via s3-compatible endpoint)
     s3_bucket_name: str = ""
     aws_region: str = "us-east-1"
     results_dir: str = "results"
+
+    # Storage — crawl input (where the crawler saved HTML pages)
+    crawl_storage_type: str = "local"  # "local" or "s3"
     crawled_sites_dir: str = "../falcon-iq-crawler/crawled_pages"
+
+    # Cloudflare R2 (S3-compatible) — when set, boto3 uses R2 endpoint instead of AWS S3
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
 
     model_config = {
         "env_prefix": "WEB_ANALYZER_",

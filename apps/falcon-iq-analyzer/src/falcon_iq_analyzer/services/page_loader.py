@@ -34,7 +34,7 @@ def load_pages(crawl_directory: str, locale_filter: str = "en") -> List[PageInfo
     """Load all HTML files from the crawl directory, filtered by locale."""
     from falcon_iq_analyzer.config import settings
 
-    if settings.storage_type == "s3":
+    if settings.crawl_storage_type == "s3":
         return _load_pages_from_s3(crawl_directory, locale_filter)
     return _load_pages_from_local(crawl_directory, locale_filter)
 

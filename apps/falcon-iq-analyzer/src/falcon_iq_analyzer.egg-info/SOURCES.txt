@@ -42,6 +42,7 @@ src/falcon_iq_analyzer/services/comparator.py
 src/falcon_iq_analyzer/services/crawler.py
 src/falcon_iq_analyzer/services/extractor.py
 src/falcon_iq_analyzer/services/html_cleaner.py
+src/falcon_iq_analyzer/services/html_report_generator.py
 src/falcon_iq_analyzer/services/multi_benchmark_service.py
 src/falcon_iq_analyzer/services/page_loader.py
 src/falcon_iq_analyzer/services/progress_reporter.py
@@ -53,6 +54,7 @@ src/falcon_iq_analyzer/storage/__init__.py
 src/falcon_iq_analyzer/storage/base.py
 src/falcon_iq_analyzer/storage/local_storage.py
 src/falcon_iq_analyzer/storage/s3_storage.py
+tests/test_company_benchmark.py
 tests/test_crawler_client.py
 tests/test_health.py
 tests/test_storage.py

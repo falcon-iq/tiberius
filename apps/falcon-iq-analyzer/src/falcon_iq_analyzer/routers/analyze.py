@@ -83,7 +83,7 @@ async def start_website_analysis(request: AnalyzeWebsiteRequest) -> JobStatus:
     crawled_pages_path = request.crawled_pages_path
     crawl_id = Path(crawled_pages_path).name
 
-    if settings.storage_type == "local":
+    if settings.crawl_storage_type == "local":
         crawl_directory = os.path.join(settings.crawled_sites_dir, crawl_id)
     else:
         # S3 mode: load_pages_from_s3 expects just the crawl ID

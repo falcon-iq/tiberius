@@ -6,7 +6,7 @@ For app-specific context, see `apps/*/CLAUDE.md` and `libs/CLAUDE.md`.
 
 ## Project Overview
 
-**Tiberius** is an Nx 21.6.4 monorepo with five applications and two shared libraries:
+**Tiberius** is an Nx 21.6.4 monorepo with six applications and two shared libraries:
 
 | App | Stack | Purpose |
 |---|---|---|
@@ -15,6 +15,7 @@ For app-specific context, see `apps/*/CLAUDE.md` and `libs/CLAUDE.md`.
 | `falcon-iq-crawler` | Java 21 + Jetty + JSoup + AWS S3 | Multi-threaded web crawler microservice |
 | `falcon-iq-analyzer` | Python 3.11 + FastAPI + OpenAI/Ollama + boto3 | LLM-powered website analysis service |
 | `falcon-iq-analyzer-web-app` | React 19 + TypeScript + Vite + TanStack | Web frontend for the analyzer |
+| `marketpilot-webapp` | React + TypeScript + Vite + Cloudflare Workers | Market intelligence web app |
 
 | Library | Path Alias | Purpose |
 |---|---|---|
@@ -34,6 +35,7 @@ nx run falcon-iq-rest:dev                      # REST API (embedded Jetty, port 
 nx run falcon-iq-crawler:serve                 # Crawler server (port 8080)
 nx run falcon-iq-analyzer:serve                # Analyzer FastAPI (port 8000)
 nx run falcon-iq-analyzer-web-app:dev          # Web app + analyzer + crawler in parallel
+nx run marketpilot-webapp:dev                  # MarketPilot web app + REST API in parallel
 
 # Quality
 nx run-many --parallel -t lint test            # All projects
@@ -48,6 +50,7 @@ nx run falcon-iq-rest:build:standalone         # Maven fat JAR (embedded Jetty)
 nx run falcon-iq-crawler:build                 # Maven fat JAR
 nx run falcon-iq-analyzer:build                # uv sync
 nx run falcon-iq-analyzer-web-app:build        # Vite build
+nx run marketpilot-webapp:build                # Vite build for Cloudflare
 
 # Infrastructure (from infra/ directory)
 make setup                                     # First-time: terraform init + tfvars
@@ -60,6 +63,11 @@ make redeploy                                  # Force new ECS deployment
 make status                                    # Check ECS service health
 make logs-crawler                              # Tail crawler CloudWatch logs
 make logs-analyzer                             # Tail analyzer CloudWatch logs
+
+# MarketPilot Deployment (Cloudflare Workers via Wrangler)
+nx run marketpilot-webapp:deploy:preview       # Deploy preview (outputs versioned URL)
+nx run marketpilot-webapp:deploy:staging       # Deploy to staging
+nx run marketpilot-webapp:deploy:production    # Deploy to production
 
 # Commits (REQUIRED — git hooks enforce conventional commit format)
 npm run commit                                 # Commitizen prompt
@@ -87,6 +95,10 @@ npm run commit                                 # Commitizen prompt
 ### Analyzer Pipeline (6 steps)
 
 Load pages -> Clean HTML -> Classify pages (LLM) -> Extract offerings (LLM) -> Synthesize top 5 (LLM) -> Generate report
+
+### MarketPilot Web App
+
+Deployed to Cloudflare Workers via Wrangler. Uses the `falcon-iq-rest` API as its backend. Deployment environments configured in `wrangler.jsonc` (preview, staging, production).
 
 ### AWS Infrastructure (Terraform in `infra/`)
 

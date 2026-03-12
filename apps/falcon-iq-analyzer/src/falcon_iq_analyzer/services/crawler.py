@@ -44,7 +44,7 @@ async def run_crawl(
             # Compute the actual output directory based on crawl_id
             # In S3 mode, use just the crawl_id (S3 prefix is crawls/{crawl_id}/)
             # In local mode, use the full filesystem path
-            if settings.storage_type == "s3":
+            if settings.crawl_storage_type == "s3":
                 output_dir = crawl_id
             else:
                 output_dir = os.path.join(settings.crawled_sites_dir, crawl_id)
@@ -89,7 +89,7 @@ async def run_crawl(
                         domain = urlparse(url).hostname or url
                         metadata = {"domain": domain, "url": url, "crawl_id": crawl_id}
 
-                        if settings.storage_type == "s3":
+                        if settings.crawl_storage_type == "s3":
                             import boto3
                             s3 = boto3.client("s3", region_name=settings.aws_region)
                             s3.put_object(

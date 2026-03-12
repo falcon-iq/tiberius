@@ -56,7 +56,7 @@ async def get_crawl_status(job_id: str) -> CrawlStatus:
 @router.get("/sites", response_model=List[SiteInfo])
 async def list_sites() -> List[SiteInfo]:
     """List already-crawled sites, reading _metadata.json for domain info."""
-    if settings.storage_type == "s3":
+    if settings.crawl_storage_type == "s3":
         return _list_sites_s3()
     return _list_sites_local()
 
@@ -149,7 +149,7 @@ def _list_sites_s3() -> List[SiteInfo]:
 @router.delete("/sites/{domain}")
 async def delete_site(domain: str) -> dict:
     """Delete a crawled site directory by domain name."""
-    if settings.storage_type == "s3":
+    if settings.crawl_storage_type == "s3":
         return _delete_site_s3(domain)
     return _delete_site_local(domain)
 

@@ -8,6 +8,9 @@
   "observability": {
     "enabled": true
   },
+  "r2_buckets": [
+    { "binding": "STORAGE", "bucket_name": "marketpilot-data" }
+  ],
   "env": {
     "preview": {
       "vars": {

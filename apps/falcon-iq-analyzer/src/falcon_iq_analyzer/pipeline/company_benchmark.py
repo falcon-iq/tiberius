@@ -31,9 +31,13 @@ CRAWL_DETAIL_COLLECTION = "website_crawl_detail"
 def _normalize_analysis_path(raw_path: str) -> str:
     """Convert MongoDB-stored analysis path to a storage key.
 
-    MongoDB stores paths like ``crawled_pages/<crawl_id>/reports/result-<job_id>.json``
-    or S3 URIs like ``s3://bucket/analyzer/<key>``.  The storage service expects a
-    relative key such as ``<crawl_id>/reports/result-<job_id>.json``.
+    The storage service saves files with a relative key (e.g.
+    ``crawled_pages/<crawl_id>/reports/result-<job_id>.json``).
+    S3StorageService prepends ``analyzer/`` internally, so we just
+    need to return the key as-is for local paths.
+
+    For S3 URIs (``s3://bucket/analyzer/<key>``), strip the bucket
+    and ``analyzer/`` prefix to recover the original key.
     """
     if raw_path.startswith("s3://"):
         # Extract the key after the analyzer/ prefix
@@ -46,9 +50,8 @@ def _normalize_analysis_path(raw_path: str) -> str:
             return key
         return raw_path
 
-    # Local path: strip leading "crawled_pages/" if present
-    if raw_path.startswith("crawled_pages/"):
-        return raw_path[len("crawled_pages/"):]
+    # Local or mixed-storage path: return as-is (the storage service
+    # uses this key directly, including any crawled_pages/ prefix)
     return raw_path
 
 
