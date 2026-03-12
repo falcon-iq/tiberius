@@ -102,5 +102,6 @@ infra/.terraform/
 infra/.terraform.lock.hcl
 infra/*.tfstate
 infra/*.tfstate.backup
+infra/*.tfstate.*.backup
 infra/terraform.tfvars
 infra/.terraform.tfstate.lock.info
