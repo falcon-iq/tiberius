@@ -87,12 +87,33 @@ public class CompanyBenchmarkReportResource {
         MongoCollection<Document> crawlDetailCollection = reporter.getMongoCollection(CRAWL_DETAIL_COLLECTION);
 
         try {
-            // Update benchmark report status to CRAWL_IN_PROGRESS
-            updateBenchmarkReportStatus(reportCollection, reportId, "CRAWL_IN_PROGRESS");
-
             String companyCrawlDetailId = reportDoc.getString("companyCrawlDetailId");
             List<String> competitionCrawlDetailIds = reportDoc.getList("competitionCrawlDetailIds", String.class,
                     new ArrayList<>());
+
+            // Fast-path: check if ALL crawl details are already completed
+            List<String> allCrawlIds = new ArrayList<>();
+            allCrawlIds.add(companyCrawlDetailId);
+            allCrawlIds.addAll(competitionCrawlDetailIds);
+
+            boolean allCompleted = true;
+            for (String crawlId : allCrawlIds) {
+                Document detail = crawlDetailCollection.find(
+                        Filters.eq("_id", new ObjectId(crawlId))).first();
+                if (detail == null || !CrawlDetailHelper.isAlreadyCompleted(detail)) {
+                    allCompleted = false;
+                    break;
+                }
+            }
+
+            if (allCompleted) {
+                logger.info("Benchmark " + reportId + ": all crawl details already completed — skipping crawl phase");
+                triggerAnalyzerBenchmark(reportId);
+                return;
+            }
+
+            // Update benchmark report status to CRAWL_IN_PROGRESS
+            updateBenchmarkReportStatus(reportCollection, reportId, "CRAWL_IN_PROGRESS");
 
             // Crawl the main company first
             logger.info("Benchmark " + reportId + ": starting crawl for company " + companyCrawlDetailId);
@@ -144,6 +165,24 @@ public class CompanyBenchmarkReportResource {
         if (websiteLink == null || websiteLink.isBlank()) {
             logger.warning("WebsiteCrawlDetail " + websiteCrawlDetailId + " has no websiteLink");
             return false;
+        }
+
+        // Defense-in-depth: check if another crawl detail for the same domain completed recently
+        Document recentDonor = CrawlDetailHelper.findRecentCompletedForDomain(crawlDetailCollection, websiteLink);
+        if (recentDonor != null) {
+            String donorId = recentDonor.getObjectId("_id").toHexString();
+            logger.info("WebsiteCrawlDetail " + websiteCrawlDetailId
+                    + ": reusing results from donor " + donorId + " for " + websiteLink);
+            crawlDetailCollection.updateOne(
+                    Filters.eq("_id", new ObjectId(websiteCrawlDetailId)),
+                    Updates.combine(
+                            Updates.set("status", "COMPLETED"),
+                            Updates.set("crawledPagesPath", recentDonor.getString("crawledPagesPath")),
+                            Updates.set("analysisResultsPath", recentDonor.getString("analysisResultsPath")),
+                            Updates.set("numberOfPagesCrawled", recentDonor.get("numberOfPagesCrawled")),
+                            Updates.set("numberOfPagesAnalyzed", recentDonor.get("numberOfPagesAnalyzed")),
+                            Updates.set("modifiedAt", System.currentTimeMillis())));
+            return true;
         }
 
         // Start the crawl

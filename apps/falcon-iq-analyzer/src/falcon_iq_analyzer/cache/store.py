@@ -15,9 +15,13 @@ class DiskCache:
     def __init__(self, crawl_directory: str):
         from falcon_iq_analyzer.config import settings
 
-        if settings.crawl_storage_type == "s3":
+        safe_dir_name = crawl_directory.replace("/", "_").replace("\\", "_")
+
+        if settings.analysis_cache_dir:
+            # Use the configured persistent cache directory
+            self._cache_dir = os.path.join(settings.analysis_cache_dir, safe_dir_name)
+        elif settings.crawl_storage_type == "s3":
             # In S3 mode, use a local temp directory for caching
-            safe_dir_name = crawl_directory.replace("/", "_").replace("\\", "_")
             self._cache_dir = os.path.join(tempfile.gettempdir(), "analyzer_cache", safe_dir_name)
         else:
             self._cache_dir = os.path.join(crawl_directory, CACHE_DIR_NAME)

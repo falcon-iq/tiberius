@@ -15,6 +15,18 @@
         "parallel": true
       }
     },
+    "dev:all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "MONGO_URI=mongodb://localhost:27017 CRAWLER_API_URL=http://localhost:8081 CRAWL_CACHE_TTL_DAYS=30 nx run falcon-iq-rest:dev",
+          "MONGO_URI=mongodb://localhost:27017 STORAGE_TYPE=local OUTPUT_DIR=/tmp/falcon-iq-crawler/crawled_pages PORT=8081 ANALYZER_API_URL=http://localhost:8000 CRAWL_CACHE_TTL_DAYS=30 nx run falcon-iq-crawler:serve",
+          "WEB_ANALYZER_MONGO_URI=mongodb://localhost:27017 WEB_ANALYZER_STORAGE_TYPE=local WEB_ANALYZER_CRAWL_STORAGE_TYPE=local WEB_ANALYZER_CRAWLER_API_URL=http://localhost:8081 WEB_ANALYZER_CRAWLED_SITES_DIR=/tmp/falcon-iq-crawler/crawled_pages WEB_ANALYZER_RESULTS_DIR=/tmp/falcon-iq-analyzer/results WEB_ANALYZER_ANALYSIS_CACHE_DIR=/tmp/falcon-iq-analyzer/cache nx run falcon-iq-analyzer:serve",
+          "cd apps/falcon-iq-analyzer-web-app && npx vite"
+        ],
+        "parallel": true
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {

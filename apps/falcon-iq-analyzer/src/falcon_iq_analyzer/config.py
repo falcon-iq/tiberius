@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     crawl_storage_type: str = "local"  # "local" or "s3"
     crawled_sites_dir: str = "../falcon-iq-crawler/crawled_pages"
 
+    # Analysis cache — persistent directory for per-page analysis cache (empty = /tmp)
+    analysis_cache_dir: str = ""
+
     # Cloudflare R2 (S3-compatible) — when set, boto3 uses R2 endpoint instead of AWS S3
     r2_account_id: str = ""
     r2_access_key_id: str = ""
