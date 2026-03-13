@@ -35,10 +35,10 @@
     },
     "dev": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build:dev"],
+      "dependsOn": ["build:standalone"],
       "options": {
         "cwd": "apps/falcon-iq-rest",
-        "command": "mvn -DskipTests jetty:run"
+        "command": "java -jar target/falcon-iq-rest-1.0.0-standalone.jar"
       }
     }
   },

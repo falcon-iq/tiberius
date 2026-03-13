@@ -1,6 +1,7 @@
 package com.example.fiq.generic;
 
 import java.util.List;
+import java.util.Optional;
 import com.example.db.MongoRepository;
 import com.example.db.MongoFilterBuilder;
 import com.example.domain.objects.AbstractBaseDomainObject;
@@ -55,6 +56,10 @@ public class GenericMongoCRUDService<StoredObject extends AbstractBaseDomainObje
     public Boolean delete(String id) {
         if (id == null || id.isBlank()) return false;
         return repository.deleteById(id);
+    }
+
+    public Optional<StoredObject> findById(String id) {
+        return repository.findById(id);
     }
 
     public StoredObject create(StoredObject object) {

@@ -5,12 +5,8 @@ import com.example.domain.objects.WebsiteCrawlDetail;
 import com.example.fiq.generic.GenericBeanType;
 import com.example.fiq.generic.GenericBeanDescriptorFactory;
 import com.example.fiq.generic.GenericMongoCRUDService;
-
-import com.example.db.MongoClientProvider;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
-import org.bson.Document;
-import org.bson.types.ObjectId;
+import com.example.util.CrawlDetailLookup;
+import com.example.util.UrlUtils;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -30,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,32 +67,18 @@ public class CompanyBenchmarkReportResource {
                     .build();
         }
 
-        // Create WebsiteCrawlDetail for the main company
-        WebsiteCrawlDetail companyDetail = new WebsiteCrawlDetail();
-        companyDetail.setWebsiteLink(companyLink);
-        companyDetail.setUserId(userId);
-        companyDetail.setIsCompetitor(false);
-        companyDetail.setStatus(WebsiteCrawlDetail.Status.NOT_STARTED);
-        companyDetail.setNumberOfPagesCrawled(0L);
-        companyDetail.setNumberOfPagesAnalyzed(0L);
+        // Sanitize user-provided URLs
+        companyLink = UrlUtils.sanitizeInputUrl(companyLink);
 
-        WebsiteCrawlDetail savedCompany = crawlDetailService.create(companyDetail);
+        // Try to reuse a recent completed crawl detail for the main company
+        String companyCrawlDetailId = findOrCreateCrawlDetail(companyLink, userId, false);
 
-        // Create WebsiteCrawlDetail for each competitor
+        // Create or reuse WebsiteCrawlDetail for each competitor
         List<String> competitorIds = new ArrayList<>();
         if (otherCompanyLinks != null) {
             for (String link : otherCompanyLinks) {
                 if (link != null && !link.isBlank()) {
-                    WebsiteCrawlDetail competitorDetail = new WebsiteCrawlDetail();
-                    competitorDetail.setWebsiteLink(link);
-                    competitorDetail.setUserId(userId);
-                    competitorDetail.setIsCompetitor(true);
-                    competitorDetail.setStatus(WebsiteCrawlDetail.Status.NOT_STARTED);
-                    competitorDetail.setNumberOfPagesCrawled(0L);
-                    competitorDetail.setNumberOfPagesAnalyzed(0L);
-
-                    WebsiteCrawlDetail savedCompetitor = crawlDetailService.create(competitorDetail);
-                    competitorIds.add(savedCompetitor.getId());
+                    competitorIds.add(findOrCreateCrawlDetail(UrlUtils.sanitizeInputUrl(link), userId, true));
                 }
             }
         }
@@ -103,7 +86,7 @@ public class CompanyBenchmarkReportResource {
         // Create CompanyBenchmarkReport
         CompanyBenchmarkReport report = new CompanyBenchmarkReport();
         report.setUserId(userId);
-        report.setCompanyCrawlDetailId(savedCompany.getId());
+        report.setCompanyCrawlDetailId(companyCrawlDetailId);
         report.setCompetitionCrawlDetailIds(competitorIds);
         report.setStatus(CompanyBenchmarkReport.Status.NOT_STARTED);
 
@@ -164,54 +147,43 @@ public class CompanyBenchmarkReportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getStatus(@PathParam("id") String id) {
         try {
-            MongoCollection<Document> reportCol = MongoClientProvider.getInstance()
-                    .getOrCreateMongoClient()
-                    .getDatabase("company_db")
-                    .getCollection("company_benchmark_report");
-
-            Document doc = reportCol.find(Filters.eq("_id", new ObjectId(id))).first();
-            if (doc == null) {
+            Optional<CompanyBenchmarkReport> reportOpt = benchmarkReportService.findById(id);
+            if (reportOpt.isEmpty()) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(Map.of("error", "Report not found"))
                         .build();
             }
 
+            CompanyBenchmarkReport report = reportOpt.get();
+
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("id", id);
-            result.put("status", doc.getString("status"));
-            result.put("reportUrl", doc.getString("reportUrl"));
-            result.put("htmlReportUrl", doc.getString("htmlReportUrl"));
-            result.put("errorMessage", doc.getString("errorMessage"));
-            result.put("companyCrawlDetailId", doc.getString("companyCrawlDetailId"));
-            result.put("competitionCrawlDetailIds", doc.getList("competitionCrawlDetailIds", String.class));
+            result.put("status", report.getStatus() != null ? report.getStatus().name() : null);
+            result.put("reportUrl", report.getReportUrl());
+            result.put("htmlReportUrl", report.getHtmlReportUrl());
+            result.put("companyCrawlDetailId", report.getCompanyCrawlDetailId());
+            result.put("competitionCrawlDetailIds", report.getCompetitionCrawlDetailIds());
 
             // Look up website links from crawl details for display
-            MongoCollection<Document> crawlCol = MongoClientProvider.getInstance()
-                    .getOrCreateMongoClient()
-                    .getDatabase("company_db")
-                    .getCollection("website_crawl_detail");
-
-            String mainCrawlId = doc.getString("companyCrawlDetailId");
+            String mainCrawlId = report.getCompanyCrawlDetailId();
             if (mainCrawlId != null) {
-                Document mainCrawl = crawlCol.find(Filters.eq("_id", new ObjectId(mainCrawlId))).first();
-                if (mainCrawl != null) {
-                    result.put("companyLink", mainCrawl.getString("websiteLink"));
-                    result.put("companyStatus", mainCrawl.getString("status"));
-                }
+                crawlDetailService.findById(mainCrawlId).ifPresent(mainCrawl -> {
+                    result.put("companyLink", mainCrawl.getWebsiteLink());
+                    result.put("companyStatus", mainCrawl.getStatus() != null ? mainCrawl.getStatus().name() : null);
+                });
             }
 
-            List<String> compIds = doc.getList("competitionCrawlDetailIds", String.class);
+            List<String> compIds = report.getCompetitionCrawlDetailIds();
             if (compIds != null) {
                 List<Map<String, String>> competitors = new ArrayList<>();
                 for (String cid : compIds) {
-                    Document compCrawl = crawlCol.find(Filters.eq("_id", new ObjectId(cid))).first();
-                    if (compCrawl != null) {
+                    crawlDetailService.findById(cid).ifPresent(compCrawl -> {
                         Map<String, String> comp = new LinkedHashMap<>();
                         comp.put("id", cid);
-                        comp.put("websiteLink", compCrawl.getString("websiteLink"));
-                        comp.put("status", compCrawl.getString("status"));
+                        comp.put("websiteLink", compCrawl.getWebsiteLink());
+                        comp.put("status", compCrawl.getStatus() != null ? compCrawl.getStatus().name() : null);
                         competitors.add(comp);
-                    }
+                    });
                 }
                 result.put("competitors", competitors);
             }
@@ -228,5 +200,24 @@ public class CompanyBenchmarkReportResource {
                     .entity(Map.of("error", e.getMessage()))
                     .build();
         }
+    }
+
+    private String findOrCreateCrawlDetail(String link, String userId, boolean isCompetitor) {
+        WebsiteCrawlDetail existing = CrawlDetailLookup.findCompletedCrawl(crawlDetailService, link);
+        if (existing != null) {
+            logger.info("Reusing recent crawl detail " + existing.getId()
+                    + " for " + (isCompetitor ? "competitor " : "") + link);
+            return existing.getId();
+        }
+
+        WebsiteCrawlDetail detail = new WebsiteCrawlDetail();
+        detail.setWebsiteLink(link);
+        detail.setUserId(userId);
+        detail.setIsCompetitor(isCompetitor);
+        detail.setStatus(WebsiteCrawlDetail.Status.NOT_STARTED);
+        detail.setNumberOfPagesCrawled(0L);
+        detail.setNumberOfPagesAnalyzed(0L);
+
+        return crawlDetailService.create(detail).getId();
     }
 }

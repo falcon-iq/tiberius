@@ -5,6 +5,7 @@ import com.example.domain.objects.WebsiteCrawlDetail;
 import com.example.fiq.generic.GenericBeanType;
 import com.example.fiq.generic.GenericBeanDescriptorFactory;
 import com.example.fiq.generic.GenericMongoCRUDService;
+import com.example.util.UrlUtils;
 
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
@@ -55,6 +56,7 @@ public class WebsiteCrawlResource {
                     .entity(Map.of("error", "websiteLink is required"))
                     .build();
         }
+        websiteLink = UrlUtils.sanitizeInputUrl(websiteLink);
         if (companyId == null || companyId.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "companyId is required"))
