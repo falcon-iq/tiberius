@@ -85,11 +85,9 @@ def _load_pages_from_local(crawl_directory: str, locale_filter: str = "en") -> L
 
 def _load_pages_from_s3(crawl_directory: str, locale_filter: str = "en") -> List[PageInfo]:
     """Load pages from S3 bucket. crawl_directory is used as the S3 key prefix."""
-    import boto3
+    from falcon_iq_analyzer.config import create_s3_client, settings
 
-    from falcon_iq_analyzer.config import settings
-
-    s3 = boto3.client("s3", region_name=settings.aws_region)
+    s3 = create_s3_client()
     bucket = settings.s3_bucket_name
     prefix = f"crawls/{crawl_directory}/"
 

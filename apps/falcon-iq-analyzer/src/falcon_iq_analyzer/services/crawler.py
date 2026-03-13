@@ -90,8 +90,8 @@ async def run_crawl(
                         metadata = {"domain": domain, "url": url, "crawl_id": crawl_id}
 
                         if settings.crawl_storage_type == "s3":
-                            import boto3
-                            s3 = boto3.client("s3", region_name=settings.aws_region)
+                            from falcon_iq_analyzer.config import create_s3_client
+                            s3 = create_s3_client()
                             s3.put_object(
                                 Bucket=settings.s3_bucket_name,
                                 Key=f"crawls/{crawl_id}/_metadata.json",

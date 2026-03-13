@@ -96,9 +96,9 @@ def _list_sites_local() -> List[SiteInfo]:
 
 def _list_sites_s3() -> List[SiteInfo]:
     """List crawled sites from S3 bucket under crawls/ prefix."""
-    import boto3
+    from falcon_iq_analyzer.config import create_s3_client
 
-    s3 = boto3.client("s3", region_name=settings.aws_region)
+    s3 = create_s3_client()
     bucket = settings.s3_bucket_name
     sites: List[SiteInfo] = []
 
@@ -196,9 +196,9 @@ def _delete_site_local(domain: str) -> dict:
 
 def _delete_site_s3(domain: str) -> dict:
     """Delete a crawled site from S3."""
-    import boto3
+    from falcon_iq_analyzer.config import create_s3_client
 
-    s3 = boto3.client("s3", region_name=settings.aws_region)
+    s3 = create_s3_client()
     bucket = settings.s3_bucket_name
 
     # Find the crawl_id matching this domain

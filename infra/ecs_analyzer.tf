@@ -28,7 +28,7 @@ resource "aws_ecs_task_definition" "analyzer" {
         { name = "WEB_ANALYZER_STORAGE_TYPE", value = "s3" },
         { name = "WEB_ANALYZER_CRAWL_STORAGE_TYPE", value = "s3" },
         { name = "WEB_ANALYZER_S3_BUCKET_NAME", value = "marketpilot-data" },
-        { name = "WEB_ANALYZER_AWS_REGION", value = "auto" },
+        { name = "WEB_ANALYZER_AWS_REGION", value = "us-east-1" },
         { name = "WEB_ANALYZER_R2_ACCOUNT_ID", value = "ef29d1c724622a010ffbf2c6340ebed4" },
         { name = "WEB_ANALYZER_CRAWLER_API_URL", value = local.crawler_internal_url },
         { name = "WEB_ANALYZER_LLM_PROVIDER", value = var.analyzer_llm_provider },

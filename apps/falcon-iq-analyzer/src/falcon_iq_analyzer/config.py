@@ -51,3 +51,16 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def create_s3_client():
+    """Create a boto3 S3 client, using R2 endpoint when configured."""
+    import boto3
+
+    kwargs: dict = {"region_name": settings.aws_region}
+    if settings.r2_account_id:
+        kwargs["endpoint_url"] = f"https://{settings.r2_account_id}.r2.cloudflarestorage.com"
+    if settings.r2_access_key_id and settings.r2_secret_access_key:
+        kwargs["aws_access_key_id"] = settings.r2_access_key_id
+        kwargs["aws_secret_access_key"] = settings.r2_secret_access_key
+    return boto3.client("s3", **kwargs)

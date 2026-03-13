@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 def _read_html(filepath: str, settings: Settings) -> str:
     """Read raw HTML content from local filesystem or S3."""
     if settings.crawl_storage_type == "s3":
-        import boto3
+        from falcon_iq_analyzer.config import create_s3_client
 
-        s3 = boto3.client("s3", region_name=settings.aws_region)
+        s3 = create_s3_client()
         response = s3.get_object(Bucket=settings.s3_bucket_name, Key=filepath)
         return response["Body"].read().decode("utf-8", errors="replace")
     else:
