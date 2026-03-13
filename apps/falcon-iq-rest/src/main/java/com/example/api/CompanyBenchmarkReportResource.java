@@ -5,6 +5,7 @@ import com.example.domain.objects.WebsiteCrawlDetail;
 import com.example.fiq.generic.GenericBeanType;
 import com.example.fiq.generic.GenericBeanDescriptorFactory;
 import com.example.fiq.generic.GenericMongoCRUDService;
+import com.example.util.BenchmarkReportLookup;
 import com.example.util.CrawlDetailLookup;
 import com.example.util.UrlUtils;
 
@@ -69,18 +70,35 @@ public class CompanyBenchmarkReportResource {
 
         // Sanitize user-provided URLs
         companyLink = UrlUtils.sanitizeInputUrl(companyLink);
+        List<String> sanitizedCompetitorLinks = new ArrayList<>();
+        if (otherCompanyLinks != null) {
+            for (String link : otherCompanyLinks) {
+                if (link != null && !link.isBlank()) {
+                    sanitizedCompetitorLinks.add(UrlUtils.sanitizeInputUrl(link));
+                }
+            }
+        }
+
+        // Build normalized fingerprints for cache lookup
+        String companyLinkNormalized = UrlUtils.normalizeUrl(companyLink);
+        String competitorKey = BenchmarkReportLookup.buildCompetitorKey(sanitizedCompetitorLinks);
+
+        // Check for a cached completed benchmark report
+        CompanyBenchmarkReport cachedReport = BenchmarkReportLookup.findCompletedBenchmark(
+                benchmarkReportService, companyLinkNormalized, competitorKey);
+        if (cachedReport != null) {
+            logger.info("Returning cached benchmark report " + cachedReport.getId()
+                    + " for " + companyLinkNormalized + " vs [" + competitorKey + "]");
+            return Response.status(Response.Status.CREATED).entity(cachedReport).build();
+        }
 
         // Try to reuse a recent completed crawl detail for the main company
         String companyCrawlDetailId = findOrCreateCrawlDetail(companyLink, userId, false);
 
         // Create or reuse WebsiteCrawlDetail for each competitor
         List<String> competitorIds = new ArrayList<>();
-        if (otherCompanyLinks != null) {
-            for (String link : otherCompanyLinks) {
-                if (link != null && !link.isBlank()) {
-                    competitorIds.add(findOrCreateCrawlDetail(UrlUtils.sanitizeInputUrl(link), userId, true));
-                }
-            }
+        for (String link : sanitizedCompetitorLinks) {
+            competitorIds.add(findOrCreateCrawlDetail(link, userId, true));
         }
 
         // Create CompanyBenchmarkReport
@@ -88,6 +106,8 @@ public class CompanyBenchmarkReportResource {
         report.setUserId(userId);
         report.setCompanyCrawlDetailId(companyCrawlDetailId);
         report.setCompetitionCrawlDetailIds(competitorIds);
+        report.setCompanyLinkNormalized(companyLinkNormalized);
+        report.setCompetitorLinksNormalized(competitorKey);
         report.setStatus(CompanyBenchmarkReport.Status.NOT_STARTED);
 
         CompanyBenchmarkReport savedReport = benchmarkReportService.create(report);
