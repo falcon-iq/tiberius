@@ -31,6 +31,9 @@
       "vars": {
         "NODE_ENV": "production"
       },
+      "r2_buckets": [
+        { "binding": "STORAGE", "bucket_name": "marketpilot-data" }
+      ],
       "route": {
         "pattern": "trymarketpilot.com",
         "custom_domain": true
