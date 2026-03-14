@@ -41,11 +41,11 @@ resource "aws_ecs_task_definition" "rest" {
       ]
 
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"]
+        command     = ["CMD-SHELL", "curl -f http://localhost:8080/api/health/live || exit 1"]
         interval    = 30
         timeout     = 10
-        retries     = 3
-        startPeriod = 60
+        retries     = 5
+        startPeriod = 120
       }
 
       logConfiguration = {
