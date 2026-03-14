@@ -1,11 +1,13 @@
 package com.example.api;
 
 import com.example.domain.objects.CompanyBenchmarkReport;
+import com.example.domain.objects.CompetitorSuggestion;
 import com.example.domain.objects.WebsiteCrawlDetail;
 import com.example.fiq.generic.GenericBeanType;
 import com.example.fiq.generic.GenericBeanDescriptorFactory;
 import com.example.fiq.generic.GenericMongoCRUDService;
 import com.example.util.BenchmarkReportLookup;
+import com.example.util.CompetitorSuggestionLookup;
 import com.example.util.CrawlDetailLookup;
 import com.example.util.OpenAiClient;
 import com.example.util.UrlUtils;
@@ -40,12 +42,15 @@ public class CompanyBenchmarkReportResource {
 
     private final GenericMongoCRUDService<WebsiteCrawlDetail> crawlDetailService;
     private final GenericMongoCRUDService<CompanyBenchmarkReport> benchmarkReportService;
+    private final GenericMongoCRUDService<CompetitorSuggestion> competitorSuggestionService;
 
     public CompanyBenchmarkReportResource() {
         this.crawlDetailService = GenericBeanDescriptorFactory.getInstance()
                 .getCRUDService(GenericBeanType.WEBSITE_CRAWL_DETAIL);
         this.benchmarkReportService = GenericBeanDescriptorFactory.getInstance()
                 .getCRUDService(GenericBeanType.COMPANY_BENCHMARK_REPORT);
+        this.competitorSuggestionService = GenericBeanDescriptorFactory.getInstance()
+                .getCRUDService(GenericBeanType.COMPETITOR_SUGGESTION);
     }
 
     @POST
@@ -177,7 +182,24 @@ public class CompanyBenchmarkReportResource {
         }
 
         try {
+            String normalizedUrl = UrlUtils.normalizeUrl(companyUrl);
+
+            // Check cache first
+            CompetitorSuggestion cached = CompetitorSuggestionLookup.findCachedSuggestion(
+                    competitorSuggestionService, normalizedUrl);
+            if (cached != null) {
+                logger.info("Returning cached competitor suggestions for " + normalizedUrl);
+                return Response.ok(Map.of("competitors", cached.getCompetitors())).build();
+            }
+
             List<String> competitors = OpenAiClient.suggestCompetitors(companyUrl);
+
+            // Save to cache
+            CompetitorSuggestion suggestion = new CompetitorSuggestion();
+            suggestion.setCompanyUrlNormalized(normalizedUrl);
+            suggestion.setCompetitors(competitors);
+            competitorSuggestionService.create(suggestion);
+
             return Response.ok(Map.of("competitors", competitors)).build();
         } catch (IllegalStateException e) {
             return Response.status(503)
