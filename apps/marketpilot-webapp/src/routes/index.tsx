@@ -58,7 +58,7 @@ const tabs: Tab[] = [
       <ComingSoonTab
         title="Experiment & Optimize"
         subtitle="Run controlled tests to improve how LLMs recommend your brand"
-        description="Marketing in the age of AI requires a new kind of experimentation. Market Pilot lets you run A/B tests on messaging, prompts, and landing pages to see how changes affect the way large language models describe and recommend your products. Test different value propositions, content structures, and Q&A approaches to find what resonates with AI-driven discovery."
+        description="Marketing in the age of AI requires a new kind of experimentation. Market Presence lets you run A/B tests on messaging, prompts, and landing pages to see how changes affect the way large language models describe and recommend your products. Test different value propositions, content structures, and Q&A approaches to find what resonates with AI-driven discovery."
         accentColor="#f59e0b"
         accentColorRgb="245, 158, 11"
         features={[
@@ -89,7 +89,7 @@ const tabs: Tab[] = [
       <ComingSoonTab
         title="Execute with AI Agents"
         subtitle="Dedicated agents that continuously optimize your LLM presence"
-        description="Stop manually updating content and hoping for the best. Market Pilot's execution layer deploys intelligent agents that work around the clock to monitor your LLM visibility, build dynamic Q&A pages that AI models love to reference, and improve creatives in real-time. These agents adapt to changes in how models retrieve and rank information, keeping you ahead of the curve."
+        description="Stop manually updating content and hoping for the best. Market Presence's execution layer deploys intelligent agents that work around the clock to monitor your LLM visibility, build dynamic Q&A pages that AI models love to reference, and improve creatives in real-time. These agents adapt to changes in how models retrieve and rank information, keeping you ahead of the curve."
         accentColor="#10b981"
         accentColorRgb="16, 185, 129"
         features={[
@@ -120,7 +120,7 @@ const tabs: Tab[] = [
       <ComingSoonTab
         title="Measure Real Business Impact"
         subtitle="Connect LLM exposure to traffic, leads, and pipeline"
-        description="Visibility without measurement is just vanity. Market Pilot's measurement layer connects the dots between your LLM presence and real business outcomes. Through advanced attribution modeling, track how AI-driven brand mentions translate into website visits, qualified leads, and actual pipeline growth. Prove ROI on your LLM marketing strategy with data, not guesswork."
+        description="Visibility without measurement is just vanity. Market Presence's measurement layer connects the dots between your LLM presence and real business outcomes. Through advanced attribution modeling, track how AI-driven brand mentions translate into website visits, qualified leads, and actual pipeline growth. Prove ROI on your LLM marketing strategy with data, not guesswork."
         accentColor="#f472b6"
         accentColorRgb="244, 114, 182"
         features={[

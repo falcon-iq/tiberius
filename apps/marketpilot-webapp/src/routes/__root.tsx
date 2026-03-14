@@ -117,24 +117,24 @@ function RootLayout() {
               }}
             />
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 30, height: 30 }}>
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
             </svg>
           </div>
           <h1
             style={{
-              fontSize: 40,
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              background: 'linear-gradient(135deg, #e0e7ff 0%, #c4b5fd 40%, #a78bfa 60%, #818cf8 100%)',
+              fontSize: 42,
+              fontWeight: 700,
+              letterSpacing: '-0.04em',
+              background: 'linear-gradient(135deg, #f0f0ff 0%, #e0e7ff 30%, #c4b5fd 60%, #a78bfa 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
               marginBottom: 10,
+              fontFamily: "'Inter', sans-serif",
             }}
           >
-            Market Pilot
+            Market Presence
           </h1>
           <p style={{ fontSize: 16, color: '#71717a', fontWeight: 400, letterSpacing: '0.01em' }}>
             The closed-loop LLM marketing engine for the AI era

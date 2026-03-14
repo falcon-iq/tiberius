@@ -6,6 +6,10 @@ interface BenchmarkFormProps {
   isSubmitting: boolean;
 }
 
+function isValidUrl(value: string): boolean {
+  return /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}(\/\S*)?$/i.test(value.trim());
+}
+
 const cardStyle: React.CSSProperties = {
   background: 'rgba(24, 24, 32, 0.8)',
   border: '1px solid rgba(63, 63, 70, 0.5)',
@@ -37,19 +41,59 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 };
 
+const errorInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  border: '1px solid rgba(239, 68, 68, 0.5)',
+};
+
+const inlineErrorStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: '#fca5a5',
+  marginTop: 4,
+};
+
 export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
   const [companyUrl, setCompanyUrl] = useState('');
   const [competitors, setCompetitors] = useState(['']);
   const [error, setError] = useState('');
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestError, setSuggestError] = useState('');
+  const [companyUrlError, setCompanyUrlError] = useState('');
+  const [competitorErrors, setCompetitorErrors] = useState<string[]>([]);
+  const [suggestedForUrl, setSuggestedForUrl] = useState('');
   const firstCompetitorRef = useRef<HTMLInputElement>(null);
 
   const competitorsAreEmpty = competitors.every((c) => !c.trim());
+  const showCompetitors = isValidUrl(companyUrl);
+
+  const validateCompanyUrl = (value: string): boolean => {
+    if (value.trim() && !isValidUrl(value)) {
+      setCompanyUrlError('Please enter a valid URL (e.g. stripe.com)');
+      return false;
+    }
+    setCompanyUrlError('');
+    return true;
+  };
+
+  const validateCompetitorUrl = (index: number, value: string): boolean => {
+    const errors = [...competitorErrors];
+    if (value.trim() && !isValidUrl(value)) {
+      errors[index] = 'Please enter a valid URL';
+      setCompetitorErrors(errors);
+      return false;
+    }
+    errors[index] = '';
+    setCompetitorErrors(errors);
+    return true;
+  };
 
   const handleSuggestCompetitors = async () => {
     if (!companyUrl.trim()) {
       setSuggestError('Please enter your website URL first.');
+      return;
+    }
+    if (!isValidUrl(companyUrl)) {
+      setCompanyUrlError('Please enter a valid URL (e.g. stripe.com)');
       return;
     }
 
@@ -59,6 +103,8 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
       const result = await api.suggestCompetitors({ companyUrl: companyUrl.trim() });
       if (result.competitors.length > 0) {
         setCompetitors(result.competitors);
+        setCompetitorErrors([]);
+        setSuggestedForUrl(companyUrl.trim());
         setTimeout(() => firstCompetitorRef.current?.focus(), 50);
       }
     } catch (err) {
@@ -78,17 +124,24 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
   const addCompetitor = () => {
     if (competitors.length < 10) {
       setCompetitors([...competitors, '']);
+      setCompetitorErrors([...competitorErrors, '']);
     }
   };
 
   const removeCompetitor = (index: number) => {
     setCompetitors(competitors.filter((_, i) => i !== index));
+    setCompetitorErrors(competitorErrors.filter((_, i) => i !== index));
   };
 
   const updateCompetitor = (index: number, value: string) => {
     const updated = [...competitors];
     updated[index] = value;
     setCompetitors(updated);
+    if (competitorErrors[index] && isValidUrl(value)) {
+      const errors = [...competitorErrors];
+      errors[index] = '';
+      setCompetitorErrors(errors);
+    }
   };
 
   const handleSubmit = () => {
@@ -98,10 +151,28 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
       setError('Please enter your website URL.');
       return;
     }
+    if (!isValidUrl(companyUrl)) {
+      setCompanyUrlError('Please enter a valid URL (e.g. stripe.com)');
+      return;
+    }
 
     const validCompetitors = competitors.map((c) => c.trim()).filter(Boolean);
     if (validCompetitors.length === 0) {
       setError('Please enter at least one competitor URL.');
+      return;
+    }
+
+    // Validate all non-empty competitor URLs
+    let hasInvalid = false;
+    const errors = competitors.map((c) => {
+      if (c.trim() && !isValidUrl(c)) {
+        hasInvalid = true;
+        return 'Please enter a valid URL';
+      }
+      return '';
+    });
+    if (hasInvalid) {
+      setCompetitorErrors(errors);
       return;
     }
 
@@ -138,24 +209,48 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
         <label style={labelStyle} htmlFor="companyUrl">Website URL</label>
         <input
           id="companyUrl"
-          type="url"
-          style={inputStyle}
+          type="text"
+          style={companyUrlError ? errorInputStyle : inputStyle}
           placeholder="https://yourcompany.com"
           value={companyUrl}
-          onChange={(e) => setCompanyUrl(e.target.value)}
+          onChange={(e) => {
+            const newVal = e.target.value;
+            setCompanyUrl(newVal);
+            if (companyUrlError && isValidUrl(newVal)) {
+              setCompanyUrlError('');
+            }
+            // Clear stale competitors when company URL changes
+            if (suggestedForUrl && newVal.trim() !== suggestedForUrl) {
+              setCompetitors(['']);
+              setCompetitorErrors([]);
+              setSuggestedForUrl('');
+            }
+          }}
+          onBlur={() => validateCompanyUrl(companyUrl)}
           onKeyDown={handleCompanyUrlKeyDown}
           disabled={isSubmitting}
           autoComplete="off"
         />
-        {companyUrl.trim() && competitorsAreEmpty && !isSuggesting && (
-          <div style={{ fontSize: 12, color: '#71717a', marginTop: 6 }}>
-            Press Enter to auto-suggest competitors
+        {companyUrlError && <div style={inlineErrorStyle}>{companyUrlError}</div>}
+        {!companyUrlError && companyUrl.trim() && competitorsAreEmpty && !isSuggesting && showCompetitors && (
+          <div style={{ fontSize: 12, color: '#a78bfa', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <kbd style={{
+              padding: '1px 6px',
+              background: 'rgba(167, 139, 250, 0.12)',
+              border: '1px solid rgba(167, 139, 250, 0.25)',
+              borderRadius: 4,
+              fontSize: 11,
+              fontFamily: 'inherit',
+              color: '#c4b5fd',
+            }}>Enter</kbd>
+            to auto-suggest competitors
           </div>
         )}
       </div>
 
-      {/* Competitors card */}
-      <div style={cardStyle}>
+      {/* Competitors card — shown only when company URL is valid */}
+      {showCompetitors && (
+      <div style={{ ...cardStyle, animation: 'fadeSlideIn 0.3s ease-out' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
           <div
             style={{
@@ -238,40 +333,44 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
           </div>
         )}
         {!isSuggesting && competitors.map((url, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', animation: 'fadeSlideIn 0.25s ease-out' }}>
-            <input
-              ref={i === 0 ? firstCompetitorRef : undefined}
-              type="url"
-              style={{ ...inputStyle, flex: 1 }}
-              placeholder={`https://competitor${i + 1}.com`}
-              value={url}
-              onChange={(e) => updateCompetitor(i, e.target.value)}
-              disabled={isSubmitting}
-              autoComplete="off"
-            />
-            {competitors.length > 1 && (
-              <button
-                onClick={() => removeCompetitor(i)}
+          <div key={i} style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', animation: 'fadeSlideIn 0.25s ease-out' }}>
+              <input
+                ref={i === 0 ? firstCompetitorRef : undefined}
+                type="text"
+                style={{ ...(competitorErrors[i] ? errorInputStyle : inputStyle), flex: 1 }}
+                placeholder={`https://competitor${i + 1}.com`}
+                value={url}
+                onChange={(e) => updateCompetitor(i, e.target.value)}
+                onBlur={() => validateCompetitorUrl(i, url)}
                 disabled={isSubmitting}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  color: '#ef4444',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontSize: 18,
-                  lineHeight: 1,
-                }}
-              >
-                &times;
-              </button>
-            )}
+                autoComplete="off"
+              />
+              {competitors.length > 1 && (
+                <button
+                  onClick={() => removeCompetitor(i)}
+                  disabled={isSubmitting}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    fontSize: 18,
+                    lineHeight: 1,
+                  }}
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+            {competitorErrors[i] && <div style={inlineErrorStyle}>{competitorErrors[i]}</div>}
           </div>
         ))}
 
@@ -303,6 +402,7 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
         </div>
         )}
       </div>
+      )}
 
       {error && (
         <div
@@ -320,6 +420,7 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
         </div>
       )}
 
+      {showCompetitors && (
       <button
         onClick={handleSubmit}
         disabled={isSubmitting}
@@ -339,6 +440,7 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
       >
         {isSubmitting ? 'Starting...' : 'Launch Benchmark Analysis'}
       </button>
+      )}
     </>
   );
 }
