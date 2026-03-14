@@ -30,6 +30,9 @@ export function TabNavigation({ tabs, defaultTab }: TabNavigationProps) {
           borderRadius: 14,
           marginBottom: 32,
           backdropFilter: 'blur(12px)',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
         }}
       >
         {tabs.map((tab) => {
@@ -44,7 +47,9 @@ export function TabNavigation({ tabs, defaultTab }: TabNavigationProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                padding: '12px 16px',
+                padding: '12px 12px',
+                minWidth: 0,
+                whiteSpace: 'nowrap',
                 border: 'none',
                 borderRadius: 10,
                 background: isActive
