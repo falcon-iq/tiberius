@@ -33,6 +33,10 @@ resource "aws_ecs_task_definition" "rest" {
         {
           name      = "MONGO_URI"
           valueFrom = aws_secretsmanager_secret.mongo_uri.arn
+        },
+        {
+          name      = "OPENAI_API_KEY"
+          valueFrom = aws_secretsmanager_secret.openai_api_key.arn
         }
       ]
 

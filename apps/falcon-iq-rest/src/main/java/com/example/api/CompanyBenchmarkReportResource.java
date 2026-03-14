@@ -7,6 +7,7 @@ import com.example.fiq.generic.GenericBeanDescriptorFactory;
 import com.example.fiq.generic.GenericMongoCRUDService;
 import com.example.util.BenchmarkReportLookup;
 import com.example.util.CrawlDetailLookup;
+import com.example.util.OpenAiClient;
 import com.example.util.UrlUtils;
 
 import jakarta.ws.rs.Consumes;
@@ -160,6 +161,34 @@ public class CompanyBenchmarkReportResource {
         }
 
         return Response.status(Response.Status.CREATED).entity(savedReport).build();
+    }
+
+    @POST
+    @Path("/suggest-competitors")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @SuppressWarnings("unchecked")
+    public Response suggestCompetitors(Map<String, Object> request) {
+        String companyUrl = (String) request.get("companyUrl");
+        if (companyUrl == null || companyUrl.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "companyUrl is required"))
+                    .build();
+        }
+
+        try {
+            List<String> competitors = OpenAiClient.suggestCompetitors(companyUrl);
+            return Response.ok(Map.of("competitors", competitors)).build();
+        } catch (IllegalStateException e) {
+            return Response.status(503)
+                    .entity(Map.of("error", "AI service not configured: " + e.getMessage()))
+                    .build();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to suggest competitors for " + companyUrl, e);
+            return Response.status(502)
+                    .entity(Map.of("error", "Failed to get competitor suggestions: " + e.getMessage()))
+                    .build();
+        }
     }
 
     @GET
