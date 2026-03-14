@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { api } from '../services/api';
 
 interface BenchmarkFormProps {
   onSubmit: (companyUrl: string, competitorUrls: string[]) => void;
@@ -40,6 +41,39 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
   const [companyUrl, setCompanyUrl] = useState('');
   const [competitors, setCompetitors] = useState(['']);
   const [error, setError] = useState('');
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState('');
+  const firstCompetitorRef = useRef<HTMLInputElement>(null);
+
+  const competitorsAreEmpty = competitors.every((c) => !c.trim());
+
+  const handleSuggestCompetitors = async () => {
+    if (!companyUrl.trim()) {
+      setSuggestError('Please enter your website URL first.');
+      return;
+    }
+
+    setSuggestError('');
+    setIsSuggesting(true);
+    try {
+      const result = await api.suggestCompetitors({ companyUrl: companyUrl.trim() });
+      if (result.competitors.length > 0) {
+        setCompetitors(result.competitors);
+        setTimeout(() => firstCompetitorRef.current?.focus(), 50);
+      }
+    } catch (err) {
+      setSuggestError(err instanceof Error ? err.message : 'Failed to suggest competitors.');
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const handleCompanyUrlKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && companyUrl.trim() && competitorsAreEmpty && !isSuggesting) {
+      e.preventDefault();
+      handleSuggestCompetitors();
+    }
+  };
 
   const addCompetitor = () => {
     if (competitors.length < 10) {
@@ -109,9 +143,15 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
           placeholder="https://yourcompany.com"
           value={companyUrl}
           onChange={(e) => setCompanyUrl(e.target.value)}
+          onKeyDown={handleCompanyUrlKeyDown}
           disabled={isSubmitting}
           autoComplete="off"
         />
+        {companyUrl.trim() && competitorsAreEmpty && !isSuggesting && (
+          <div style={{ fontSize: 12, color: '#71717a', marginTop: 6 }}>
+            Press Enter to auto-suggest competitors
+          </div>
+        )}
       </div>
 
       {/* Competitors card */}
@@ -141,10 +181,66 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
           </div>
         </div>
 
-        <label style={labelStyle}>Competitor URLs</label>
-        {competitors.map((url, i) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <label style={{ ...labelStyle, marginBottom: 0 }}>Competitor URLs</label>
+          <button
+            onClick={handleSuggestCompetitors}
+            disabled={isSubmitting || isSuggesting || !companyUrl.trim()}
+            style={{
+              padding: '6px 14px',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+              borderRadius: 8,
+              background: isSuggesting
+                ? 'rgba(168, 85, 247, 0.15)'
+                : 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))',
+              color: !companyUrl.trim() ? '#52525b' : '#c084fc',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: !companyUrl.trim() || isSuggesting ? 'not-allowed' : 'pointer',
+              opacity: !companyUrl.trim() ? 0.5 : 1,
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: 14, height: 14 }}>
+              <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6h4c0-3 2-4 2-6a4 4 0 0 0-4-4z" />
+              <path d="M10 18h4M11 22h2" />
+            </svg>
+            {isSuggesting ? 'Finding competitors...' : 'Suggest with AI'}
+          </button>
+        </div>
+        {suggestError && (
+          <div style={{ fontSize: 12, color: '#fca5a5', marginBottom: 8 }}>{suggestError}</div>
+        )}
+        {isSuggesting && (
+          <div style={{ marginBottom: 10 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  height: 44,
+                  background: 'rgba(9, 9, 11, 0.6)',
+                  border: '1px solid rgba(63, 63, 70, 0.6)',
+                  borderRadius: 10,
+                  marginBottom: 10,
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                  animationDelay: `${i * 0.1}s`,
+                  opacity: 0.6,
+                }}
+              />
+            ))}
+            <style>{`@keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }`}</style>
+            <div style={{ fontSize: 12, color: '#a78bfa', textAlign: 'center' }}>
+              Finding competitors...
+            </div>
+          </div>
+        )}
+        {!isSuggesting && competitors.map((url, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', animation: 'fadeSlideIn 0.25s ease-out' }}>
             <input
+              ref={i === 0 ? firstCompetitorRef : undefined}
               type="url"
               style={{ ...inputStyle, flex: 1 }}
               placeholder={`https://competitor${i + 1}.com`}
@@ -179,6 +275,7 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
           </div>
         ))}
 
+        {!isSuggesting && (
         <button
           onClick={addCompetitor}
           disabled={isSubmitting || competitors.length >= 10}
@@ -199,9 +296,12 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
         >
           + Add Competitor
         </button>
+        )}
+        {!isSuggesting && (
         <div style={{ fontSize: 12, color: '#52525b', textAlign: 'right', marginTop: 6 }}>
           {competitors.length} of 10 competitors
         </div>
+        )}
       </div>
 
       {error && (

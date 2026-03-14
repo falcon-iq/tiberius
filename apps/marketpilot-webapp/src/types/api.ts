@@ -13,6 +13,14 @@ export interface StartBenchmarkRequest {
   competitorUrls: string[];
 }
 
+export interface SuggestCompetitorsRequest {
+  companyUrl: string;
+}
+
+export interface SuggestCompetitorsResponse {
+  competitors: string[];
+}
+
 export interface StartBenchmarkResponse {
   id: string;
 }
