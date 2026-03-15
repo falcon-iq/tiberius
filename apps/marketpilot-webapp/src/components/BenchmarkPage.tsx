@@ -11,10 +11,10 @@ type PageState =
 export function BenchmarkPage() {
   const [state, setState] = useState<PageState>({ phase: 'idle' });
 
-  const handleSubmit = async (companyUrl: string, competitorUrls: string[]) => {
+  const handleSubmit = async (email: string, companyName: string, companyUrl: string, competitorUrls: string[]) => {
     setState({ phase: 'submitting' });
     try {
-      const res = await api.startBenchmark({ companyUrl, competitorUrls });
+      const res = await api.startBenchmark({ email, companyName, companyUrl, competitorUrls });
       setState({ phase: 'polling', jobId: res.id });
     } catch (err) {
       setState({ phase: 'idle' });

@@ -9,6 +9,8 @@ export type BenchmarkStatus =
   | 'FAILED';
 
 export interface StartBenchmarkRequest {
+  email: string;
+  companyName: string;
   companyUrl: string;
   competitorUrls: string[];
 }

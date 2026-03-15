@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { api } from '../services/api';
 
 interface BenchmarkFormProps {
-  onSubmit: (companyUrl: string, competitorUrls: string[]) => void;
+  onSubmit: (email: string, companyName: string, companyUrl: string, competitorUrls: string[]) => void;
   isSubmitting: boolean;
 }
 
@@ -53,6 +53,10 @@ const inlineErrorStyle: React.CSSProperties = {
 };
 
 export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
+  const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [companyNameError, setCompanyNameError] = useState('');
   const [companyUrl, setCompanyUrl] = useState('');
   const [competitors, setCompetitors] = useState(['']);
   const [error, setError] = useState('');
@@ -63,8 +67,27 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
   const [suggestedForUrl, setSuggestedForUrl] = useState('');
   const firstCompetitorRef = useRef<HTMLInputElement>(null);
 
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
   const competitorsAreEmpty = competitors.every((c) => !c.trim());
-  const showCompetitors = isValidUrl(companyUrl);
+  const showCompetitors = isValidEmail(email) && companyName.trim() !== '' && isValidUrl(companyUrl);
+
+  const validateEmail = (value: string): boolean => {
+    if (value.trim() && !isValidEmail(value)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  const validateCompanyName = (value: string): boolean => {
+    if (!value.trim()) {
+      setCompanyNameError('Company name is required');
+      return false;
+    }
+    setCompanyNameError('');
+    return true;
+  };
 
   const validateCompanyUrl = (value: string): boolean => {
     if (value.trim() && !isValidUrl(value)) {
@@ -147,6 +170,14 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
   const handleSubmit = () => {
     setError('');
 
+    if (!email.trim() || !isValidEmail(email)) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
+    if (!companyName.trim()) {
+      setCompanyNameError('Company name is required');
+      return;
+    }
     if (!companyUrl.trim()) {
       setError('Please enter your website URL.');
       return;
@@ -176,7 +207,7 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
       return;
     }
 
-    onSubmit(companyUrl.trim(), validCompetitors);
+    onSubmit(email.trim(), companyName.trim(), companyUrl.trim(), validCompetitors);
   };
 
   return (
@@ -196,16 +227,58 @@ export function BenchmarkForm({ onSubmit, isSubmitting }: BenchmarkFormProps) {
               flexShrink: 0,
             }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" style={{ width: 20, height: 20 }}>
-              <circle cx="12" cy="12" r="10" />
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
+              <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#f4f4f5' }}>Your Website</div>
-            <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>Enter the website you want to benchmark</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#f4f4f5' }}>Your Company</div>
+            <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>Tell us about your company so we can benchmark it against competitors</div>
           </div>
         </div>
+
+        <label style={labelStyle} htmlFor="email">Work Email</label>
+        <input
+          id="email"
+          type="email"
+          style={emailError ? errorInputStyle : inputStyle}
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (emailError && isValidEmail(e.target.value)) {
+              setEmailError('');
+            }
+          }}
+          onBlur={() => validateEmail(email)}
+          disabled={isSubmitting}
+          autoComplete="email"
+        />
+        {emailError && <div style={inlineErrorStyle}>{emailError}</div>}
+
+        <div style={{ marginTop: 16 }} />
+
+        <label style={labelStyle} htmlFor="companyName">Company Name</label>
+        <input
+          id="companyName"
+          type="text"
+          style={companyNameError ? errorInputStyle : inputStyle}
+          placeholder="Acme Inc."
+          value={companyName}
+          onChange={(e) => {
+            setCompanyName(e.target.value);
+            if (companyNameError && e.target.value.trim()) {
+              setCompanyNameError('');
+            }
+          }}
+          onBlur={() => validateCompanyName(companyName)}
+          disabled={isSubmitting}
+          autoComplete="organization"
+        />
+        {companyNameError && <div style={inlineErrorStyle}>{companyNameError}</div>}
+
+        <div style={{ marginTop: 16 }} />
+
         <label style={labelStyle} htmlFor="companyUrl">Website URL</label>
         <input
           id="companyUrl"
