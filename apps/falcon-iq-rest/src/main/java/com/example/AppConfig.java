@@ -18,9 +18,12 @@ public class AppConfig extends ResourceConfig {
   public AppConfig() {
     // auto-register all @Path resources in this package
     packages("com.example.api");
-    
+
     // Explicitly register Jackson for JSON support
     register(JacksonFeature.class);
+
+    // Register benchmark request tracking filter
+    register(com.example.api.BenchmarkTrackingFilter.class);
     
     // Register an application event listener to print all registered APIs
     register(new ApplicationEventListener() {
