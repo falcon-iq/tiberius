@@ -18,8 +18,11 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.glassfish.jersey.server.ContainerRequest;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -58,7 +61,7 @@ public class CompanyBenchmarkReportResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
-    public Response start(Map<String, Object> request) {
+    public Response start(Map<String, Object> request, @Context ContainerRequest containerRequest) {
         String userId = (String) request.get("userId");
         String companyName = (String) request.get("companyName");
         String companyLink = (String) request.get("companyLink");
@@ -93,11 +96,20 @@ public class CompanyBenchmarkReportResource {
         // Check for a cached completed benchmark report
         CompanyBenchmarkReport cachedReport = BenchmarkReportLookup.findCompletedBenchmark(
                 benchmarkReportService, companyLinkNormalized, competitorKey);
+        // Set tracking context for BenchmarkTrackingFilter
+        containerRequest.setProperty("tracking.companyUrl", companyLinkNormalized);
+        containerRequest.setProperty("tracking.competitorCount",
+                sanitizedCompetitorLinks != null ? sanitizedCompetitorLinks.size() : 0);
+        containerRequest.setProperty("tracking.email", userId);
+
         if (cachedReport != null) {
             logger.info("Returning cached benchmark report " + cachedReport.getId()
                     + " for " + companyLinkNormalized + " vs [" + competitorKey + "]");
+            containerRequest.setProperty("tracking.cacheHit", true);
+            containerRequest.setProperty("tracking.benchmarkReportId", cachedReport.getId());
             return Response.status(Response.Status.CREATED).entity(cachedReport).build();
         }
+        containerRequest.setProperty("tracking.cacheHit", false);
 
         // Try to reuse a recent completed crawl detail for the main company
         String companyCrawlDetailId = findOrCreateCrawlDetail(companyLink, userId, false);
@@ -119,6 +131,7 @@ public class CompanyBenchmarkReportResource {
         report.setStatus(CompanyBenchmarkReport.Status.NOT_STARTED);
 
         CompanyBenchmarkReport savedReport = benchmarkReportService.create(report);
+        containerRequest.setProperty("tracking.benchmarkReportId", savedReport.getId());
 
         // Trigger the crawler service to process all crawls
         if (CRAWLER_API_URL == null || CRAWLER_API_URL.isBlank()) {
@@ -175,13 +188,15 @@ public class CompanyBenchmarkReportResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
-    public Response suggestCompetitors(Map<String, Object> request) {
+    public Response suggestCompetitors(Map<String, Object> request, @Context ContainerRequest containerRequest) {
         String companyUrl = (String) request.get("companyUrl");
         if (companyUrl == null || companyUrl.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "companyUrl is required"))
                     .build();
         }
+
+        containerRequest.setProperty("tracking.companyUrl", companyUrl);
 
         try {
             String normalizedUrl = UrlUtils.normalizeUrl(companyUrl);

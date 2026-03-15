@@ -7,6 +7,7 @@ import com.example.db.MongoRepository;
 import com.example.domain.objects.metadata.BenchmarkReportTaskBeanDescriptor;
 import com.example.domain.objects.metadata.CompanyBenchmarkReportBeanDescriptor;
 import com.example.domain.objects.metadata.CompanyProfileBeanDescriptor;
+import com.example.domain.objects.metadata.BenchmarkRequestEventBeanDescriptor;
 import com.example.domain.objects.metadata.CompetitorSuggestionBeanDescriptor;
 
 import com.example.domain.objects.metadata.UserProfileBeanDescriptor;
@@ -28,6 +29,8 @@ public class GenericBeanDescriptorFactory {
                 new CompanyBenchmarkReportBeanDescriptor());
         GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.COMPETITOR_SUGGESTION,
                 new CompetitorSuggestionBeanDescriptor());
+        GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.BENCHMARK_REQUEST_EVENT,
+                new BenchmarkRequestEventBeanDescriptor());
     }
 
     private final Map<GenericBeanType, GenericBeanDescriptor<? extends com.example.domain.objects.AbstractBaseDomainObject>> descriptors = new ConcurrentHashMap<>();
