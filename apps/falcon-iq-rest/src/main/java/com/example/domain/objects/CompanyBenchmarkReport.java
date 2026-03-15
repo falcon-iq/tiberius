@@ -11,6 +11,7 @@ public class CompanyBenchmarkReport extends AbstractBaseDomainObject {
     public static final String STATUS = "status";
     public static final String COMPANY_LINK_NORMALIZED = "companyLinkNormalized";
     public static final String COMPETITOR_LINKS_NORMALIZED = "competitorLinksNormalized";
+    public static final String COMPANY_NAME = "companyName";
 
     public enum Status {
         NOT_STARTED,
@@ -24,6 +25,8 @@ public class CompanyBenchmarkReport extends AbstractBaseDomainObject {
     }
 
     private String userId;
+
+    private String companyName;
 
     private String companyCrawlDetailId;
 
@@ -45,6 +48,14 @@ public class CompanyBenchmarkReport extends AbstractBaseDomainObject {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
     }
 
     public String getCompanyCrawlDetailId() {

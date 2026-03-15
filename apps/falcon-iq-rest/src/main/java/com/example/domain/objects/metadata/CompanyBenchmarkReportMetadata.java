@@ -49,6 +49,16 @@ public class CompanyBenchmarkReportMetadata implements GenericBeanMetadata {
                         .filterSupported(true)
                         .build();
 
+        public static final GenericBeanFieldMetadata<String> COMPANY_NAME = GenericBeanFieldMetadataBuilder.<String>builder()
+                        .name("companyName")
+                        .label("Company Name")
+                        .type(FieldType.STRING)
+                        .updateAllowed(false)
+                        .required(false)
+                        .sortSupported(true)
+                        .filterSupported(true)
+                        .build();
+
         public static final GenericBeanFieldMetadata<String> COMPANY_CRAWL_DETAIL_ID = GenericBeanFieldMetadataBuilder
                         .<String>builder()
                         .name("companyCrawlDetailId")
@@ -94,7 +104,7 @@ public class CompanyBenchmarkReportMetadata implements GenericBeanMetadata {
 
         @Override
         public List<GenericBeanFieldMetadata<?>> getFields() {
-                return List.of(ID, CREATED_AT, MODIFIED_AT, USER_ID, COMPANY_CRAWL_DETAIL_ID,
+                return List.of(ID, CREATED_AT, MODIFIED_AT, USER_ID, COMPANY_NAME, COMPANY_CRAWL_DETAIL_ID,
                                 COMPETITION_CRAWL_DETAIL_IDS, REPORT_URL, STATUS);
         }
 }

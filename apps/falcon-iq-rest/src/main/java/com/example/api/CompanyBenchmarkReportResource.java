@@ -60,6 +60,7 @@ public class CompanyBenchmarkReportResource {
     @SuppressWarnings("unchecked")
     public Response start(Map<String, Object> request) {
         String userId = (String) request.get("userId");
+        String companyName = (String) request.get("companyName");
         String companyLink = (String) request.get("companyLink");
         List<String> otherCompanyLinks = (List<String>) request.get("otherCompanyLinks");
 
@@ -110,6 +111,7 @@ public class CompanyBenchmarkReportResource {
         // Create CompanyBenchmarkReport
         CompanyBenchmarkReport report = new CompanyBenchmarkReport();
         report.setUserId(userId);
+        report.setCompanyName(companyName);
         report.setCompanyCrawlDetailId(companyCrawlDetailId);
         report.setCompetitionCrawlDetailIds(competitorIds);
         report.setCompanyLinkNormalized(companyLinkNormalized);
