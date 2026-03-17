@@ -9,6 +9,8 @@ import com.example.domain.objects.metadata.CompanyBenchmarkReportBeanDescriptor;
 import com.example.domain.objects.metadata.CompanyProfileBeanDescriptor;
 import com.example.domain.objects.metadata.BenchmarkRequestEventBeanDescriptor;
 import com.example.domain.objects.metadata.CompetitorSuggestionBeanDescriptor;
+import com.example.domain.objects.metadata.IndustryBenchmarkBeanDescriptor;
+import com.example.domain.objects.metadata.IndustryBenchmarkConfigBeanDescriptor;
 
 import com.example.domain.objects.metadata.UserProfileBeanDescriptor;
 import com.example.domain.objects.metadata.WebsiteCrawlDetailBeanDescriptor;
@@ -31,6 +33,10 @@ public class GenericBeanDescriptorFactory {
                 new CompetitorSuggestionBeanDescriptor());
         GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.BENCHMARK_REQUEST_EVENT,
                 new BenchmarkRequestEventBeanDescriptor());
+        GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.INDUSTRY_BENCHMARK_CONFIG,
+                new IndustryBenchmarkConfigBeanDescriptor());
+        GenericBeanDescriptorFactory.getInstance().register(GenericBeanType.INDUSTRY_BENCHMARK,
+                new IndustryBenchmarkBeanDescriptor());
     }
 
     private final Map<GenericBeanType, GenericBeanDescriptor<? extends com.example.domain.objects.AbstractBaseDomainObject>> descriptors = new ConcurrentHashMap<>();

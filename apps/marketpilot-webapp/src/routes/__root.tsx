@@ -88,7 +88,7 @@ function RootLayout() {
       />
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 960, margin: '0 auto', padding: '40px 24px 80px' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div

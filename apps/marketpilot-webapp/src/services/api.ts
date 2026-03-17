@@ -1,4 +1,4 @@
-import type { StartBenchmarkRequest, StartBenchmarkResponse, BenchmarkStatusResponse, SuggestCompetitorsRequest, SuggestCompetitorsResponse } from '@app-types/api';
+import type { StartBenchmarkRequest, StartBenchmarkResponse, BenchmarkStatusResponse, SuggestCompetitorsRequest, SuggestCompetitorsResponse, IndustryBenchmarkSummary, IndustryBenchmarkDetail } from '@app-types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
@@ -38,4 +38,10 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ companyUrl: req.companyUrl }),
     }),
+
+  getIndustryBenchmarks: () =>
+    request<IndustryBenchmarkSummary[]>('/api/industry-benchmarks'),
+
+  getIndustryBenchmark: (slug: string) =>
+    request<IndustryBenchmarkDetail>(`/api/industry-benchmarks/${slug}`),
 };
