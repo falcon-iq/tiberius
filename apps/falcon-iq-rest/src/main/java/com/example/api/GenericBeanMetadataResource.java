@@ -92,13 +92,13 @@ public class GenericBeanMetadataResource {
         return Response.ok(results).build();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @PUT
     @Path("/update/{type}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("type") String typeStr, @PathParam("id") String id,
-            List<GenericBeanFieldChangeItem<?>> changeItems) {
+            JsonNode body) {
         GenericBeanType type;
         try {
             type = GenericBeanType.valueOf(typeStr.toUpperCase());
@@ -118,10 +118,16 @@ public class GenericBeanMetadataResource {
             return Response.status(Response.Status.NOT_IMPLEMENTED).entity("No CRUD service for type: " + type).build();
         }
 
-        // service is untyped here; perform an unchecked cast to satisfy the
-        // GenericMongoCRUDService<T>.update signature. This is safe because the
-        // registry controls service creation for each type.
-        @SuppressWarnings("rawtypes")
+        List<GenericBeanFieldChangeItem<?>> changeItems;
+        try {
+            changeItems = mapper.readValue(body.traverse(),
+                    mapper.getTypeFactory().constructCollectionType(List.class, GenericBeanFieldChangeItem.class));
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Invalid change items: " + e.getMessage())
+                    .build();
+        }
+
         Boolean ok = ((GenericMongoCRUDService) service).update(id, (List) changeItems);
         return Response.ok(Map.of("updated", ok)).build();
     }

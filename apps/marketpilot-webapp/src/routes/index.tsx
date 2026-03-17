@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { BenchmarkPage } from '@components/BenchmarkPage';
 import { ComingSoonTab } from '@components/ComingSoonTab';
+import { IndustryBenchmarksTab } from '@components/IndustryBenchmarksTab';
 import { TabNavigation, type Tab } from '@components/TabNavigation';
 
 export const Route = createFileRoute('/')({
@@ -30,6 +31,14 @@ const ExecuteIcon = () => (
   </svg>
 );
 
+const BenchmarkIcon = () => (
+  <svg {...iconProps} stroke="#3b82f6">
+    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 9 7 12 7s5-3 7.5-3a2.5 2.5 0 0 1 0 5H18" />
+    <path d="M12 7v10" />
+    <path d="M8 17h8a2 2 0 1 1 0 4H8a2 2 0 1 1 0-4z" />
+  </svg>
+);
+
 const MeasureIcon = () => (
   <svg {...iconProps} stroke="#f472b6">
     <path d="M18 20V10M12 20V4M6 20v-6" />
@@ -49,6 +58,12 @@ const tabs: Tab[] = [
     label: 'Plan',
     icon: <PlanIcon />,
     content: <BenchmarkPage />,
+  },
+  {
+    id: 'benchmarks',
+    label: 'Industries',
+    icon: <BenchmarkIcon />,
+    content: <IndustryBenchmarksTab />,
   },
   {
     id: 'experiment',

@@ -24,6 +24,9 @@ public class AppConfig extends ResourceConfig {
 
     // Register benchmark request tracking filter
     register(com.example.api.BenchmarkTrackingFilter.class);
+
+    // Register admin token authentication filter
+    register(com.example.api.filters.AdminTokenFilter.class);
     
     // Register an application event listener to print all registered APIs
     register(new ApplicationEventListener() {

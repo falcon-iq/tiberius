@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from falcon_iq_analyzer.config import settings
-from falcon_iq_analyzer.routers import analyze, benchmark, company_benchmark, compare, crawl, report
+from falcon_iq_analyzer.routers import analyze, benchmark, company_benchmark, compare, crawl, report, industry_benchmark
 from falcon_iq_analyzer.storage import create_storage_service
 
 logging.basicConfig(
@@ -36,6 +36,7 @@ app.include_router(report.router, tags=["report"])
 app.include_router(crawl.router, tags=["crawl"])
 app.include_router(benchmark.router, tags=["benchmark"])
 app.include_router(company_benchmark.router, tags=["company-benchmark"])
+app.include_router(industry_benchmark.router, tags=["industry-benchmark"])
 
 
 @app.get("/health")
@@ -59,6 +60,7 @@ _static_dir = (_repo_root / "apps" / "falcon-iq-analyzer-web-app" / "dist") if _
 _API_PREFIXES = (
     "health", "analyze", "compare", "report", "crawl",
     "benchmark", "company-benchmark", "company-benchmark-report",
+    "industry-benchmark",
     "sites", "analyses", "benchmarks",
 )
 

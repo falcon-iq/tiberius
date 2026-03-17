@@ -36,3 +36,49 @@ export interface BenchmarkStatusResponse {
   htmlReportUrl?: string;
   errorMessage?: string;
 }
+
+export interface CompanyStrength {
+  title: string;
+  detail: string;
+}
+
+export interface CompanyImprovement {
+  title: string;
+  detail: string;
+}
+
+export interface CompanyTestimonial {
+  quote: string;
+  source: string;
+  authorRole: string;
+}
+
+export interface CompanyKeyFact {
+  label: string;
+  value: string;
+  source: string;
+  sourceUrl: string;
+}
+
+export interface IndustryCompanyEntry {
+  companyName: string;
+  companyUrl: string;
+  logoUrl?: string;
+  keyFacts: CompanyKeyFact[];
+  strengths: CompanyStrength[];
+  improvements: CompanyImprovement[];
+  testimonials: CompanyTestimonial[];
+}
+
+export interface IndustryBenchmarkSummary {
+  id: string;
+  industryName: string;
+  country: string;
+  slug: string;
+  generatedAt: number;
+  companyCount: number;
+}
+
+export interface IndustryBenchmarkDetail extends IndustryBenchmarkSummary {
+  companies: IndustryCompanyEntry[];
+}

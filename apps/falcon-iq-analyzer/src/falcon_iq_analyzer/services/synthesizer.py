@@ -41,7 +41,7 @@ async def _summarize_batch(llm: LLMClient, batch_text: str) -> str:
     for s in summaries:
         lines.append(
             f"- {s.get('product_name', '?')} ({s.get('category', '?')}): "
-            f"{s.get('description', '')} Features: {', '.join(s.get('key_features', []))}"
+            f"{s.get('description', '')} Features: {', '.join(str(f) for f in s.get('key_features', []))}"
         )
     return "\n".join(lines)
 

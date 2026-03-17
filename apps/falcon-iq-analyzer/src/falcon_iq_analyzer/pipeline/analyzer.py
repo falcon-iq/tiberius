@@ -205,9 +205,11 @@ async def run_analysis(
 
         if _report:
             progress_reporter.report_completed(website_crawl_detail_id, result_key)
+            progress_reporter.check_and_trigger_industry_benchmark(website_crawl_detail_id)
 
     except Exception as e:
         logger.exception("Analysis pipeline failed")
         job_manager.set_error(job_id, str(e))
         if _report:
             progress_reporter.report_failed(website_crawl_detail_id, str(e))
+            progress_reporter.check_and_trigger_industry_benchmark(website_crawl_detail_id)
