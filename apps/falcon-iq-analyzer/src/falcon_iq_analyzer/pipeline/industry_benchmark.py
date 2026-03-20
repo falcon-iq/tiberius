@@ -8,7 +8,6 @@ import time
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
-
 from bson import ObjectId
 from pymongo import MongoClient
 
@@ -24,7 +23,6 @@ from falcon_iq_analyzer.llm.industry_benchmark_prompts import (
     EXTRACT_TESTIMONIALS_SYSTEM,
     EXTRACT_TESTIMONIALS_USER,
 )
-from falcon_iq_analyzer.services.wikidata_service import fetch_company_facts
 from falcon_iq_analyzer.models.domain import AnalysisResult
 from falcon_iq_analyzer.models.industry_benchmark import (
     CompanyImprovement,
@@ -34,6 +32,7 @@ from falcon_iq_analyzer.models.industry_benchmark import (
     IndustryBenchmarkResult,
     IndustryCompanyResult,
 )
+from falcon_iq_analyzer.services.wikidata_service import fetch_company_facts
 from falcon_iq_analyzer.storage import create_storage_service
 
 logger = logging.getLogger(__name__)
@@ -229,7 +228,12 @@ async def _extract_company_data(
                     key_facts.append(f)
                     existing_labels.add(f.label)
             facts_source = "wikidata+llm" if real_fact_count > 0 else "llm"
-            logger.info("After LLM fallback: %d total facts for %s (source: %s)", len(key_facts), company_name, facts_source)
+            logger.info(
+                "After LLM fallback: %d total facts for %s (source: %s)",
+                len(key_facts),
+                company_name,
+                facts_source,
+            )
         except Exception:
             logger.exception("LLM key facts fallback also failed for %s", company_name)
             if real_fact_count > 0:
@@ -327,7 +331,9 @@ async def run_industry_benchmark(
             )
 
             try:
-                result, facts_source = await _extract_company_data(llm, company_name, company_url, content, logo_url=logo_url)
+                result, facts_source = await _extract_company_data(
+                    llm, company_name, company_url, content, logo_url=logo_url
+                )
                 company_results.append(result)
                 facts_sources[company_name] = facts_source
                 logger.info("Completed extraction for %s (facts: %s)", company_name, facts_source)
