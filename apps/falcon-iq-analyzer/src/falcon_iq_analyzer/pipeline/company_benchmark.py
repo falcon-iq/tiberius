@@ -4,21 +4,28 @@ import asyncio
 import json
 import logging
 import time
+from urllib.parse import urlparse
 
 from bson import ObjectId
 from pymongo import MongoClient
 
 from falcon_iq_analyzer.config import Settings
 from falcon_iq_analyzer.llm.base import LLMClient
-from falcon_iq_analyzer.models.company_benchmark import MultiCompanyBenchmarkResult
+from falcon_iq_analyzer.models.company_benchmark import (
+    CompanyOfferingSummary,
+    CompanyOverview,
+    MultiCompanyBenchmarkResult,
+)
 from falcon_iq_analyzer.models.domain import AnalysisResult
 from falcon_iq_analyzer.services.html_report_generator import generate_html_report
 from falcon_iq_analyzer.services.multi_benchmark_service import (
     evaluate_single_prompt_multi,
     generate_multi_benchmark_report,
     generate_multi_prompts,
+    normalize_product_categories,
     summarize_multi_evaluations,
 )
+from falcon_iq_analyzer.services.wikidata_service import fetch_company_tagline
 from falcon_iq_analyzer.storage import create_storage_service
 
 logger = logging.getLogger(__name__)
@@ -46,7 +53,7 @@ def _normalize_analysis_path(raw_path: str) -> str:
             key = parts[3]
             # Strip analyzer/ prefix if present (S3StorageService adds it back)
             if key.startswith("analyzer/"):
-                return key[len("analyzer/"):]
+                return key[len("analyzer/") :]
             return key
         return raw_path
 
@@ -75,9 +82,7 @@ async def _wait_for_analyses(
 
     while pending:
         if time.time() > deadline:
-            raise ValueError(
-                f"Timed out after {timeout_minutes}m waiting for analyses: {pending}"
-            )
+            raise ValueError(f"Timed out after {timeout_minutes}m waiting for analyses: {pending}")
 
         still_pending: set[str] = set()
         for crawl_id in pending:
@@ -129,8 +134,9 @@ async def run_company_benchmark(
         # 4. Wait for all individual analyses to finish (they run in parallel)
         await _wait_for_analyses(crawl_col, all_crawl_ids, timeout_minutes=30)
 
-        # 5. Load analysis results for each crawl detail
+        # 5. Load analysis results and company URLs for each crawl detail
         analysis_results: list[AnalysisResult] = []
+        company_urls: dict[str, str] = {}  # company_name → websiteLink
         for crawl_id in all_crawl_ids:
             crawl_doc = crawl_col.find_one({"_id": ObjectId(crawl_id)})
             if not crawl_doc:
@@ -146,11 +152,53 @@ async def run_company_benchmark(
                 raise ValueError(f"Analysis result not found at {storage_key}")
 
             result_data = json.loads(raw_json)
-            analysis_results.append(AnalysisResult(**result_data))
+            ar = AnalysisResult(**result_data)
+            analysis_results.append(ar)
+
+            # Extract URL from crawl doc
+            website_link = crawl_doc.get("websiteLink", "")
+            if website_link:
+                company_urls[ar.company_name] = website_link
 
         main_result = analysis_results[0]
         competitor_results = analysis_results[1:]
         all_company_names = [r.company_name for r in analysis_results]
+
+        # Build company overviews (favicon, URL, categories, offerings)
+        company_overviews: dict[str, CompanyOverview] = {}
+        for ar in analysis_results:
+            url = company_urls.get(ar.company_name, "")
+            domain = urlparse(url).netloc if url else ""
+            logo_url = f"https://www.google.com/s2/favicons?domain={domain}&sz=128" if domain else ""
+            categories = sorted({o.category for o in ar.top_offerings if o.category})
+            offerings = [
+                CompanyOfferingSummary(
+                    product_name=o.product_name,
+                    category=o.category,
+                    description=o.description[:200],
+                    key_features=o.key_features[:5],
+                )
+                for o in ar.top_offerings[:3]
+            ]
+            company_overviews[ar.company_name] = CompanyOverview(
+                company_name=ar.company_name,
+                url=url,
+                logo_url=logo_url,
+                categories=categories,
+                top_offerings=offerings,
+            )
+
+        # 5b. Fetch Wikipedia taglines in parallel
+        async def _fill_tagline(name: str) -> None:
+            tagline = await fetch_company_tagline(name)
+            if tagline:
+                company_overviews[name].tagline = tagline
+
+        await asyncio.gather(*[_fill_tagline(name) for name in company_overviews])
+        logger.info(
+            "Company benchmark: fetched taglines for %d companies",
+            sum(1 for ov in company_overviews.values() if ov.tagline),
+        )
 
         logger.info(
             "Company benchmark: main=%s, competitors=%s",
@@ -162,7 +210,7 @@ async def run_company_benchmark(
         prompts = await generate_multi_prompts(llm, main_result, competitor_results, num_prompts)
         logger.info("Company benchmark: generated %d prompts", len(prompts))
 
-        # 7. Evaluate each prompt sequentially
+        # 7. Evaluate each prompt sequentially (with real company data as context)
         evaluations = []
         for i, prompt in enumerate(prompts):
             evaluation = await evaluate_single_prompt_multi(llm, prompt, all_company_names)
@@ -178,13 +226,19 @@ async def run_company_benchmark(
         summary = await summarize_multi_evaluations(llm, all_company_names, evaluations)
         logger.info("Company benchmark: summary complete")
 
+        # 8b. Normalize product categories for comparison table
+        product_groups = await normalize_product_categories(llm, company_overviews)
+        logger.info("Company benchmark: product category normalization complete (%d groups)", len(product_groups))
+
         # 9. Generate markdown report
         benchmark_result = MultiCompanyBenchmarkResult(
             main_company=main_result.company_name,
             competitors=[r.company_name for r in competitor_results],
+            company_overviews=company_overviews,
             prompts=prompts,
             evaluations=evaluations,
             summary=summary,
+            product_comparison_groups=product_groups,
         )
         benchmark_result.markdown_report = generate_multi_benchmark_report(benchmark_result)
 
@@ -194,9 +248,7 @@ async def run_company_benchmark(
         logger.info("Company benchmark report saved to %s", report_key)
 
         result_key = f"company-benchmarks/benchmark-{company_benchmark_report_id}.json"
-        storage.save_file(
-            result_key, benchmark_result.model_dump_json(indent=2), "application/json"
-        )
+        storage.save_file(result_key, benchmark_result.model_dump_json(indent=2), "application/json")
         logger.info("Persisted company benchmark result to %s", result_key)
 
         html_key = f"company-benchmarks/benchmark-{company_benchmark_report_id}.html"

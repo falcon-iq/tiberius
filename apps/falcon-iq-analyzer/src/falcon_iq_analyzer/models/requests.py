@@ -30,4 +30,4 @@ class BenchmarkRequest(BaseModel):
 
 class CompanyBenchmarkRequest(BaseModel):
     companyBenchmarkReportId: str
-    num_prompts: int = 15
+    num_prompts: Optional[int] = None

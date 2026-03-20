@@ -1,7 +1,17 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
+
+_BENCHMARK_PROMPTS_BY_ENV = {
+    "development": 20,
+    "staging": 50,
+    "production": 100,
+}
 
 
 class Settings(BaseSettings):
+    # Environment: "development", "staging", or "production"
+    environment: str = "development"
+
     # LLM provider: "openai" or "ollama"
     llm_provider: str = "openai"
 
@@ -16,6 +26,15 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: list[str] = ["*"]
+
+    # Benchmark — 0 means "derive from environment" (dev=20, staging=50, prod=100)
+    benchmark_num_prompts: int = 0
+
+    @model_validator(mode="after")
+    def _set_benchmark_defaults(self) -> "Settings":
+        if self.benchmark_num_prompts == 0:
+            self.benchmark_num_prompts = _BENCHMARK_PROMPTS_BY_ENV.get(self.environment, 100)
+        return self
 
     # General
     max_concurrency: int = 10

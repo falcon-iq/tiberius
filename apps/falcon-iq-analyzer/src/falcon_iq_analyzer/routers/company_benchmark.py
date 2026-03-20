@@ -68,11 +68,12 @@ async def start_company_benchmark(request: CompanyBenchmarkRequest) -> CompanyBe
             client.close()
 
     # Launch background task
+    num_prompts = request.num_prompts if request.num_prompts is not None else settings.benchmark_num_prompts
     llm = create_llm_client(settings)
     asyncio.create_task(
         run_company_benchmark(
             company_benchmark_report_id=request.companyBenchmarkReportId,
-            num_prompts=request.num_prompts,
+            num_prompts=num_prompts,
             llm=llm,
             settings=settings,
         )
@@ -81,7 +82,7 @@ async def start_company_benchmark(request: CompanyBenchmarkRequest) -> CompanyBe
     return CompanyBenchmarkJobResponse(
         companyBenchmarkReportId=request.companyBenchmarkReportId,
         status="BENCHMARK_REPORT_IN_PROGRESS",
-        message=f"Benchmark started for {len(all_crawl_ids)} companies with {request.num_prompts} prompts",
+        message=f"Benchmark started for {len(all_crawl_ids)} companies with {num_prompts} prompts",
     )
 
 
