@@ -1,4 +1,48 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { TabNavigation, type Tab } from '@components/TabNavigation';
+
+const iconProps = { viewBox: '0 0 24 24', fill: 'none', strokeWidth: '2', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, style: { width: 16, height: 16 } };
+
+const PlanIcon = () => (
+  <svg {...iconProps} stroke="#818cf8">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>
+);
+
+const BenchmarkIcon = () => (
+  <svg {...iconProps} stroke="#3b82f6">
+    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 9 7 12 7s5-3 7.5-3a2.5 2.5 0 0 1 0 5H18" />
+    <path d="M12 7v10" />
+    <path d="M8 17h8a2 2 0 1 1 0 4H8a2 2 0 1 1 0-4z" />
+  </svg>
+);
+
+const ExperimentIcon = () => (
+  <svg {...iconProps} stroke="#f59e0b">
+    <path d="M9 3h6M12 3v7l4 8H8l4-8V3z" />
+  </svg>
+);
+
+const ExecuteIcon = () => (
+  <svg {...iconProps} stroke="#10b981">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+  </svg>
+);
+
+const MeasureIcon = () => (
+  <svg {...iconProps} stroke="#f472b6">
+    <path d="M18 20V10M12 20V4M6 20v-6" />
+  </svg>
+);
+
+const tabs: Tab[] = [
+  { id: 'plan', label: 'Plan', icon: <PlanIcon />, to: '/plan' },
+  { id: 'industries', label: 'Industries', icon: <BenchmarkIcon />, to: '/industries' },
+  { id: 'experiment', label: 'Experiment', icon: <ExperimentIcon />, to: '/experiment' },
+  { id: 'execute', label: 'Execute', icon: <ExecuteIcon />, to: '/execute' },
+  { id: 'measure', label: 'Measure', icon: <MeasureIcon />, to: '/measure' },
+];
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -140,6 +184,7 @@ function RootLayout() {
             The closed-loop LLM marketing engine for the AI era
           </p>
         </div>
+        <TabNavigation tabs={tabs} />
         <Outlet />
       </div>
     </div>

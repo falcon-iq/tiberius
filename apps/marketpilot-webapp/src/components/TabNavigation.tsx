@@ -1,22 +1,71 @@
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { Link, useRouterState } from '@tanstack/react-router';
 
 export interface Tab {
   id: string;
   label: string;
   icon: ReactNode;
-  content: ReactNode;
+  to: string;
 }
 
 interface TabNavigationProps {
   tabs: Tab[];
-  defaultTab?: string;
 }
 
-export function TabNavigation({ tabs, defaultTab }: TabNavigationProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab ?? tabs[0]?.id ?? '');
+function TabLink({ tab }: { tab: Tab }) {
+  const { location } = useRouterState();
+  const isActive = location.pathname === tab.to;
 
-  const activeContent = tabs.find((t) => t.id === activeTab)?.content;
+  return (
+    <Link
+      to={tab.to}
+      className="tab-btn"
+      title={tab.label}
+      style={{
+        background: isActive
+          ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.2))'
+          : 'transparent',
+        color: isActive ? '#e0e7ff' : '#71717a',
+        fontWeight: isActive ? 700 : 500,
+        boxShadow: isActive
+          ? '0 0 20px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)'
+          : 'none',
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.color = '#a1a1aa';
+          e.currentTarget.style.background = 'rgba(63, 63, 70, 0.2)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.color = '#71717a';
+          e.currentTarget.style.background = 'transparent';
+        }
+      }}
+    >
+      <span style={{ display: 'flex', alignItems: 'center', width: 16, height: 16, flexShrink: 0 }}>
+        {tab.icon}
+      </span>
+      <span className="tab-label">{tab.label}</span>
+      {isActive && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: '20%',
+            right: '20%',
+            height: 2,
+            background: 'linear-gradient(90deg, transparent, #6366f1, #a855f7, transparent)',
+            borderRadius: 1,
+          }}
+        />
+      )}
+    </Link>
+  );
+}
 
+export function TabNavigation({ tabs }: TabNavigationProps) {
   return (
     <div>
       <style>{`
@@ -53,6 +102,7 @@ export function TabNavigation({ tabs, defaultTab }: TabNavigationProps) {
           transition: all 0.25s ease;
           position: relative;
           letter-spacing: 0.01em;
+          text-decoration: none;
         }
         .tab-label {
           display: inline;
@@ -71,64 +121,10 @@ export function TabNavigation({ tabs, defaultTab }: TabNavigationProps) {
         }
       `}</style>
 
-      {/* Tab bar */}
       <div className="tab-bar">
-        {tabs.map((tab) => {
-          const isActive = tab.id === activeTab;
-          return (
-            <button
-              key={tab.id}
-              className="tab-btn"
-              onClick={() => setActiveTab(tab.id)}
-              title={tab.label}
-              style={{
-                background: isActive
-                  ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.2))'
-                  : 'transparent',
-                color: isActive ? '#e0e7ff' : '#71717a',
-                fontWeight: isActive ? 700 : 500,
-                boxShadow: isActive
-                  ? '0 0 20px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)'
-                  : 'none',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.color = '#a1a1aa';
-                  e.currentTarget.style.background = 'rgba(63, 63, 70, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.color = '#71717a';
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', width: 16, height: 16, flexShrink: 0 }}>
-                {tab.icon}
-              </span>
-              <span className="tab-label">{tab.label}</span>
-              {isActive && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: '20%',
-                    right: '20%',
-                    height: 2,
-                    background: 'linear-gradient(90deg, transparent, #6366f1, #a855f7, transparent)',
-                    borderRadius: 1,
-                  }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab content */}
-      <div style={{ animation: 'fadeSlideIn 0.3s ease-out' }} key={activeTab}>
-        {activeContent}
+        {tabs.map((tab) => (
+          <TabLink key={tab.id} tab={tab} />
+        ))}
       </div>
     </div>
   );
