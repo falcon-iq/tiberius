@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from falcon_iq_analyzer.config import settings
-from falcon_iq_analyzer.routers import analyze, benchmark, company_benchmark, compare, crawl, report, industry_benchmark
+from falcon_iq_analyzer.routers import analyze, benchmark, company_benchmark, compare, crawl, industry_benchmark, report
 from falcon_iq_analyzer.storage import create_storage_service
 
 logging.basicConfig(
