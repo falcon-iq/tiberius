@@ -5,17 +5,20 @@ from __future__ import annotations
 import html
 from datetime import datetime, timezone
 
-from falcon_iq_analyzer.models.company_benchmark import MultiCompanyBenchmarkResult, MultiCompanyStats
+from falcon_iq_analyzer.models.company_benchmark import (
+    MultiCompanyBenchmarkResult,
+    MultiCompanyStats,
+)
 
 # ── Colour palette (one per company, cycles if > 6) ──────────────────────────
 
 _PALETTE = [
-    ("#6366f1", "#818cf8", "rgba(99,102,241,0.12)"),   # indigo
-    ("#f43f5e", "#fb7185", "rgba(244,63,94,0.12)"),    # rose
-    ("#10b981", "#34d399", "rgba(16,185,129,0.12)"),   # emerald
-    ("#f59e0b", "#fbbf24", "rgba(245,158,11,0.12)"),   # amber
-    ("#3b82f6", "#60a5fa", "rgba(59,130,246,0.12)"),   # blue
-    ("#8b5cf6", "#a78bfa", "rgba(139,92,246,0.12)"),   # violet
+    ("#6366f1", "#818cf8", "rgba(99,102,241,0.12)"),  # indigo
+    ("#f43f5e", "#fb7185", "rgba(244,63,94,0.12)"),  # rose
+    ("#10b981", "#34d399", "rgba(16,185,129,0.12)"),  # emerald
+    ("#f59e0b", "#fbbf24", "rgba(245,158,11,0.12)"),  # amber
+    ("#3b82f6", "#60a5fa", "rgba(59,130,246,0.12)"),  # blue
+    ("#8b5cf6", "#a78bfa", "rgba(139,92,246,0.12)"),  # violet
 ]
 
 
@@ -61,6 +64,60 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
     s = result.summary
     total = s.total_prompts if s and s.total_prompts else 1
     generated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
+
+    # ── Company overview cards ─────────────────────────────────────────────
+    company_cards_html = ""
+    for i, name in enumerate(all_companies):
+        overview = result.company_overviews.get(name)
+        primary, _, bg = _color(i)
+        is_main_tag = (
+            f'<span class="co-you-badge" style="background:{bg};color:{primary};">You</span>'
+            if name == result.main_company
+            else ""
+        )
+
+        if overview and overview.logo_url:
+            logo_html = (
+                f'<img src="{_esc(overview.logo_url)}" alt="{_esc(name)}" '
+                f'class="co-logo" onerror="this.style.display=\'none\';'
+                f"this.nextElementSibling.style.display='flex'\">"
+                f'<div class="co-logo-fallback" style="display:none;'
+                f'background:linear-gradient(135deg,{primary},#a855f7)">'
+                f"{_esc(name[0].upper())}</div>"
+            )
+        else:
+            logo_html = (
+                f'<div class="co-logo-fallback" '
+                f'style="background:linear-gradient(135deg,{primary},#a855f7)">'
+                f"{_esc(name[0].upper())}</div>"
+            )
+
+        url_html = ""
+        if overview and overview.url:
+            url_html = (
+                f'<a href="{_esc(overview.url)}" target="_blank" rel="noopener" class="co-url">{_esc(overview.url)}</a>'
+            )
+
+        tagline_html = ""
+        if overview and overview.tagline:
+            tagline_html = f'<div class="co-tagline">{_esc(overview.tagline)}</div>'
+
+        cat_badges = ""
+        if overview and overview.categories:
+            cat_badges = "".join(f'<span class="co-cat-badge">{_esc(c)}</span>' for c in overview.categories)
+
+        company_cards_html += f"""
+        <div class="co-card" style="border-top:3px solid {primary};">
+            <div class="co-header">
+                {logo_html}
+                <div class="co-identity">
+                    <div class="co-name">{_esc(name)} {is_main_tag}</div>
+                    {url_html}
+                </div>
+            </div>
+            {tagline_html}
+            {f'<div class="co-categories">{cat_badges}</div>' if cat_badges else ""}
+        </div>"""
 
     # ── Scorecard cards ───────────────────────────────────────────────────
     scorecard_cards = ""
@@ -110,6 +167,29 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
         nei_c = counts.get("neither", 0)
         cat_rows += f"<tr><td class='cat-name'>{_esc(cat)}</td>{cells}<td>{tie_c}</td><td>{nei_c}</td></tr>"
 
+    # ── Win-rate-by-prompt-type table ──────────────────────────────────────
+    prompt_types: dict[str, dict[str, int]] = {}
+    for e in result.evaluations:
+        pt = e.prompt_type
+        if pt not in prompt_types:
+            prompt_types[pt] = {}
+        prompt_types[pt][e.winner] = prompt_types[pt].get(e.winner, 0) + 1
+
+    pt_header = "".join(f"<th>{_esc(n)}</th>" for n in all_companies)
+    pt_rows = ""
+    for pt in sorted(prompt_types):
+        counts = prompt_types[pt]
+        pt_total = sum(counts.values())
+        cells = ""
+        for name in all_companies:
+            c = counts.get(name, 0)
+            cells += f"<td>{c}</td>" if c == 0 else f'<td class="highlight">{c}</td>'
+        tie_c = counts.get("tie", 0)
+        nei_c = counts.get("neither", 0)
+        pt_rows += (
+            f"<tr><td class='cat-name'>{_esc(pt)}</td>{cells}<td>{tie_c}</td><td>{nei_c}</td><td>{pt_total}</td></tr>"
+        )
+
     # ── Company perception sections ───────────────────────────────────────
     perception_html = ""
     if s:
@@ -146,6 +226,87 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
         for insight in s.key_insights:
             insights_html += f'<div class="insight-item">{_esc(insight)}</div>'
 
+    # ── Product comparison by category ────────────────────────────────
+    product_comparison_html = ""
+    company_index = {name: i for i, name in enumerate(all_companies)}
+
+    def _render_comparison_table(cat_title: str, cat_desc: str, rows_html: str) -> str:
+        desc_html = f'<div class="comp-cat-desc">{_esc(cat_desc)}</div>' if cat_desc else ""
+        return (
+            f'<div class="comp-category">'
+            f'<h3 class="comp-cat-title">{_esc(cat_title)}</h3>'
+            f"{desc_html}"
+            f'<table class="cat-table comp-table">'
+            f'<thead><tr><th style="text-align:left;">Company</th>'
+            f'<th style="text-align:left;">Product</th>'
+            f'<th style="text-align:left;">Key Features</th></tr></thead>'
+            f"<tbody>{rows_html}</tbody></table></div>"
+        )
+
+    def _render_offering_row(name: str, product_name: str, key_features: list[str], description: str) -> str:
+        idx = company_index.get(name, 0)
+        primary, _, _ = _color(idx)
+        overview = result.company_overviews.get(name)
+        favicon = ""
+        if overview and overview.logo_url:
+            favicon = (
+                f'<img src="{_esc(overview.logo_url)}" '
+                f'style="width:20px;height:20px;border-radius:4px;vertical-align:middle;'
+                f'background:#fff;margin-right:6px;"'
+                f" onerror=\"this.style.display='none'\">"
+            )
+        if key_features:
+            features_html = " ".join(f'<span class="comp-feature">{_esc(f)}</span>' for f in key_features[:5])
+        else:
+            desc = _esc(description[:120])
+            if len(description) > 120:
+                desc += "..."
+            features_html = f'<span class="comp-desc">{desc}</span>'
+        return (
+            f"<tr>"
+            f'<td style="border-left:3px solid {primary};">'
+            f"{favicon}{_esc(name)}</td>"
+            f'<td class="comp-product">{_esc(product_name)}</td>'
+            f"<td>{features_html}</td>"
+            f"</tr>"
+        )
+
+    if result.product_comparison_groups:
+        # Use LLM-normalized groups
+        tables_html = ""
+        for group in result.product_comparison_groups:
+            rows = ""
+            for entry in group.entries:
+                rows += _render_offering_row(
+                    entry.company_name, entry.product_name, entry.key_features, entry.description
+                )
+            tables_html += _render_comparison_table(group.group_name, group.group_description, rows)
+        product_comparison_html = tables_html
+    else:
+        # Fallback: group by raw category
+        cat_offerings: dict[str, list[tuple[str, int, object]]] = {}
+        for i, name in enumerate(all_companies):
+            overview = result.company_overviews.get(name)
+            if not overview:
+                continue
+            for offering in overview.top_offerings:
+                cat = offering.category or "Other"
+                if cat not in cat_offerings:
+                    cat_offerings[cat] = []
+                cat_offerings[cat].append((name, i, offering))
+
+        if cat_offerings:
+            tables_html = ""
+            for cat in sorted(cat_offerings):
+                entries = cat_offerings[cat]
+                rows = ""
+                for name, _idx, offering in entries:
+                    rows += _render_offering_row(
+                        name, offering.product_name, offering.key_features, offering.description
+                    )
+                tables_html += _render_comparison_table(cat, "", rows)
+            product_comparison_html = tables_html
+
     # ── Detailed evaluations ──────────────────────────────────────────────
     eval_rows = ""
     for idx, e in enumerate(result.evaluations, 1):
@@ -156,8 +317,8 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
                 mention_chips += f"""
                 <div class="mention-chip">
                     <strong>{_esc(name)}</strong> {_sentiment_badge(mention.sentiment)}
-                    {''.join(f'<span class="str-tag">+ {_esc(st)}</span>' for st in mention.strengths_mentioned[:3])}
-                    {''.join(f'<span class="wk-tag">- {_esc(w)}</span>' for w in mention.weaknesses_mentioned[:3])}
+                    {"".join(f'<span class="str-tag">+ {_esc(st)}</span>' for st in mention.strengths_mentioned[:3])}
+                    {"".join(f'<span class="wk-tag">- {_esc(w)}</span>' for w in mention.weaknesses_mentioned[:3])}
                 </div>"""
 
         eval_rows += f"""
@@ -166,6 +327,7 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
                 <div class="eval-num">#{idx}</div>
                 <div class="eval-meta">
                     <span class="eval-category">{_esc(e.category)}</span>
+                    <span class="badge-prompt-type">{_esc(e.prompt_type)}</span>
                     <span class="eval-prompt">{_esc(e.prompt_text)}</span>
                 </div>
                 <div class="eval-winner">{_winner_badge(e.winner, result.main_company)}</div>
@@ -173,7 +335,7 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
             </div>
             <div class="eval-body">
                 <div class="eval-mentions">{mention_chips}</div>
-                {f'<div class="eval-notes"><em>{_esc(e.analysis_notes)}</em></div>' if e.analysis_notes else ''}
+                {f'<div class="eval-notes"><em>{_esc(e.analysis_notes)}</em></div>' if e.analysis_notes else ""}
                 <details class="llm-response">
                     <summary>Full LLM Response</summary>
                     <pre>{_esc(e.llm_response)}</pre>
@@ -187,7 +349,7 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Benchmark Report: {_esc(' vs '.join(all_companies))}</title>
+<title>Benchmark Report: {_esc(" vs ".join(all_companies))}</title>
 <style>
 :root {{
     --bg: #0f172a;
@@ -277,6 +439,18 @@ body {{
 .badge-neutral {{ background: rgba(245,158,11,0.15); color: #fbbf24; }}
 .badge-muted {{ background: rgba(148,163,184,0.15); color: #94a3b8; }}
 .badge-competitor {{ background: rgba(244,63,94,0.15); color: #fb7185; }}
+.badge-prompt-type {{
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: rgba(99,102,241,0.15);
+    color: #818cf8;
+    margin-left: 0.3rem;
+}}
 
 /* Category table */
 .cat-table {{
@@ -432,6 +606,124 @@ body {{
     line-height: 1.5;
 }}
 
+/* Company overview cards */
+.co-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}}
+.co-card {{
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}}
+.co-card:hover {{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}}
+.co-header {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.6rem;
+}}
+.co-logo {{
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    object-fit: contain;
+    background: #fff;
+    flex-shrink: 0;
+}}
+.co-logo-fallback {{
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}}
+.co-identity {{ min-width: 0; }}
+.co-name {{
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}}
+.co-you-badge {{
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}}
+.co-url {{
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(148,163,184,0.4);
+}}
+.co-url:hover {{ color: #818cf8; }}
+.co-tagline {{
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 0.6rem;
+}}
+.co-categories {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}}
+.co-cat-badge {{
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    background: var(--surface2);
+    color: var(--text-muted);
+    text-transform: capitalize;
+}}
+
+/* Product comparison */
+.comp-category {{ margin-bottom: 1.25rem; }}
+.comp-cat-title {{
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    text-transform: capitalize;
+}}
+.comp-cat-desc {{
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}}
+.comp-table td {{ text-align: left; vertical-align: top; }}
+.comp-product {{ font-weight: 600; white-space: nowrap; }}
+.comp-feature {{
+    display: inline-block;
+    background: rgba(99,102,241,0.12);
+    color: #818cf8;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin: 0.1rem 0.15rem;
+}}
+.comp-desc {{
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}}
+
 /* Footer */
 .report-footer {{
     text-align: center;
@@ -454,10 +746,16 @@ body {{
 
 <div class="report-header">
     <h1>LLM Benchmark Report</h1>
-    <div class="subtitle">{_esc(' vs '.join(all_companies))} &mdash; {generated_at}</div>
+    <div class="subtitle">{_esc(" vs ".join(all_companies))} &mdash; {generated_at}</div>
 </div>
 
 <div class="container">
+
+    <!-- Companies -->
+    <div class="section">
+        <div class="section-title"><span class="section-icon">&#127970;</span> Companies</div>
+        <div class="co-grid">{company_cards_html}</div>
+    </div>
 
     <!-- Scorecard -->
     <div class="section">
@@ -474,6 +772,16 @@ body {{
         </table>
     </div>
 
+    <!-- Win Rates by Prompt Type -->
+    <div class="section">
+        <div class="section-title"><span class="section-icon">&#127919;</span> Win Rates by Prompt Type</div>
+        <table class="cat-table">
+            <thead><tr><th style="text-align:left;">Prompt Type</th>{pt_header}
+            <th>Ties</th><th>Neither</th><th>Total</th></tr></thead>
+            <tbody>{pt_rows}</tbody>
+        </table>
+    </div>
+
     <!-- Company Perception -->
     <div class="section">
         <div class="section-title"><span class="section-icon">&#128065;</span> LLM Perception by Company</div>
@@ -485,6 +793,16 @@ body {{
         <div class="section-title"><span class="section-icon">&#128161;</span> Key Insights</div>
         {insights_html if insights_html else '<div class="insight-item">No insights generated.</div>'}
     </div>
+
+    <!-- Product Comparison -->
+    {
+        f'''<div class="section">
+        <div class="section-title"><span class="section-icon">&#128203;</span> Product Comparison</div>
+        {product_comparison_html}
+    </div>'''
+        if product_comparison_html
+        else ""
+    }
 
     <!-- Detailed Evaluations -->
     <div class="section">

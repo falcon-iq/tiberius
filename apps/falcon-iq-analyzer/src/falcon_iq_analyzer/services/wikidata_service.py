@@ -30,14 +30,17 @@ PROP_IDS = "|".join(PROPS.keys())
 async def search_wikidata_entity(company_name: str) -> str | None:
     """Search Wikidata for a company and return the entity ID (e.g. Q44294)."""
     async with httpx.AsyncClient(timeout=15, headers={"User-Agent": USER_AGENT}) as client:
-        resp = await client.get(WIKIDATA_API, params={
-            "action": "wbsearchentities",
-            "search": company_name,
-            "language": "en",
-            "type": "item",
-            "limit": "5",
-            "format": "json",
-        })
+        resp = await client.get(
+            WIKIDATA_API,
+            params={
+                "action": "wbsearchentities",
+                "search": company_name,
+                "language": "en",
+                "type": "item",
+                "limit": "5",
+                "format": "json",
+            },
+        )
         resp.raise_for_status()
         data = resp.json()
 
@@ -59,12 +62,15 @@ async def search_wikidata_entity(company_name: str) -> str | None:
 async def get_entity_claims(entity_id: str) -> dict[str, Any]:
     """Fetch claims (facts) for a Wikidata entity via wbgetentities."""
     async with httpx.AsyncClient(timeout=15, headers={"User-Agent": USER_AGENT}) as client:
-        resp = await client.get(WIKIDATA_API, params={
-            "action": "wbgetentities",
-            "ids": entity_id,
-            "props": "claims",
-            "format": "json",
-        })
+        resp = await client.get(
+            WIKIDATA_API,
+            params={
+                "action": "wbgetentities",
+                "ids": entity_id,
+                "props": "claims",
+                "format": "json",
+            },
+        )
         resp.raise_for_status()
         entities = resp.json().get("entities", {})
         entity = entities.get(entity_id, {})
@@ -74,13 +80,16 @@ async def get_entity_claims(entity_id: str) -> dict[str, Any]:
 async def resolve_entity_label(entity_id: str) -> str:
     """Resolve a Wikidata entity ID to its English label."""
     async with httpx.AsyncClient(timeout=10, headers={"User-Agent": USER_AGENT}) as client:
-        resp = await client.get(WIKIDATA_API, params={
-            "action": "wbgetentities",
-            "ids": entity_id,
-            "props": "labels",
-            "languages": "en",
-            "format": "json",
-        })
+        resp = await client.get(
+            WIKIDATA_API,
+            params={
+                "action": "wbgetentities",
+                "ids": entity_id,
+                "props": "labels",
+                "languages": "en",
+                "format": "json",
+            },
+        )
         resp.raise_for_status()
         entities = resp.json().get("entities", {})
         entity = entities.get(entity_id, {})
@@ -167,6 +176,53 @@ def _get_point_in_time(claim: dict) -> str:
     return ""
 
 
+async def fetch_company_tagline(company_name: str) -> str:
+    """Fetch a one-sentence description from Wikipedia for a company.
+
+    Searches Wikipedia, then fetches the page summary extract (first sentence).
+    Returns empty string on failure.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10, headers={"User-Agent": USER_AGENT}) as client:
+            # Search Wikipedia for the company
+            search_resp = await client.get(
+                "https://en.wikipedia.org/w/api.php",
+                params={
+                    "action": "query",
+                    "list": "search",
+                    "srsearch": company_name,
+                    "format": "json",
+                    "srlimit": "1",
+                },
+            )
+            search_resp.raise_for_status()
+            results = search_resp.json().get("query", {}).get("search", [])
+            if not results:
+                return ""
+
+            title = results[0]["title"]
+
+            # Fetch the summary extract
+            summary_resp = await client.get(f"{WIKIPEDIA_API}/{title}")
+            summary_resp.raise_for_status()
+            data = summary_resp.json()
+
+            description = data.get("description", "")
+            extract = data.get("extract", "")
+
+            # Use the first sentence of the extract
+            if extract:
+                first_sentence = extract.split(". ")[0]
+                if not first_sentence.endswith("."):
+                    first_sentence += "."
+                return first_sentence
+
+            return description
+    except Exception:
+        logger.debug("Wikipedia tagline lookup failed for %s", company_name)
+        return ""
+
+
 async def fetch_company_facts(company_name: str, company_url: str) -> list[dict]:
     """Fetch verified facts about a company from Wikidata.
 
@@ -189,12 +245,14 @@ async def fetch_company_facts(company_name: str, company_url: str) -> list[dict]
             for claim in claims["P571"]:
                 year = _extract_time_value(claim)
                 if year:
-                    facts.append({
-                        "label": "Founded",
-                        "value": year,
-                        "source": "Wikidata",
-                        "sourceUrl": wikidata_url,
-                    })
+                    facts.append(
+                        {
+                            "label": "Founded",
+                            "value": year,
+                            "source": "Wikidata",
+                            "sourceUrl": wikidata_url,
+                        }
+                    )
                     break
 
         # Headquarters (P159) — pick preferred or first
@@ -205,12 +263,14 @@ async def fetch_company_facts(company_name: str, company_url: str) -> list[dict]
                 if hq_id:
                     try:
                         hq_label = await resolve_entity_label(hq_id)
-                        facts.append({
-                            "label": "Headquarters",
-                            "value": hq_label,
-                            "source": "Wikidata",
-                            "sourceUrl": wikidata_url,
-                        })
+                        facts.append(
+                            {
+                                "label": "Headquarters",
+                                "value": hq_label,
+                                "source": "Wikidata",
+                                "sourceUrl": wikidata_url,
+                            }
+                        )
                         break
                     except Exception:
                         pass
@@ -232,12 +292,14 @@ async def fetch_company_facts(company_name: str, company_url: str) -> list[dict]
                 amount, _ = _extract_quantity_value(best_claim)
                 if amount:
                     year_note = f" ({best_year})" if best_year else ""
-                    facts.append({
-                        "label": "Employees",
-                        "value": f"{amount}{year_note}",
-                        "source": "Wikidata",
-                        "sourceUrl": wikidata_url,
-                    })
+                    facts.append(
+                        {
+                            "label": "Employees",
+                            "value": f"{amount}{year_note}",
+                            "source": "Wikidata",
+                            "sourceUrl": wikidata_url,
+                        }
+                    )
 
         # Revenue (P2139) — pick the most recent
         if "P2139" in claims:
@@ -257,12 +319,14 @@ async def fetch_company_facts(company_name: str, company_url: str) -> list[dict]
                 if amount:
                     year_note = f" ({best_year})" if best_year else ""
                     currency_prefix = f"{currency} " if currency else ""
-                    facts.append({
-                        "label": "Revenue",
-                        "value": f"{currency_prefix}{amount}{year_note}",
-                        "source": "Wikidata",
-                        "sourceUrl": wikidata_url,
-                    })
+                    facts.append(
+                        {
+                            "label": "Revenue",
+                            "value": f"{currency_prefix}{amount}{year_note}",
+                            "source": "Wikidata",
+                            "sourceUrl": wikidata_url,
+                        }
+                    )
 
         # CEO (P169) — pick preferred or first
         if "P169" in claims:
@@ -272,23 +336,27 @@ async def fetch_company_facts(company_name: str, company_url: str) -> list[dict]
                 if ceo_id:
                     try:
                         ceo_label = await resolve_entity_label(ceo_id)
-                        facts.append({
-                            "label": "CEO",
-                            "value": ceo_label,
-                            "source": "Wikidata",
-                            "sourceUrl": wikidata_url,
-                        })
+                        facts.append(
+                            {
+                                "label": "CEO",
+                                "value": ceo_label,
+                                "source": "Wikidata",
+                                "sourceUrl": wikidata_url,
+                            }
+                        )
                         break
                     except Exception:
                         pass
 
         # Add Wikipedia link as a general reference
-        facts.append({
-            "label": "Wikipedia",
-            "value": company_name,
-            "source": "Wikipedia",
-            "sourceUrl": wikipedia_url,
-        })
+        facts.append(
+            {
+                "label": "Wikipedia",
+                "value": company_name,
+                "source": "Wikipedia",
+                "sourceUrl": wikipedia_url,
+            }
+        )
 
         logger.info("Fetched %d facts from Wikidata for %s (%s)", len(facts), company_name, entity_id)
 

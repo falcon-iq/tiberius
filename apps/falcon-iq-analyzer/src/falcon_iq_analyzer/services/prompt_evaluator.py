@@ -27,7 +27,7 @@ async def evaluate_single_prompt(
     company_b: str,
 ) -> PromptEvaluation:
     """Evaluate a single prompt: send to LLM, then analyze the response."""
-    # Step 1: Send prompt as a regular user query
+    # Step 1: Send prompt as a regular user query (no injected context — tests real LLM perception)
     llm_response = await llm.complete(BENCHMARK_EVAL_SYSTEM, prompt.prompt_text)
 
     # Step 2: Analyze the response for competitive positioning

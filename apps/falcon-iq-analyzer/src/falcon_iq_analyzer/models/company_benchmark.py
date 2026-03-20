@@ -9,6 +9,7 @@ class MultiCompanyPromptEvaluation(BaseModel):
     prompt_id: str
     prompt_text: str
     category: str
+    prompt_type: str = "generic"  # url_query, context_injected, feature_specific, category_specific, generic
     llm_response: str = ""
     company_mentions: Dict[str, CompanyMention] = {}
     winner: str = ""  # company name, "tie", or "neither"
@@ -32,10 +33,42 @@ class MultiCompanyBenchmarkSummary(BaseModel):
     key_insights: List[str] = []
 
 
+class CompanyOfferingSummary(BaseModel):
+    product_name: str
+    category: str
+    description: str
+    key_features: List[str] = []
+
+
+class CompanyOverview(BaseModel):
+    company_name: str
+    url: str = ""
+    logo_url: str = ""
+    tagline: str = ""
+    categories: List[str] = []
+    top_offerings: List[CompanyOfferingSummary] = []
+
+
+class ProductComparisonEntry(BaseModel):
+    company_name: str
+    product_name: str
+    original_category: str
+    description: str
+    key_features: List[str] = []
+
+
+class ProductComparisonGroup(BaseModel):
+    group_name: str
+    group_description: str = ""
+    entries: List[ProductComparisonEntry] = []
+
+
 class MultiCompanyBenchmarkResult(BaseModel):
     main_company: str
     competitors: List[str] = []
+    company_overviews: Dict[str, CompanyOverview] = {}
     prompts: List[GeneratedPrompt] = []
     evaluations: List[MultiCompanyPromptEvaluation] = []
     summary: Optional[MultiCompanyBenchmarkSummary] = None
+    product_comparison_groups: List[ProductComparisonGroup] = []
     markdown_report: str = ""

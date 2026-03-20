@@ -71,6 +71,8 @@ class GeneratedPrompt(BaseModel):
     prompt_text: str
     category: str  # comparison, recommendation, feature_inquiry, best_for_use_case
     intent: str
+    prompt_type: str = "generic"  # url_query, context_injected, feature_specific, category_specific, generic
+    context_block: str = ""  # website content appended to user message (context_injected only)
 
 
 class PromptGenerationResult(BaseModel):
