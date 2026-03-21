@@ -13,8 +13,13 @@ SHOULD_PUSH="${2}"
 
 echo "Building Falcon IQ Analyzer Docker image..."
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+
 echo "Building image: ${IMAGE_NAME}:${TAG}"
-docker buildx build --platform linux/amd64 --load -t ${IMAGE_NAME}:${TAG} .
+docker buildx build --platform linux/amd64 --load \
+    -f "$(dirname "$0")/Dockerfile" \
+    -t ${IMAGE_NAME}:${TAG} \
+    "${REPO_ROOT}"
 
 if [ ! -z "$REGISTRY" ]; then
     echo "Tagging for registry: ${REGISTRY}/${IMAGE_NAME}:${TAG}"

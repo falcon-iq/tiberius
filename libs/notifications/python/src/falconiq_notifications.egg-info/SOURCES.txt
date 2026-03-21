@@ -1,0 +1,9 @@
+pyproject.toml
+src/falconiq_notifications/__init__.py
+src/falconiq_notifications/renderer.py
+src/falconiq_notifications/ses_client.py
+src/falconiq_notifications.egg-info/PKG-INFO
+src/falconiq_notifications.egg-info/SOURCES.txt
+src/falconiq_notifications.egg-info/dependency_links.txt
+src/falconiq_notifications.egg-info/requires.txt
+src/falconiq_notifications.egg-info/top_level.txt

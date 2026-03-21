@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     # Analysis cache — persistent directory for per-page analysis cache (empty = /tmp)
     analysis_cache_dir: str = ""
 
+    # Email notifications (SES)
+    ses_sender_email: str = ""
+    ses_region: str = "us-east-1"
+    notification_enabled: bool = True
+
     # Cloudflare R2 (S3-compatible) — when set, boto3 uses R2 endpoint instead of AWS S3
     r2_account_id: str = ""
     r2_access_key_id: str = ""

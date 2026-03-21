@@ -21,7 +21,11 @@ dependencies = [
     "jinja2>=3.1.0",
     "boto3>=1.35.0",
     "pymongo>=4.7.0",
+    "falconiq-notifications",
 ]
+
+[tool.uv.sources]
+falconiq-notifications = { path = "../../libs/notifications/python", editable = true }
 
 [project.optional-dependencies]
 dev = [
