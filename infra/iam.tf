@@ -128,6 +128,23 @@ resource "aws_iam_role_policy" "analyzer_s3" {
   policy = data.aws_iam_policy_document.analyzer_s3.json
 }
 
+data "aws_iam_policy_document" "analyzer_ses" {
+  statement {
+    sid = "SendEmail"
+    actions = [
+      "ses:SendEmail",
+      "ses:SendRawEmail",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "analyzer_ses" {
+  name   = "${local.name_prefix}-analyzer-ses"
+  role   = aws_iam_role.analyzer_task.id
+  policy = data.aws_iam_policy_document.analyzer_ses.json
+}
+
 # -----------------------------------------------------------------------------
 # REST API Task Role
 # Minimal role (no S3 needed) - just allows ECS tasks to assume the role
