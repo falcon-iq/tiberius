@@ -275,8 +275,8 @@ async def run_company_benchmark(
 
                 from falconiq_notifications import send_templated_email
 
-                # Build report URL (the HTML report endpoint)
-                report_url = f"/company-benchmark-report/{company_benchmark_report_id}/report"
+                # Build report URL (CDN link to the HTML report in storage)
+                report_url = f"https://cdn.trymarketpilot.com/analyzer/{html_key}"
 
                 # Gather template data from the benchmark result
                 all_companies_list = [benchmark_result.main_company] + benchmark_result.competitors
@@ -291,11 +291,7 @@ async def run_company_benchmark(
                 total = benchmark_result.summary.total_prompts if benchmark_result.summary else len(evaluations)
                 winner_pct = round(winner_wins / max(total, 1) * 100)
 
-                templates_dir = Path(__file__).resolve().parents[4] / "libs" / "notifications" / "templates"
-                # For Docker: check if /app/notification-templates/ exists, use that instead
-                docker_templates = Path("/app/notification-templates")
-                if docker_templates.is_dir():
-                    templates_dir = docker_templates
+                templates_dir = Path(__file__).resolve().parents[5] / "libs" / "notifications" / "templates"
 
                 await send_templated_email(
                     to=recipient_email,
