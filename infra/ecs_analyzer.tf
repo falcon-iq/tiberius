@@ -26,6 +26,7 @@ resource "aws_ecs_task_definition" "analyzer" {
 
       environment = [
         { name = "WEB_ANALYZER_ENVIRONMENT", value = var.environment },
+        { name = "WEB_ANALYZER_BENCHMARK_NUM_PROMPTS", value = "100" },
         { name = "WEB_ANALYZER_STORAGE_TYPE", value = "s3" },
         { name = "WEB_ANALYZER_CRAWL_STORAGE_TYPE", value = "s3" },
         { name = "WEB_ANALYZER_S3_BUCKET_NAME", value = "marketpilot-data" },
@@ -37,6 +38,8 @@ resource "aws_ecs_task_definition" "analyzer" {
         { name = "WEB_ANALYZER_HOST", value = "0.0.0.0" },
         { name = "WEB_ANALYZER_PORT", value = "8000" },
         { name = "WEB_ANALYZER_MAX_CONCURRENCY", value = "3" },
+        { name = "WEB_ANALYZER_SES_SENDER_EMAIL", value = "noreply@trymarketpilot.com" },
+        { name = "WEB_ANALYZER_SES_REGION", value = "us-east-1" },
       ]
 
       secrets = [
