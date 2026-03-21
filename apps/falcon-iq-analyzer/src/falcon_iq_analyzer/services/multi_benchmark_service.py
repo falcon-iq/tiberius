@@ -6,6 +6,7 @@ from collections import Counter
 
 from falcon_iq_analyzer.llm.base import LLMClient
 from falcon_iq_analyzer.llm.multi_benchmark_prompts import (
+    DEDUP_SECTION,
     MULTI_BENCHMARK_ANALYZE_SYSTEM,
     MULTI_BENCHMARK_ANALYZE_USER,
     MULTI_BENCHMARK_GENERATE_SYSTEM,
@@ -146,15 +147,15 @@ def _resolve_context_placeholder(
 def _compute_distribution(num_prompts: int) -> dict[str, int]:
     """Prompt type distribution:
 
-    ~50% context_injected, ~15% feature_specific, ~15% category_specific,
-    ~10% url_query, ~10% generic.
-    Context-carrying types (first 3) get product data injected so the LLM
-    can actually differentiate niche companies.
+    ~30% context_injected, ~25% feature_specific, ~15% category_specific,
+    ~15% url_query, ~15% generic.
+    Feature-specific and url_query prompts are the strongest discriminators
+    (they test concrete knowledge), so they get a larger share.
     """
-    context_injected = round(num_prompts * 0.50)
-    feature_specific = round(num_prompts * 0.15)
+    context_injected = round(num_prompts * 0.30)
+    feature_specific = round(num_prompts * 0.25)
     category_specific = round(num_prompts * 0.15)
-    url_query = round(num_prompts * 0.10)
+    url_query = round(num_prompts * 0.15)
     generic = num_prompts - context_injected - feature_specific - category_specific - url_query
     # Ensure baseline types get at least 1 each
     if url_query < 1:
@@ -189,8 +190,20 @@ async def _generate_prompt_batch(
     batch_distribution: dict[str, int],
     batch_size: int,
     batch_num: int,
+    previous_intents: list[str] | None = None,
 ) -> list[GeneratedPrompt]:
-    """Generate a single batch of prompts."""
+    """Generate a single batch of prompts.
+
+    When *previous_intents* is provided (batches 2+), a deduplication
+    section is appended to the user prompt so the LLM avoids repeating
+    angles already covered by earlier batches.
+    """
+    if previous_intents:
+        numbered = "\n".join(f"{i + 1}. {intent}" for i, intent in enumerate(previous_intents))
+        dedup_section = DEDUP_SECTION.format(previous_intents=numbered, num_prompts=batch_size)
+    else:
+        dedup_section = ""
+
     user_prompt = MULTI_BENCHMARK_GENERATE_USER.format(
         main_company=main_company,
         main_offerings=main_offerings,
@@ -203,6 +216,7 @@ async def _generate_prompt_batch(
         feature_specific_count=batch_distribution["feature_specific"],
         category_specific_count=batch_distribution["category_specific"],
         generic_count=batch_distribution["generic"],
+        dedup_section=dedup_section,
     )
 
     data = await llm.complete_json(system_prompt, user_prompt)
@@ -246,9 +260,10 @@ async def generate_multi_prompts(
 
     total_distribution = _compute_distribution(num_prompts)
 
-    # Split into batches
+    # Split into batches — accumulate intents for cross-batch deduplication
     num_batches = max(1, (num_prompts + _BATCH_SIZE - 1) // _BATCH_SIZE)
     all_prompts: list[GeneratedPrompt] = []
+    accumulated_intents: list[str] = []
 
     for batch_idx in range(num_batches):
         batch_start = batch_idx * _BATCH_SIZE
@@ -258,10 +273,11 @@ async def generate_multi_prompts(
         batch_dist = _compute_distribution(batch_size)
 
         logger.info(
-            "Generating prompt batch %d/%d (%d prompts)",
+            "Generating prompt batch %d/%d (%d prompts, %d prior intents for dedup)",
             batch_idx + 1,
             num_batches,
             batch_size,
+            len(accumulated_intents),
         )
 
         batch_prompts = await _generate_prompt_batch(
@@ -275,7 +291,9 @@ async def generate_multi_prompts(
             batch_distribution=batch_dist,
             batch_size=batch_size,
             batch_num=batch_idx,
+            previous_intents=accumulated_intents or None,
         )
+        accumulated_intents.extend(p.intent for p in batch_prompts)
         all_prompts.extend(batch_prompts)
 
     # Post-process: inject context blocks for all context-carrying prompt types
