@@ -1,42 +1,94 @@
 MULTI_BENCHMARK_GENERATE_SYSTEM = """You are a market research expert. Generate realistic prompts that a business buyer or decision-maker would type into an AI assistant (like ChatGPT or Gemini) when researching solutions.
 
-Generate 5 types of prompts that mimic how real users interact with AI assistants:
+Your goal is to generate prompts that DISCRIMINATE between companies — prompts where the LLM is forced to show specific knowledge (or lack thereof) about each company, rather than giving generic balanced answers.
 
-1. **context_injected** (~50% of prompts): The user has visited websites and pastes product info into the prompt. These prompts include phrases like "I found these services", "Here's what their website says", "Based on this info". The actual website content will be injected separately — just write the framing prompt text with [CONTEXT] placeholder.
+Generate 5 types of prompts:
 
-   CRITICAL: Each prompt MUST have a DIFFERENT angle. Vary by:
-   - Team/company size ("for a 50-person startup", "for a 2000-employee enterprise")
-   - Budget concern ("tight budget", "cost is not the primary concern")
-   - Specific need ("we need HRMS integration", "fleet tracking is critical", "tax savings matter most")
-   - Industry ("for a logistics company", "for an IT services firm", "for a manufacturing company")
-   - Decision criteria ("which scales better", "which has better support", "which is easier to implement")
+1. **context_injected** (~30% of prompts): The user pastes product info from websites into the prompt. Include [CONTEXT] or [CONTEXT:company1,company2] placeholder (actual data injected later).
 
-   Some context_injected prompts should compare only 2-3 companies (not all). Indicate which companies to include by writing [CONTEXT:company1,company2] — e.g. [CONTEXT:automint.in,tortoise.pro].
+   Sub-angle requirements for context_injected:
+   - At least 30% must be "dealbreaker" questions: "I MUST have X. Which of these supports it?" [CONTEXT:co1,co2]
+   - At least 30% must be scenario-specific: "We're migrating from [competitor]. Which is easiest to switch to?" [CONTEXT]
+   - At least 20% must reference a specific industry vertical with a concrete constraint
+   - Remaining can be comparative with context, but NEVER just "which is better?"
 
-   Examples:
-   - "I'm evaluating employee benefit platforms for a 500-person company. Here's what I found: [CONTEXT:automint.in,tortoise.pro]. Which scales better?"
-   - "My HR team shortlisted these: [CONTEXT]. We care most about integration with our existing HRMS. Which fits?"
-   - "For a startup with 50 employees and tight budget, which makes more sense? [CONTEXT:swishclub.in,automint.in]"
+   GOOD examples:
+   - "We're a 200-person logistics company switching from manual fleet management. We MUST have GPS tracking and fuel card integration. Based on this: [CONTEXT:company1,company2]. Which actually supports both?"
+   - "Our CFO wants to see 3-year TCO projections. Here's what I found: [CONTEXT]. Which one provides transparent pricing without hidden fees?"
 
-2. **feature_specific** (~15% of prompts): The user asks about REAL features and includes product info they found. You MUST reference features from the "Real features" list below. Include [CONTEXT:company1,company2] with the 2-3 companies being compared.
-   Examples:
-   - "I care about '30% savings on cars' — I see automint.in claims this. How does it compare? [CONTEXT:automint.in,tortoise.pro]"
-   - "Which of these has better HRMS integration? [CONTEXT:tortoise.pro,swishclub.in]"
+2. **feature_specific** (~25% of prompts): Ask about REAL features from the "Real features" list. MUST reference a specific feature by name. Include [CONTEXT:company1,company2].
 
-3. **category_specific** (~15% of prompts): The user asks about a specific product CATEGORY and includes info about companies in that category. Use categories from the "Product categories" list. Include [CONTEXT:company1,company2] with companies in that category.
-   Examples:
-   - "I need a Car Leasing solution. Here's what I found: [CONTEXT:orixindia.com,quiklyz.com,ayvens.com]. Which is best for a 200-vehicle fleet?"
-   - "Comparing Employee Benefits platforms: [CONTEXT:automint.in,tortoise.pro]. Which one has broader coverage?"
+   Requirements:
+   - Each prompt must name a SPECIFIC feature (not "good features" — name the actual feature)
+   - No feature may appear in more than 2 prompts
+   - At least 40% must be factual yes/no: "Does company X actually offer [feature]?"
+   - At least 30% must compare a feature across exactly 2 companies
 
-4. **url_query** (~10% of prompts): The user references a company URL and asks what they offer. NO context injected — tests raw LLM knowledge. Each prompt should reference a DIFFERENT company.
-   Examples:
-   - "What does automint.in offer for employee car benefits?"
-   - "Tell me about tortoise.pro — are they legit?"
+   GOOD examples:
+   - "Does company1 actually support 'Darwinbox HRMS integration'? Their website mentions it but I want to verify. [CONTEXT:company1,company2]"
+   - "company1 claims '30% savings on cars' — is that realistic? How does company2's pricing compare? [CONTEXT:company1,company2]"
 
-5. **generic** (~10% of prompts): Traditional comparison/recommendation prompts. NO context. Always name specific companies.
-   Examples:
-   - "Compare automint.in vs tortoise.pro for corporate car programs"
-   - "automint.in vs orixindia.com — which should I pick?"
+3. **category_specific** (~15% of prompts): Ask about a specific product CATEGORY from the "Product categories" list. Include [CONTEXT:company1,company2].
+
+   GOOD examples:
+   - "I need a Car Leasing solution for a 500-vehicle fleet across 3 cities. Multi-location support is non-negotiable. [CONTEXT:company1,company2,company3]. Which handles multi-city operations?"
+   - "We're evaluating Employee Benefits platforms. Our workforce is 60% remote. [CONTEXT:company1,company2]. Which is designed for distributed teams?"
+
+4. **url_query** (~15% of prompts): Reference a company URL and ask what they offer. NO context injected — tests raw LLM knowledge. Each prompt MUST reference a DIFFERENT company.
+
+   Requirements:
+   - At least 30% must be skeptical/adversarial: "Is X legit?", "Any red flags with X?", "How long has X been around?"
+   - At least 30% must ask about specific capabilities: "Does X support Y?", "Can X handle Z?"
+   - At least 1 must ask about company credibility/track record
+
+   GOOD examples:
+   - "I found company1.com — how long have they been in business? Do they have enterprise customers or are they mainly SMB?"
+   - "What exactly does company1.com do? Are they a direct provider or a marketplace/aggregator?"
+   - "Has anyone used company1.com? Any known issues or complaints?"
+
+5. **generic** (~15% of prompts): Named-company comparisons without context. Always name specific companies.
+
+   Requirements:
+   - At least 30% must ask about a specific differentiator, not just "compare X vs Y"
+   - At least 1 must ask which company is better for a specific edge case
+   - Never use "compare X vs Y" as the entire prompt — always add a specific angle
+
+   GOOD examples:
+   - "Between company1 and company2, which one is better for a startup that needs to scale from 50 to 500 employees within a year?"
+   - "What does company1 do that company2 doesn't? What's their unique selling point?"
+   - "If I'm a manufacturing company with blue-collar workers, should I go with company1 or company2?"
+
+ANGLE TAXONOMY — draw from these angles and DO NOT reuse the same angle twice:
+- Security & data privacy (SOC 2, GDPR, data residency)
+- Compliance & regulatory (ISO 27001, audit trails, industry certifications)
+- Total cost of ownership / ROI (3-year TCO, hidden fees, per-seat vs flat pricing)
+- Pricing transparency (published pricing, free trial, setup fees)
+- Migration & switching costs (data export, onboarding time, contract lock-in)
+- Integration complexity (HRMS, payroll, ERP, API availability, SSO)
+- Scalability (multi-country, multi-city, employee growth, fleet size)
+- Support & SLA (response time, dedicated account manager, 24/7 support)
+- Implementation timeline (self-serve vs professional services, go-live time)
+- UX & adoption (mobile app, employee self-service portal, training required)
+- Vendor stability & credibility (founding year, funding, customer count, reviews)
+- Industry-specific fit (healthcare, manufacturing, logistics, IT, fintech, retail)
+- Company size fit (startup <50, mid-market 50-500, enterprise 500+)
+- Specific use case (fleet management, tax-saving benefits, device leasing)
+- Competitive positioning (unique differentiator, market position, brand recognition)
+
+STRUCTURAL RULES:
+- No more than 2 prompts may start with "for a [size] company" or "I'm evaluating"
+- At least 3 prompts must be factual yes/no questions ("Does X support Y?", "Is X certified for Z?")
+- At least 2 prompts must reference a named integration or standard (e.g., "SAP integration", "ISO 27001")
+- At least 2 prompts must be skeptical or adversarial ("Is X legit?", "Any red flags?", "What's the catch?")
+- At least 1 prompt must ask about pricing with specific numbers or comparison criteria
+- No two prompts may use the same sentence structure — vary between questions, statements, scenarios, and requests
+
+BAD PROMPTS (never generate these):
+- "Compare company1 and company2" (too vague, produces ties)
+- "Which is better for a mid-size company?" (no specific criteria)
+- "What are the pros and cons of each?" (invites balanced non-answer)
+- "Which service is more scalable?" (no concrete scale defined)
+- "Which has better customer support?" (no measurable criteria)
 
 CRITICAL RULES:
 - Every company must appear in at least 3 prompts across all types
@@ -44,7 +96,8 @@ CRITICAL RULES:
 - For feature_specific prompts, ONLY reference features from the "Real features" list
 - For category_specific prompts, ONLY reference categories from the "Product categories" list
 - Vary which companies are compared — don't always pair the same two
-- No two prompts should ask the same question from the same angle
+- Each prompt MUST use a DIFFERENT angle from the taxonomy
+- The "intent" field must be a unique, specific description — never generic like "comparison of features"
 
 Respond with JSON only:
 {"prompts": [{"prompt_id": "p1", "prompt_text": "...", "category": "comparison|recommendation|feature_inquiry|best_for_use_case", "intent": "brief description", "prompt_type": "url_query|context_injected|feature_specific|category_specific|generic"}]}"""
@@ -69,7 +122,15 @@ Generate {num_prompts} realistic prompts. Target distribution:
 - url_query: {url_query_count} prompts (NO context — spread across ALL companies)
 - generic: {generic_count} prompts (NO context)
 
-Ensure every company appears in at least 3 prompts total."""
+Ensure every company appears in at least 3 prompts total.
+{dedup_section}"""
+
+DEDUP_SECTION = """
+ALREADY GENERATED — do NOT repeat these angles or ask similar questions.
+Each new prompt MUST cover a DIFFERENT angle from the taxonomy:
+{previous_intents}
+
+Generate {num_prompts} NEW prompts with COMPLETELY DIFFERENT angles from the above."""
 
 MULTI_BENCHMARK_ANALYZE_SYSTEM = """You are a competitive intelligence analyst. Analyze the following AI assistant response to extract how each company is perceived.
 
