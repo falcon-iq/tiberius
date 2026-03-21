@@ -17,22 +17,24 @@ COPY apps/falcon-iq-analyzer/pyproject.toml apps/falcon-iq-analyzer/uv.lock ./
 COPY apps/falcon-iq-analyzer/src/ ./src/
 RUN uv sync --frozen --no-dev
 
-# Stage 2: Runtime
+# Stage 2: Runtime — mirror same layout so uv.sources path resolves at runtime
 FROM python:3.11-slim
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /app
-COPY --from=builder /repo/apps/falcon-iq-analyzer /app
+# Keep same directory structure as build stage
+WORKDIR /repo/apps/falcon-iq-analyzer
+COPY --from=builder /repo/apps/falcon-iq-analyzer /repo/apps/falcon-iq-analyzer
+COPY --from=builder /repo/libs/notifications/python /repo/libs/notifications/python
 
 # Copy notification templates
-COPY libs/notifications/templates/ /app/notification-templates/
+COPY libs/notifications/templates/ /repo/libs/notifications/templates/
 
 # Create non-root user (AWS Fargate best practice)
 RUN groupadd -r falcon && useradd -r -g falcon -m falcon
-RUN mkdir -p /app/results && chown -R falcon:falcon /app
+RUN mkdir -p /repo/apps/falcon-iq-analyzer/results && chown -R falcon:falcon /repo
 
 # Default to S3 storage in container (override for local dev)
 ENV WEB_ANALYZER_STORAGE_TYPE=s3
