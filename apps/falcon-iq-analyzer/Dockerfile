@@ -1,13 +1,20 @@
 # Multi-stage build for Falcon IQ Analyzer
+# Build context: repo root (set by build.sh -f flag)
 
 # Stage 1: Install dependencies
 FROM python:3.11-slim AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /app
-COPY pyproject.toml uv.lock ./
-COPY src/ ./src/
+# Mirror repo layout so the relative path in [tool.uv.sources] resolves
+WORKDIR /repo/apps/falcon-iq-analyzer
+
+# Copy notification library (local dependency at ../../libs/notifications/python)
+COPY libs/notifications/python/ /repo/libs/notifications/python/
+
+# Copy analyzer source and install
+COPY apps/falcon-iq-analyzer/pyproject.toml apps/falcon-iq-analyzer/uv.lock ./
+COPY apps/falcon-iq-analyzer/src/ ./src/
 RUN uv sync --frozen --no-dev
 
 # Stage 2: Runtime
@@ -18,7 +25,10 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
-COPY --from=builder /app /app
+COPY --from=builder /repo/apps/falcon-iq-analyzer /app
+
+# Copy notification templates
+COPY libs/notifications/templates/ /app/notification-templates/
 
 # Create non-root user (AWS Fargate best practice)
 RUN groupadd -r falcon && useradd -r -g falcon -m falcon

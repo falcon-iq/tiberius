@@ -266,6 +266,65 @@ async def run_company_benchmark(
         )
         logger.info("Company benchmark %s completed successfully", company_benchmark_report_id)
 
+        # 12. Send email notification
+        try:
+            recipient_email = report_doc.get("userId", "")
+            if recipient_email and settings.notification_enabled and settings.ses_sender_email:
+                from datetime import datetime, timezone
+                from pathlib import Path
+
+                from falconiq_notifications import send_templated_email
+
+                # Build report URL (the HTML report endpoint)
+                report_url = f"/company-benchmark-report/{company_benchmark_report_id}/report"
+
+                # Gather template data from the benchmark result
+                all_companies_list = [benchmark_result.main_company] + benchmark_result.competitors
+                winner_name = ""
+                winner_wins = 0
+                if benchmark_result.summary:
+                    for stat in benchmark_result.summary.company_stats:
+                        if stat.wins > winner_wins:
+                            winner_wins = stat.wins
+                            winner_name = stat.company_name
+
+                total = benchmark_result.summary.total_prompts if benchmark_result.summary else len(evaluations)
+                winner_pct = round(winner_wins / max(total, 1) * 100)
+
+                templates_dir = Path(__file__).resolve().parents[4] / "libs" / "notifications" / "templates"
+                # For Docker: check if /app/notification-templates/ exists, use that instead
+                docker_templates = Path("/app/notification-templates")
+                if docker_templates.is_dir():
+                    templates_dir = docker_templates
+
+                await send_templated_email(
+                    to=recipient_email,
+                    template_name="benchmark_complete",
+                    template_data={
+                        "recipient_name": report_doc.get("companyName", "there"),
+                        "main_company": benchmark_result.main_company,
+                        "competitors": benchmark_result.competitors,
+                        "total_prompts": total,
+                        "num_companies": len(all_companies_list),
+                        "winner_name": winner_name,
+                        "winner_wins": winner_wins,
+                        "winner_pct": winner_pct,
+                        "key_insights": (benchmark_result.summary.key_insights[:3] if benchmark_result.summary else []),
+                        "report_url": report_url,
+                        "generated_at": datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC"),
+                    },
+                    subject=(
+                        f"Your Benchmark Report is Ready — {benchmark_result.main_company}"
+                        f" vs {', '.join(benchmark_result.competitors)}"
+                    ),
+                    sender_email=settings.ses_sender_email,
+                    templates_dir=templates_dir,
+                    ses_region=settings.ses_region,
+                )
+                logger.info("Benchmark completion email sent to %s", recipient_email)
+        except Exception:
+            logger.exception("Failed to send benchmark completion email (non-fatal)")
+
     except Exception as e:
         logger.exception("Company benchmark pipeline failed for %s", company_benchmark_report_id)
         if client:

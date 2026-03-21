@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: falconiq-notifications
+Version: 0.1.0
+Summary: Falcon IQ notification library - email templates and SES integration
+Requires-Python: >=3.11
+Requires-Dist: boto3>=1.35.0
+Requires-Dist: jinja2>=3.1.0
