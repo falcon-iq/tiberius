@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 
 from falcon_iq_analyzer.config import settings
 from falcon_iq_analyzer.routers import analyze, benchmark, company_benchmark, compare, crawl, industry_benchmark, report
+from falcon_iq_analyzer.services.renderer import router as renderer_router
+from falcon_iq_analyzer.services.renderer import shutdown_browser
 from falcon_iq_analyzer.storage import create_storage_service
 
 logging.basicConfig(
@@ -37,6 +39,12 @@ app.include_router(crawl.router, tags=["crawl"])
 app.include_router(benchmark.router, tags=["benchmark"])
 app.include_router(company_benchmark.router, tags=["company-benchmark"])
 app.include_router(industry_benchmark.router, tags=["industry-benchmark"])
+app.include_router(renderer_router, tags=["renderer"])
+
+
+@app.on_event("shutdown")
+async def _shutdown():
+    await shutdown_browser()
 
 
 @app.get("/health")
@@ -60,7 +68,7 @@ _static_dir = (_repo_root / "apps" / "falcon-iq-analyzer-web-app" / "dist") if _
 _API_PREFIXES = (
     "health", "analyze", "compare", "report", "crawl",
     "benchmark", "company-benchmark", "company-benchmark-report",
-    "industry-benchmark",
+    "industry-benchmark", "render",
     "sites", "analyses", "benchmarks",
 )
 

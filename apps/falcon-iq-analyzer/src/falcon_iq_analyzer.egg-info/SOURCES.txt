@@ -52,8 +52,11 @@ src/falcon_iq_analyzer/services/page_loader.py
 src/falcon_iq_analyzer/services/progress_reporter.py
 src/falcon_iq_analyzer/services/prompt_evaluator.py
 src/falcon_iq_analyzer/services/prompt_generator.py
+src/falcon_iq_analyzer/services/renderer.py
 src/falcon_iq_analyzer/services/report_generator.py
+src/falcon_iq_analyzer/services/structured_extractor.py
 src/falcon_iq_analyzer/services/synthesizer.py
+src/falcon_iq_analyzer/services/validators.py
 src/falcon_iq_analyzer/services/wikidata_service.py
 src/falcon_iq_analyzer/storage/__init__.py
 src/falcon_iq_analyzer/storage/base.py
