@@ -1,6 +1,29 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional  # noqa: I001
 
 from pydantic import BaseModel
+
+
+# ── Evidence & structured data ───────────────────────────────────────────
+
+
+class Evidence(BaseModel):
+    """A source snippet tied to a specific page URL."""
+
+    url: str  # page URL path where this was found (e.g. "/pricing")
+    quote: str  # verbatim quote from the page (≤280 chars)
+
+
+class StructuredPageData(BaseModel):
+    """Deterministically extracted structured data from HTML (no LLM)."""
+
+    json_ld: List[Dict[str, Any]] = []  # parsed JSON-LD blocks
+    og_tags: Dict[str, str] = {}  # Open Graph tags (og:title, og:description, etc.)
+    tables: List[List[List[str]]] = []  # list of tables, each table = list of rows, each row = list of cells
+    headings: List[Dict[str, str]] = []  # [{level: "h1", text: "..."}]
+    named_links: List[Dict[str, str]] = []  # [{text: "Salesforce", href: "/integrations/salesforce"}]
+
+
+# ── Page models ──────────────────────────────────────────────────────────
 
 
 class PageInfo(BaseModel):
@@ -11,6 +34,7 @@ class PageInfo(BaseModel):
     title: str = ""
     meta_description: str = ""
     clean_text: str = ""
+    structured_data: Optional[StructuredPageData] = None
 
 
 class PageClassification(BaseModel):
@@ -19,30 +43,63 @@ class PageClassification(BaseModel):
     reasoning: str
 
 
+# ── Extraction models ────────────────────────────────────────────────────
+
+
 class Offering(BaseModel):
-    product_name: str
-    category: str
-    description: str
+    product_name: str = ""
+    category: str = ""
+    description: str = ""
     features: List[str] = []
     benefits: List[str] = []
-    target_audience: str = ""
+    target_audience: Optional[str] = ""
+    evidence: List[Evidence] = []
+    confidence: float = 0.0  # 0.0-1.0, set during verification
+
+
+class PricingPlan(BaseModel):
+    """A pricing plan extracted from the website."""
+
+    name: str
+    price: Optional[float] = None  # null if "contact sales"
+    currency: Optional[str] = None  # ISO 4217 (USD, EUR, etc.)
+    billing_period: str = "contact_sales"  # monthly|annual|one_time|usage_based|contact_sales
+    trial: Optional[str] = None
+    limits: List[str] = []
+    evidence: List[Evidence] = []
+    confidence: float = 0.0
+
+
+class ExtractedIntegration(BaseModel):
+    """An integration extracted from the website."""
+
+    name: str
+    integration_type: str = "unknown"  # native|api|partner|unknown
+    notes: str = ""
+    evidence: List[Evidence] = []
+    confidence: float = 0.0
 
 
 class PageExtraction(BaseModel):
     filepath: str
     url_path: str
     offerings: List[Offering] = []
+    pricing_plans: List[PricingPlan] = []
+    integrations: List[ExtractedIntegration] = []
 
 
 class TopOffering(BaseModel):
-    rank: int
-    product_name: str
-    category: str
-    description: str
+    rank: int = 0
+    product_name: str = ""
+    category: str = ""
+    description: str = ""
     key_features: List[str] = []
     key_benefits: List[str] = []
-    target_audience: str = ""
-    selling_script: str = ""
+    target_audience: Optional[str] = ""
+    selling_script: str = ""  # deprecated — kept for backward compat, will be empty
+    evidence_summary: Optional[str] = ""  # factual summary backed by page evidence
+    evidence: List[Evidence] = []
+    confidence: float = 0.0  # 0.0-1.0
 
 
 class ComparisonResult(BaseModel):
@@ -63,6 +120,8 @@ class AnalysisResult(BaseModel):
     classification_summary: Dict[str, int] = {}
     product_pages_analyzed: int = 0
     top_offerings: List[TopOffering] = []
+    pricing_plans: List[PricingPlan] = []
+    integrations: List[ExtractedIntegration] = []
     markdown_report: str = ""
 
 
