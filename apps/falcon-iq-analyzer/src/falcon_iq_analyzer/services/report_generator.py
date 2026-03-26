@@ -49,9 +49,19 @@ def generate_markdown_report(result: AnalysisResult) -> str:
             lines.append(f"**Target Audience:** {offering.target_audience}")
             lines.append("")
 
-        if offering.selling_script:
-            lines.append("**Selling Script:**")
-            lines.append(f"> {offering.selling_script}")
+        if offering.evidence_summary:
+            lines.append("**Evidence Summary:**")
+            lines.append(f"> {offering.evidence_summary}")
+            lines.append("")
+
+        if offering.evidence:
+            lines.append("**Sources:**")
+            for ev in offering.evidence[:3]:
+                lines.append(f"- [{ev.url}] \"{ev.quote}\"")
+            lines.append("")
+
+        if offering.confidence:
+            lines.append(f"**Confidence:** {offering.confidence:.0%}")
             lines.append("")
 
         lines.append("---")

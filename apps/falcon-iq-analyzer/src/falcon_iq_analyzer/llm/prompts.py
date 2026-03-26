@@ -22,55 +22,108 @@ Meta description: {meta_description}
 Page content:
 {clean_text}"""
 
-EXTRACT_SYSTEM = """You are a product analyst. Extract all product offerings and capabilities described on this web page.
+EXTRACT_SYSTEM = """You are a strict information extraction engine. You MUST only use the provided SOURCES.
+If a field cannot be supported by a quoted snippet from SOURCES, output null or an empty list.
+Never guess. Never rely on general knowledge. Never infer features that are not explicitly stated.
 
-For each offering found, extract:
-- product_name: Name of the product or feature
-- category: General category (e.g., "Social Media Management", "Customer Service", "Analytics")
-- description: Brief description of what it does
-- features: List of specific features mentioned
-- benefits: List of business benefits mentioned
-- target_audience: Who this product is for
+For each product offering found on the page, extract:
+- product_name: The exact name used on the page
+- category: General category (e.g., "CRM", "Analytics", "Fleet Management")
+- description: 1-2 sentence description using ONLY words/concepts from the page
+- features: List of features EXPLICITLY named on the page. Use the page's exact wording. If the page says "integrates with popular tools" do NOT list specific tool names.
+- benefits: List of business benefits EXPLICITLY stated on the page (not inferred)
+- target_audience: Who this product is for, ONLY if stated on the page
+- evidence: For each offering, include 1-3 supporting quotes from the page (≤280 chars each)
+
+Also extract from the page:
+- pricing_plans: Any pricing mentioned [{name, price (number or null), currency, billing_period (monthly|annual|one_time|usage_based|contact_sales), evidence}]
+- integrations: Integration partners EXPLICITLY named [{name, integration_type (native|api|partner|unknown), evidence}]
+
+CRITICAL RULES:
+- Every offering must have at least 1 evidence quote from the source text
+- If the page says "integrates with popular HR tools" → do NOT list "SAP", "Workday", etc.
+- If the page says "500+ customers" → extract that as-is, do NOT change the number
+- If information is not on the page, leave the field empty or null
+- When in doubt, leave it out
 
 Respond with JSON only:
-{"offerings": [{"product_name": "...", "category": "...", "description": "...", "features": [...], "benefits": [...], "target_audience": "..."}]}
+{"offerings": [{"product_name": "...", "category": "...", "description": "...", "features": [...], "benefits": [...], "target_audience": "...", "evidence": [{"url": "...", "quote": "..."}]}], "pricing_plans": [...], "integrations": [...]}
 
-If no clear product offerings are found, return {"offerings": []}."""
+If no clear product offerings are found, return {"offerings": [], "pricing_plans": [], "integrations": []}."""
 
-EXTRACT_USER = """Page URL path: {url_path}
+EXTRACT_USER = """<SOURCES>
+Page URL path: {url_path}
 Page title: {title}
-
+{structured_data_section}
 Page content:
-{clean_text}"""
+{clean_text}
+</SOURCES>
 
-SYNTHESIZE_SYSTEM = """You are a strategic product analyst. Given extracted product offerings from a company's website, identify the TOP 5 core product offerings and generate a concise selling script for each.
+Extract product offerings, pricing, and integrations from the above source. Every claim must include a verbatim evidence quote from the text."""
+
+SYNTHESIZE_SYSTEM = """You are a strategic product analyst. Given evidence-backed product offerings extracted from a company's website pages, identify the TOP 5 core product offerings.
 
 For each of the top 5 offerings, provide:
 - rank: 1-5 (1 = most important)
-- product_name: Official product name
+- product_name: Official product name (must match a name from the extractions)
 - category: Product category
-- description: 2-3 sentence description
-- key_features: Top 5 features
-- key_benefits: Top 5 business benefits
-- target_audience: Primary target customers
-- selling_script: A compelling 3-4 sentence sales pitch that a sales rep could use
+- description: 2-3 sentence factual description based ONLY on the provided evidence
+- key_features: Top 5 features (only those backed by evidence from the extractions)
+- key_benefits: Top 5 business benefits (only those backed by evidence)
+- target_audience: Primary target customers (only if stated in the extractions)
+- evidence_summary: A factual 2-3 sentence summary of what the evidence shows about this product
+- confidence: 0.0-1.0 based on evidence strength:
+  - 1.0: Stated on 2+ pages with specific details
+  - 0.8: Stated on 1 page with strong supporting detail
+  - 0.5: Implied but not directly stated — include only if no better alternative
+
+CRITICAL: Do NOT invent features, benefits, or claims not present in the extractions.
+If an extraction has weak evidence, rank it lower or exclude it.
 
 Respond with JSON only:
-{"top_offerings": [{"rank": 1, "product_name": "...", "category": "...", "description": "...", "key_features": [...], "key_benefits": [...], "target_audience": "...", "selling_script": "..."}]}"""
+{"top_offerings": [{"rank": 1, "product_name": "...", "category": "...", "description": "...", "key_features": [...], "key_benefits": [...], "target_audience": "...", "evidence_summary": "...", "confidence": 0.9}]}"""
 
 SYNTHESIZE_USER = """Company: {company_name}
 
-Extracted offerings from {num_pages} product pages:
+Evidence-backed offerings extracted from {num_pages} product pages:
 
 {extractions_text}"""
 
-SUMMARIZE_BATCH_SYSTEM = """You are a product analyst. Summarize the following product extractions into a concise list of unique offerings. Remove duplicates and merge similar offerings.
+SUMMARIZE_BATCH_SYSTEM = """You are a product analyst. Summarize the following product extractions into a concise list of unique offerings. Remove duplicates and merge similar offerings. Preserve evidence references.
 
 Respond with JSON only:
-{"offerings_summary": [{"product_name": "...", "category": "...", "description": "...", "key_features": [...]}]}"""
+{"offerings_summary": [{"product_name": "...", "category": "...", "description": "...", "key_features": [...], "source_pages": [...]}]}"""
 
 SUMMARIZE_BATCH_USER = """Offerings batch:
 {batch_text}"""
+
+# ── Verification prompt (Pass 2 of two-pass extraction) ──────────────────
+
+VERIFY_EXTRACTION_SYSTEM = """You are a claim verifier. You only judge support from evidence.
+
+Given candidate extractions and the original page text, verify each claim:
+- For each offering: does the page text actually support the product name, features, and description?
+- For each feature: is it EXPLICITLY stated or only vaguely implied?
+- For each pricing claim: does the page show this exact price?
+
+For each claim, output:
+- verdict: supported | not_supported | ambiguous
+- rationale: 1-2 sentences referencing the evidence
+- required_action: keep | drop | downgrade_confidence
+
+Respond with JSON only:
+{"verified_offerings": [{"product_name": "...", "verdict": "supported|not_supported|ambiguous", "rationale": "...", "required_action": "keep|drop|downgrade_confidence", "features_verdicts": [{"feature": "...", "verdict": "...", "rationale": "..."}]}]}"""
+
+VERIFY_EXTRACTION_USER = """<CANDIDATE_EXTRACTIONS>
+{extractions_json}
+</CANDIDATE_EXTRACTIONS>
+
+<ORIGINAL_PAGE_TEXT>
+Page URL: {url_path}
+{clean_text}
+</ORIGINAL_PAGE_TEXT>
+
+Verify each candidate extraction against the original page text. Be strict — only mark "supported" if the page clearly states the claim."""
 
 COMPARE_SYSTEM = """You are a competitive intelligence analyst. Compare two companies based on their analyzed product offerings.
 

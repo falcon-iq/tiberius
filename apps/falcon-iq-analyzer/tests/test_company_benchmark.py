@@ -138,7 +138,9 @@ def _make_analysis_result(company_name: str) -> dict:
                 "key_features": ["analytics", "integrations"],
                 "key_benefits": ["increased sales"],
                 "target_audience": "Enterprise",
-                "selling_script": "Best CRM on the market",
+                "selling_script": "",
+                "evidence_summary": "Flagship CRM product with analytics and integrations",
+                "confidence": 0.9,
             }
         ],
         "markdown_report": f"# {company_name} Analysis",
