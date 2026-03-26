@@ -21,6 +21,7 @@ dependencies = [
     "jinja2>=3.1.0",
     "boto3>=1.35.0",
     "pymongo>=4.7.0",
+    "playwright>=1.40.0",
     "falconiq-notifications",
 ]
 

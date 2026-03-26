@@ -75,7 +75,8 @@ public class CrawlManager {
                 WebCrawler crawler = new WebCrawler(
                         url, maxPages, threads, delayMs,
                         storageService, crawlId, progressCounter,
-                        progressReporter, websiteCrawlDetailId);
+                        progressReporter, websiteCrawlDetailId,
+                        analyzerApiUrl);
                 List<CrawlResult> results = crawler.crawl();
                 job.complete(results);
                 String crawledPagesPath = storageService.getBasePath(crawlId);

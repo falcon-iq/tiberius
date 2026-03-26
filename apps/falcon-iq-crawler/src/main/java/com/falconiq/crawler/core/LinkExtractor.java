@@ -1,5 +1,6 @@
 package com.falconiq.crawler.core;
 
+import com.falconiq.crawler.util.UrlUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -10,17 +11,23 @@ import java.util.List;
 
 /**
  * Extracts and normalizes same-domain links from HTML content.
+ * Uses URL canonicalization to strip tracking params and normalize host/path.
  */
 public class LinkExtractor {
 
     private final String targetHost;
+    private final String targetHostNormalized;
 
     public LinkExtractor(String targetHost) {
         this.targetHost = targetHost;
+        // Normalize for www/non-www matching
+        this.targetHostNormalized = targetHost.toLowerCase().startsWith("www.")
+                ? targetHost.substring(4).toLowerCase()
+                : targetHost.toLowerCase();
     }
 
     /**
-     * Parse HTML and return a list of absolute, normalized, same-domain URLs.
+     * Parse HTML and return a list of absolute, canonicalized, same-domain URLs.
      */
     public List<String> extract(String baseUrl, String html) {
         List<String> links = new ArrayList<>();
@@ -31,39 +38,24 @@ public class LinkExtractor {
             if (href.isEmpty()) {
                 continue;
             }
-            String normalized = normalize(href);
-            if (normalized != null && isSameDomain(normalized)) {
-                links.add(normalized);
+            String canonical = UrlUtils.canonicalize(href);
+            if (canonical != null && isSameDomain(canonical)) {
+                links.add(canonical);
             }
         }
         return links;
     }
 
-    private String normalize(String url) {
-        try {
-            URI uri = URI.create(url);
-            String scheme = uri.getScheme();
-            if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) {
-                return null;
-            }
-            String path = uri.getPath();
-            if (path == null || path.isEmpty()) {
-                path = "/";
-            } else if (path.length() > 1 && path.endsWith("/")) {
-                path = path.substring(0, path.length() - 1);
-            }
-            URI normalized = new URI(scheme, null, uri.getHost(), uri.getPort(),
-                    path, uri.getQuery(), null);
-            return normalized.toString();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     private boolean isSameDomain(String url) {
         try {
             URI uri = URI.create(url);
-            return targetHost.equalsIgnoreCase(uri.getHost());
+            String host = uri.getHost();
+            if (host == null) return false;
+            host = host.toLowerCase();
+            if (host.startsWith("www.")) {
+                host = host.substring(4);
+            }
+            return targetHostNormalized.equals(host);
         } catch (Exception e) {
             return false;
         }

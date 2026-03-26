@@ -1,6 +1,7 @@
 package com.falconiq.crawler.core;
 
 import com.falconiq.crawler.storage.StorageService;
+import com.falconiq.crawler.util.UrlUtils;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -30,9 +31,10 @@ public class WebCrawler {
     private final long delayMs;
     private final StorageService storageService;
     private final String crawlId;
+    private final String analyzerApiUrl;
 
     private final Set<String> visited = ConcurrentHashMap.newKeySet();
-    private final ConcurrentLinkedQueue<String> frontier = new ConcurrentLinkedQueue<>();
+    private final CrawlPriorityQueue frontier = new CrawlPriorityQueue();
     private final List<CrawlResult> results = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger downloadedCount;
 
@@ -46,7 +48,7 @@ public class WebCrawler {
                       StorageService storageService, String crawlId,
                       AtomicInteger progressCounter) {
         this(startUrl, maxPages, threadCount, delayMs, storageService, crawlId,
-                progressCounter, null, null);
+                progressCounter, null, null, null);
     }
 
     public WebCrawler(String startUrl, int maxPages, int threadCount, long delayMs,
@@ -54,6 +56,16 @@ public class WebCrawler {
                       AtomicInteger progressCounter,
                       CrawlProgressReporter progressReporter,
                       String websiteCrawlDetailId) {
+        this(startUrl, maxPages, threadCount, delayMs, storageService, crawlId,
+                progressCounter, progressReporter, websiteCrawlDetailId, null);
+    }
+
+    public WebCrawler(String startUrl, int maxPages, int threadCount, long delayMs,
+                      StorageService storageService, String crawlId,
+                      AtomicInteger progressCounter,
+                      CrawlProgressReporter progressReporter,
+                      String websiteCrawlDetailId,
+                      String analyzerApiUrl) {
         this.startUrl = startUrl;
         this.maxPages = maxPages;
         this.threadCount = threadCount;
@@ -63,6 +75,7 @@ public class WebCrawler {
         this.downloadedCount = progressCounter;
         this.progressReporter = progressReporter;
         this.websiteCrawlDetailId = websiteCrawlDetailId;
+        this.analyzerApiUrl = analyzerApiUrl;
 
         URI uri = URI.create(startUrl);
         this.targetHost = uri.getHost();
@@ -72,17 +85,49 @@ public class WebCrawler {
      * Run the crawl and return the list of downloaded pages.
      */
     public List<CrawlResult> crawl() {
-        this.pageFetcher = new PageFetcher(storageService, crawlId);
+        HeadlessRenderer renderer = (analyzerApiUrl != null && !analyzerApiUrl.isBlank())
+                ? new HeadlessRenderer(analyzerApiUrl) : null;
+        this.pageFetcher = new PageFetcher(storageService, crawlId, renderer);
         this.linkExtractor = new LinkExtractor(targetHost);
 
-        loadRobotsTxt();
+        String robotsTxtContent = loadRobotsTxt();
 
+        // Seed the start URL
         String normalized = normalizeStartUrl(startUrl);
-        frontier.add(normalized);
+        frontier.offer(normalized);
         visited.add(normalized);
 
+        // Seed high-signal paths directly (they'll be prioritized by CrawlPriorityQueue)
+        URI baseUri = URI.create(startUrl);
+        String baseScheme = baseUri.getScheme() != null ? baseUri.getScheme() : "https";
+        for (String path : CrawlPriorityQueue.HIGH_SIGNAL_PATHS) {
+            String seedUrl = baseScheme + "://" + targetHost + path;
+            String canonical = UrlUtils.canonicalize(seedUrl);
+            if (canonical != null && visited.add(canonical)) {
+                frontier.offer(canonical);
+            }
+        }
+
+        // Discover and seed URLs from sitemap.xml
+        SitemapParser sitemapParser = new SitemapParser();
+        String sitemapBaseUrl = baseScheme + "://" + targetHost;
+        List<String> sitemapUrls = sitemapParser.discoverUrls(sitemapBaseUrl, robotsTxtContent);
+        int sitemapSeeded = 0;
+        for (String sitemapUrl : sitemapUrls) {
+            String canonical = UrlUtils.canonicalize(sitemapUrl);
+            if (canonical != null && visited.add(canonical) && !isDisallowed(canonical)) {
+                if (frontier.offer(canonical)) {
+                    sitemapSeeded++;
+                }
+            }
+        }
+        if (sitemapSeeded > 0) {
+            logger.info("Seeded " + sitemapSeeded + " URLs from sitemap");
+        }
+
         logger.info("Starting crawl of " + targetHost
-                + " (max " + maxPages + " pages, " + threadCount + " threads)");
+                + " (max " + maxPages + " pages, " + threadCount + " threads, "
+                + frontier.size() + " URLs in queue)");
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         List<Future<?>> activeTasks = new ArrayList<>();
@@ -159,12 +204,15 @@ public class WebCrawler {
         List<String> links = linkExtractor.extract(url, result.html());
         for (String link : links) {
             if (visited.add(link)) {
-                frontier.add(link);
+                frontier.offer(link);
             }
         }
     }
 
-    private void loadRobotsTxt() {
+    /**
+     * Fetch and parse robots.txt. Returns the raw content (for sitemap discovery), or null.
+     */
+    private String loadRobotsTxt() {
         try {
             URI uri = URI.create(startUrl);
             String robotsUrl = uri.getScheme() + "://" + targetHost + "/robots.txt";
@@ -182,12 +230,15 @@ public class WebCrawler {
             HttpResponse<String> response = client.send(request,
                     HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
-                parseRobotsTxt(response.body());
+                String content = response.body();
+                parseRobotsTxt(content);
                 logger.info("Loaded robots.txt from " + robotsUrl);
+                return content;
             }
         } catch (Exception e) {
             logger.warning("Could not fetch robots.txt — proceeding without it");
         }
+        return null;
     }
 
     private void parseRobotsTxt(String content) {

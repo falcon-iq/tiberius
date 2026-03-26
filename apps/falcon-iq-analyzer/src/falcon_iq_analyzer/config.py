@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     ses_region: str = "us-east-1"
     notification_enabled: bool = True
 
+    # Playwright renderer
+    renderer_enabled: bool = True
+    renderer_timeout_ms: int = 30000
+    renderer_max_page_size_bytes: int = 5 * 1024 * 1024  # 5 MB
+
     # Cloudflare R2 (S3-compatible) — when set, boto3 uses R2 endpoint instead of AWS S3
     r2_account_id: str = ""
     r2_access_key_id: str = ""
