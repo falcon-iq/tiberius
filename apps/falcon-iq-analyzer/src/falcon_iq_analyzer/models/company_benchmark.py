@@ -3,6 +3,11 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel
 
 from falcon_iq_analyzer.models.domain import CompanyMention, GeneratedPrompt
+from falcon_iq_analyzer.models.enrichment import (
+    EnrichedCompanyProfile,
+    EnrichmentResult,
+    VerifiedClaim,
+)
 
 
 class MultiCompanyPromptEvaluation(BaseModel):
@@ -47,6 +52,8 @@ class CompanyOverview(BaseModel):
     tagline: str = ""
     categories: List[str] = []
     top_offerings: List[CompanyOfferingSummary] = []
+    enrichment: Optional[EnrichmentResult] = None
+    verified_claims: List[VerifiedClaim] = []
 
 
 class ProductComparisonEntry(BaseModel):
@@ -72,3 +79,4 @@ class MultiCompanyBenchmarkResult(BaseModel):
     summary: Optional[MultiCompanyBenchmarkSummary] = None
     product_comparison_groups: List[ProductComparisonGroup] = []
     markdown_report: str = ""
+    enriched_profiles: Dict[str, EnrichedCompanyProfile] = {}

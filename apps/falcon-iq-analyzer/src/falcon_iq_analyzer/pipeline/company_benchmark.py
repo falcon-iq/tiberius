@@ -17,6 +17,8 @@ from falcon_iq_analyzer.models.company_benchmark import (
     MultiCompanyBenchmarkResult,
 )
 from falcon_iq_analyzer.models.domain import AnalysisResult
+from falcon_iq_analyzer.models.enrichment import EnrichedCompanyProfile
+from falcon_iq_analyzer.services.enrichment import fetch_all_enrichments, verify_claims
 from falcon_iq_analyzer.services.html_report_generator import generate_html_report
 from falcon_iq_analyzer.services.multi_benchmark_service import (
     evaluate_single_prompt_multi,
@@ -200,6 +202,33 @@ async def run_company_benchmark(
             sum(1 for ov in company_overviews.values() if ov.tagline),
         )
 
+        # 5c. External enrichment (G2, Crunchbase, Google Search via crawler)
+        enriched_profiles: dict[str, EnrichedCompanyProfile] = {}
+        if settings.enrichment_enabled:
+            _update_benchmark_status(report_col, company_benchmark_report_id, "ENRICHMENT_IN_PROGRESS")
+            logger.info("Company benchmark: starting external enrichment for %d companies", len(company_overviews))
+
+            enrichment_results = await fetch_all_enrichments(company_overviews, settings.crawler_api_url)
+
+            for name, enrichment in enrichment_results.items():
+                company_overviews[name].enrichment = enrichment
+                # Extract claims from top offerings for LLM verification
+                claims = [o.description for o in company_overviews[name].top_offerings if o.description]
+                verified = await verify_claims(llm, name, claims, enrichment)
+                company_overviews[name].verified_claims = verified
+                enriched_profiles[name] = EnrichedCompanyProfile(
+                    company_name=name,
+                    enrichment=enrichment,
+                    verified_claims=verified,
+                )
+
+            logger.info(
+                "Company benchmark: enrichment complete — %d companies enriched, %d total verified claims",
+                len(enriched_profiles),
+                sum(len(p.verified_claims) for p in enriched_profiles.values()),
+            )
+            _update_benchmark_status(report_col, company_benchmark_report_id, "BENCHMARK_REPORT_IN_PROGRESS")
+
         logger.info(
             "Company benchmark: main=%s, competitors=%s",
             main_result.company_name,
@@ -239,6 +268,7 @@ async def run_company_benchmark(
             evaluations=evaluations,
             summary=summary,
             product_comparison_groups=product_groups,
+            enriched_profiles=enriched_profiles,
         )
         benchmark_result.markdown_report = generate_multi_benchmark_report(benchmark_result)
 
