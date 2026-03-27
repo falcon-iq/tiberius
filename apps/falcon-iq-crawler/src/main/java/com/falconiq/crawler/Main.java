@@ -2,14 +2,18 @@ package com.falconiq.crawler;
 
 import com.falconiq.crawler.core.CrawlManager;
 import com.falconiq.crawler.core.CrawlProgressReporter;
+import com.falconiq.crawler.enrichment.EnrichmentManager;
 import com.falconiq.crawler.storage.LocalStorageService;
 import com.falconiq.crawler.storage.S3StorageService;
 import com.falconiq.crawler.storage.StorageService;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 import org.glassfish.jersey.servlet.ServletContainer;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class Main {
@@ -28,8 +32,19 @@ public class Main {
         String analyzerApiUrl = env("ANALYZER_API_URL", "");
         CrawlManager.initialize(storageService, maxConcurrentCrawls, progressReporter, analyzerApiUrl);
 
+        // Initialize enrichment manager
+        String serpApiKey = env("SERP_API_KEY", "");
+        MongoCollection<Document> enrichmentCacheCollection = progressReporter.getMongoCollection("enrichment_cache");
+        Map<String, Integer> ttlConfig = Map.of(
+                "g2", Integer.parseInt(env("ENRICHMENT_TTL_G2_DAYS", "7")),
+                "crunchbase", Integer.parseInt(env("ENRICHMENT_TTL_CRUNCHBASE_DAYS", "30")),
+                "google_search", Integer.parseInt(env("ENRICHMENT_TTL_GOOGLE_DAYS", "3"))
+        );
+        EnrichmentManager.initialize(enrichmentCacheCollection, ttlConfig, serpApiKey, analyzerApiUrl);
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Shutting down CrawlProgressReporter...");
+            logger.info("Shutting down services...");
+            EnrichmentManager.getInstance().shutdown();
             progressReporter.shutdown();
         }));
 

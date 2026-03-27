@@ -22,6 +22,7 @@ src/falcon_iq_analyzer/models/__init__.py
 src/falcon_iq_analyzer/models/company_benchmark.py
 src/falcon_iq_analyzer/models/crawl_models.py
 src/falcon_iq_analyzer/models/domain.py
+src/falcon_iq_analyzer/models/enrichment.py
 src/falcon_iq_analyzer/models/industry_benchmark.py
 src/falcon_iq_analyzer/models/requests.py
 src/falcon_iq_analyzer/models/responses.py
@@ -58,6 +59,9 @@ src/falcon_iq_analyzer/services/structured_extractor.py
 src/falcon_iq_analyzer/services/synthesizer.py
 src/falcon_iq_analyzer/services/validators.py
 src/falcon_iq_analyzer/services/wikidata_service.py
+src/falcon_iq_analyzer/services/enrichment/__init__.py
+src/falcon_iq_analyzer/services/enrichment/client.py
+src/falcon_iq_analyzer/services/enrichment/verifier.py
 src/falcon_iq_analyzer/storage/__init__.py
 src/falcon_iq_analyzer/storage/base.py
 src/falcon_iq_analyzer/storage/local_storage.py

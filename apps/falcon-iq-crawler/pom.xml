@@ -16,6 +16,8 @@
     <jetty.version>12.0.27</jetty.version>
     <slf4j.version>2.0.13</slf4j.version>
     <aws.sdk.version>2.25.0</aws.sdk.version>
+    <!-- Override with -DexcludedGroups= to include integration tests -->
+    <surefire.excludedGroups>integration</surefire.excludedGroups>
   </properties>
 
   <dependencyManagement>
@@ -94,7 +96,31 @@
       <version>${slf4j.version}</version>
       <scope>runtime</scope>
     </dependency>
+
+    <!-- Test dependencies -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.11.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.14.2</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>integration</id>
+      <properties>
+        <surefire.excludedGroups></surefire.excludedGroups>
+        <groups>integration</groups>
+      </properties>
+    </profile>
+  </profiles>
 
   <build>
     <plugins>
@@ -103,6 +129,20 @@
         <version>3.13.0</version>
         <configuration>
           <release>21</release>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <excludedGroups>${surefire.excludedGroups}</excludedGroups>
+          <!-- Forward env vars to forked test JVM -->
+          <environmentVariables>
+            <SERP_API_KEY>${env.SERP_API_KEY}</SERP_API_KEY>
+            <ANALYZER_API_URL>${env.ANALYZER_API_URL}</ANALYZER_API_URL>
+          </environmentVariables>
         </configuration>
       </plugin>
 

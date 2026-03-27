@@ -19,6 +19,7 @@ public class CompanyBenchmarkReport extends AbstractBaseDomainObject {
         CRAWL_COMPLETED,
         ANALYSIS_IN_PROGRESS,
         ANALYSIS_COMPLETED,
+        ENRICHMENT_IN_PROGRESS,
         BENCHMARK_REPORT_IN_PROGRESS,
         COMPLETED,
         FAILED
