@@ -193,6 +193,13 @@ variable "r2_secret_access_key" {
   sensitive   = true
 }
 
+variable "serp_api_key" {
+  description = "SerpAPI key for external enrichment (G2, reviews, company data). Set via TF_VAR_serp_api_key env var."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
 # S3
 # -----------------------------------------------------------------------------
