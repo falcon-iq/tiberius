@@ -19,12 +19,19 @@ class MultiCompanyPromptEvaluation(BaseModel):
     company_mentions: Dict[str, CompanyMention] = {}
     winner: str = ""  # company name, "tie", or "neither"
     analysis_notes: str = ""
+    factual_accuracy: float = 0.0  # 0.0 to 1.0
+    facts_confirmed: List[str] = []
+    facts_wrong: List[str] = []
+    facts_hallucinated: List[str] = []
+    knowledge_gaps: List[str] = []
 
 
 class MultiCompanyStats(BaseModel):
     company_name: str
     wins: int = 0
     avg_sentiment: float = 0.0
+    avg_factual_accuracy: float = 0.0
+    total_hallucinations: int = 0
     top_strengths: List[str] = []
     top_weaknesses: List[str] = []
 

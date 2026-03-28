@@ -7,6 +7,8 @@ from collections import Counter
 from falcon_iq_analyzer.llm.base import LLMClient
 from falcon_iq_analyzer.llm.multi_benchmark_prompts import (
     DEDUP_SECTION,
+    FACT_CHECK_SYSTEM,
+    FACT_CHECK_USER,
     MULTI_BENCHMARK_ANALYZE_SYSTEM,
     MULTI_BENCHMARK_ANALYZE_USER,
     MULTI_BENCHMARK_GENERATE_SYSTEM,
@@ -85,35 +87,106 @@ def _format_features_by_company(
 
 def _build_context_block_for_companies(
     results: list[AnalysisResult],
+    company_overviews: dict[str, CompanyOverview] | None = None,
 ) -> str:
-    """Format AnalysisResult data as text simulating user pasting from websites.
+    """Format company data as context for LLM prompts.
 
-    Includes up to 3 offerings per company, 5 features each, 200 char cap.
+    Includes website offerings + external enrichment data (G2, company facts,
+    review site ratings, verified claims) when available.
     """
     sections: list[str] = []
     for result in results:
         lines: list[str] = [f"--- {result.company_name} ---"]
+
+        # Website offerings
         for offering in result.top_offerings[:3]:
             desc = offering.description[:200]
             if len(offering.description) > 200:
                 desc += "..."
-            lines.append(f"Product: {offering.product_name}")
-            lines.append(f"Category: {offering.category}")
-            lines.append(f"Description: {desc}")
+            lines.append(f"[Website] Product: {offering.product_name}")
+            lines.append(f"  Category: {offering.category}")
+            lines.append(f"  Description: {desc}")
             if offering.key_features:
                 features = ", ".join(offering.key_features[:5])
-                lines.append(f"Features: {features}")
+                lines.append(f"  Features: {features}")
             if offering.target_audience:
-                lines.append(f"For: {offering.target_audience}")
+                lines.append(f"  For: {offering.target_audience}")
             lines.append("")
+
+        # Enrichment data (if available)
+        overview = (company_overviews or {}).get(result.company_name)
+        if overview and overview.enrichment:
+            enr = overview.enrichment
+            _append_enrichment_lines(lines, enr)
+
+        # Verified claims
+        if overview and overview.verified_claims:
+            verified = [c for c in overview.verified_claims if c.status == "verified"]
+            contradicted = [c for c in overview.verified_claims if c.status == "contradicted"]
+            if verified:
+                lines.append("Verified claims:")
+                for c in verified[:5]:
+                    lines.append(f"  ✓ {c.claim} [source: {c.external_source or 'external'}]")
+            if contradicted:
+                lines.append("Contradicted claims:")
+                for c in contradicted[:3]:
+                    lines.append(f"  ✗ {c.claim} — {c.evidence}")
+            lines.append("")
+
         sections.append("\n".join(lines))
     return "\n".join(sections)
+
+
+def _append_enrichment_lines(lines: list[str], enr) -> None:
+    """Append enrichment data lines with source tags."""
+    # G2 reviews
+    if enr.g2:
+        g2 = enr.g2
+        if g2.rating is not None:
+            lines.append(f"[G2] Rating: {g2.rating}/5 ({g2.review_count} reviews)")
+        if g2.pros_themes:
+            lines.append("[G2] What users like:")
+            for t in g2.pros_themes[:3]:
+                theme_text = t.theme[:150] + "..." if len(t.theme) > 150 else t.theme
+                lines.append(f"  + {theme_text}")
+        if g2.cons_themes:
+            lines.append("[G2] What users dislike:")
+            for t in g2.cons_themes[:3]:
+                theme_text = t.theme[:150] + "..." if len(t.theme) > 150 else t.theme
+                lines.append(f"  - {theme_text}")
+
+    # Company data (Knowledge Graph / Crunchbase)
+    if enr.crunchbase:
+        cb = enr.crunchbase
+        facts = []
+        if cb.founded:
+            facts.append(f"Founded: {cb.founded}")
+        if cb.hq:
+            facts.append(f"HQ: {cb.hq}")
+        if cb.employee_count:
+            facts.append(f"Employees: {cb.employee_count}")
+        if cb.total_funding:
+            facts.append(f"Funding/Valuation: {cb.total_funding}")
+        if facts:
+            lines.append(f"[Company Data] {' | '.join(facts)}")
+
+    # Review site ratings
+    if enr.review_sites:
+        ratings = []
+        for rs in enr.review_sites[:4]:
+            r = f"{rs.rating}/5" if rs.rating else "N/A"
+            ratings.append(f"{rs.site_name}: {r}")
+        if ratings:
+            lines.append(f"[Review Sites] {' | '.join(ratings)}")
+
+    lines.append("")
 
 
 def _resolve_context_placeholder(
     prompt_text: str,
     results_by_name: dict[str, AnalysisResult],
     all_results: list[AnalysisResult],
+    company_overviews: dict[str, CompanyOverview] | None = None,
 ) -> tuple[str, str]:
     """Replace [CONTEXT] or [CONTEXT:co1,co2] with actual data.
 
@@ -126,17 +199,17 @@ def _resolve_context_placeholder(
         subset = [results_by_name[n] for n in names if n in results_by_name]
         if not subset:
             subset = all_results
-        block = _build_context_block_for_companies(subset)
+        block = _build_context_block_for_companies(subset, company_overviews)
         resolved = prompt_text.replace(targeted.group(0), block)
         return resolved, block
 
     # Generic [CONTEXT] — use all companies
     if "[CONTEXT]" in prompt_text:
-        block = _build_context_block_for_companies(all_results)
+        block = _build_context_block_for_companies(all_results, company_overviews)
         return prompt_text.replace("[CONTEXT]", block), block
 
     # No placeholder — append full context
-    block = _build_context_block_for_companies(all_results)
+    block = _build_context_block_for_companies(all_results, company_overviews)
     resolved = f"{prompt_text}\n\nHere's what I found on their websites:\n{block}"
     return resolved, block
 
@@ -236,6 +309,7 @@ async def generate_multi_prompts(
     main_result: AnalysisResult,
     competitor_results: list[AnalysisResult],
     num_prompts: int = 100,
+    company_overviews: dict[str, CompanyOverview] | None = None,
 ) -> list[GeneratedPrompt]:
     """Generate realistic buyer prompts given a main company + N competitors.
 
@@ -302,7 +376,7 @@ async def generate_multi_prompts(
     for prompt in all_prompts:
         if prompt.prompt_type in _context_types:
             prompt.prompt_text, prompt.context_block = _resolve_context_placeholder(
-                prompt.prompt_text, results_by_name, all_results
+                prompt.prompt_text, results_by_name, all_results, company_overviews
             )
 
     logger.info(
@@ -322,8 +396,9 @@ async def evaluate_single_prompt_multi(
     llm: LLMClient,
     prompt: GeneratedPrompt,
     company_names: list[str],
+    company_overviews: dict[str, CompanyOverview] | None = None,
 ) -> MultiCompanyPromptEvaluation:
-    """Evaluate a single prompt: send to LLM, then analyze the response."""
+    """Evaluate a single prompt: send to LLM, analyze, then fact-check."""
     # Step 1: send prompt as a regular user query
     llm_response = await llm.complete(BENCHMARK_EVAL_SYSTEM, prompt.prompt_text)
 
@@ -354,6 +429,9 @@ async def evaluate_single_prompt_multi(
         if isinstance(mention_data, dict):
             company_mentions[name] = CompanyMention(**mention_data)
 
+    # Step 3: fact-check the LLM response against enrichment ground truth
+    fact_check = await _fact_check_response(llm, llm_response, company_overviews)
+
     return MultiCompanyPromptEvaluation(
         prompt_id=prompt.prompt_id,
         prompt_text=prompt.prompt_text,
@@ -363,7 +441,76 @@ async def evaluate_single_prompt_multi(
         company_mentions=company_mentions,
         winner=analysis.get("winner", "neither"),
         analysis_notes=analysis.get("analysis_notes", ""),
+        factual_accuracy=fact_check.get("factual_accuracy", 0.0),
+        facts_confirmed=fact_check.get("facts_confirmed", []),
+        facts_wrong=fact_check.get("facts_wrong", []),
+        facts_hallucinated=fact_check.get("facts_hallucinated", []),
+        knowledge_gaps=fact_check.get("knowledge_gaps", []),
     )
+
+
+async def _fact_check_response(
+    llm: LLMClient,
+    llm_response: str,
+    company_overviews: dict[str, CompanyOverview] | None,
+) -> dict:
+    """Fact-check an LLM response against enrichment ground truth."""
+    if not company_overviews:
+        return {}
+
+    ground_truth = _build_ground_truth(company_overviews)
+    if not ground_truth.strip():
+        return {}
+
+    try:
+        fact_check_user = FACT_CHECK_USER.format(
+            llm_response=llm_response,
+            ground_truth=ground_truth,
+        )
+        return await llm.complete_json(FACT_CHECK_SYSTEM, fact_check_user)
+    except Exception:
+        logger.warning("Fact-check failed — skipping", exc_info=True)
+        return {}
+
+
+def _build_ground_truth(company_overviews: dict[str, CompanyOverview]) -> str:
+    """Build a ground truth block from enrichment data for fact-checking."""
+    sections: list[str] = []
+    for name, overview in company_overviews.items():
+        lines: list[str] = [f"--- {name} ---"]
+        enr = overview.enrichment
+        if not enr:
+            continue
+
+        if enr.g2 and enr.g2.rating is not None:
+            lines.append(f"G2 rating: {enr.g2.rating}/5 ({enr.g2.review_count} reviews)")
+        if enr.crunchbase:
+            cb = enr.crunchbase
+            if cb.founded:
+                lines.append(f"Founded: {cb.founded}")
+            if cb.hq:
+                lines.append(f"HQ: {cb.hq}")
+            if cb.employee_count:
+                lines.append(f"Employees: {cb.employee_count}")
+            if cb.total_funding:
+                lines.append(f"Funding/Valuation: {cb.total_funding}")
+        for rs in (enr.review_sites or [])[:3]:
+            if rs.rating:
+                lines.append(f"{rs.site_name} rating: {rs.rating}")
+        for fact in (enr.external_facts or [])[:5]:
+            lines.append(f"{fact.fact}")
+
+        # Verified claims from website
+        for claim in overview.verified_claims:
+            if claim.status == "verified":
+                lines.append(f"Verified: {claim.claim}")
+            elif claim.status == "contradicted":
+                lines.append(f"Contradicted: {claim.claim} — {claim.evidence}")
+
+        if len(lines) > 1:
+            sections.append("\n".join(lines))
+
+    return "\n\n".join(sections)
 
 
 # ── Summarization ────────────────────────────────────────────────────────
@@ -432,16 +579,27 @@ async def summarize_multi_evaluations(
 
     llm_stats = {s["company_name"]: s for s in data.get("company_stats", []) if isinstance(s, dict)}
 
+    # Fact-check accuracy per company (average across all evaluations)
+    accuracy_accum: list[float] = []
+    hallucination_total = 0
+    for e in evaluations:
+        if e.factual_accuracy > 0:
+            accuracy_accum.append(e.factual_accuracy)
+        hallucination_total += len(e.facts_hallucinated)
+
     company_stats: list[MultiCompanyStats] = []
     for name in company_names:
         sentiments = sentiment_accum.get(name, [])
         avg_sent = round(sum(sentiments) / len(sentiments), 2) if sentiments else 0.0
+        avg_accuracy = round(sum(accuracy_accum) / len(accuracy_accum), 2) if accuracy_accum else 0.0
         llm_s = llm_stats.get(name, {})
         company_stats.append(
             MultiCompanyStats(
                 company_name=name,
                 wins=win_counts.get(name, 0),
                 avg_sentiment=avg_sent,
+                avg_factual_accuracy=avg_accuracy,
+                total_hallucinations=hallucination_total,
                 top_strengths=llm_s.get("top_strengths", []),
                 top_weaknesses=llm_s.get("top_weaknesses", []),
             )
@@ -650,6 +808,22 @@ def generate_multi_benchmark_report(
                 lines.append(f"- {insight}")
             lines.append("")
 
+    # External validation summary
+    _append_enrichment_report_section(lines, result, all_companies)
+
+    # Fact-check summary
+    scored = [e for e in result.evaluations if e.factual_accuracy > 0]
+    if scored:
+        avg_acc = sum(e.factual_accuracy for e in scored) / len(scored)
+        total_hall = sum(len(e.facts_hallucinated) for e in result.evaluations)
+        lines.append("## Fact-Check Scorecard")
+        lines.append("")
+        lines.append(f"- **Average factual accuracy:** {avg_acc:.0%}")
+        lines.append(f"- **Total hallucinations detected:** {total_hall}")
+        lines.append(f"- **Facts confirmed:** {sum(len(e.facts_confirmed) for e in result.evaluations)}")
+        lines.append(f"- **Knowledge gaps:** {sum(len(e.knowledge_gaps) for e in result.evaluations)}")
+        lines.append("")
+
     # Detailed per-prompt evaluations
     lines.append("## Detailed Evaluations")
     lines.append("")
@@ -683,3 +857,71 @@ def generate_multi_benchmark_report(
         lines.append("")
 
     return "\n".join(lines)
+
+
+def _append_enrichment_report_section(
+    lines: list[str],
+    result: MultiCompanyBenchmarkResult,
+    all_companies: list[str],
+) -> None:
+    """Append external validation section to the markdown report."""
+    has_enrichment = any(
+        result.company_overviews.get(name) and result.company_overviews[name].enrichment for name in all_companies
+    )
+    if not has_enrichment:
+        return
+
+    lines.append("## External Validation")
+    lines.append("")
+
+    # Ratings table
+    header = "| Source |"
+    sep = "|--------|"
+    for name in all_companies:
+        header += f" {name} |"
+        sep += "------|"
+    lines.append(header)
+    lines.append(sep)
+
+    for source_name in ["G2", "Capterra", "TrustRadius", "Trustpilot", "GetApp"]:
+        row = f"| {source_name} |"
+        has_data = False
+        for name in all_companies:
+            ov = result.company_overviews.get(name)
+            enr = ov.enrichment if ov else None
+            val = "—"
+            if enr:
+                if source_name == "G2" and enr.g2 and enr.g2.rating is not None:
+                    val = f"{enr.g2.rating}/5 ({enr.g2.review_count})"
+                    has_data = True
+                else:
+                    for rs in enr.review_sites:
+                        if rs.site_name.lower() == source_name.lower() and rs.rating is not None:
+                            val = f"{rs.rating} ({rs.review_count})"
+                            has_data = True
+                            break
+            row += f" {val} |"
+        if has_data:
+            lines.append(row)
+
+    lines.append("")
+
+    # Company facts
+    for name in all_companies:
+        ov = result.company_overviews.get(name)
+        enr = ov.enrichment if ov else None
+        if not enr or not enr.crunchbase:
+            continue
+        cb = enr.crunchbase
+        facts = []
+        if cb.founded:
+            facts.append(f"Founded: {cb.founded}")
+        if cb.hq:
+            facts.append(f"HQ: {cb.hq}")
+        if cb.employee_count:
+            facts.append(f"Employees: {cb.employee_count}")
+        if cb.total_funding:
+            facts.append(f"Funding: {cb.total_funding}")
+        if facts:
+            lines.append(f"**{name}:** {' | '.join(facts)}")
+    lines.append("")

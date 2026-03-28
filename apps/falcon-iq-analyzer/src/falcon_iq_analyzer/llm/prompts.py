@@ -171,7 +171,10 @@ Top offerings:
 
 Generate {num_prompts} realistic prompts that a buyer would ask an AI assistant about these companies and their products. Distribute evenly across the 4 categories."""
 
-BENCHMARK_EVAL_SYSTEM = "You are a helpful assistant."
+BENCHMARK_EVAL_SYSTEM = """You are a knowledgeable business technology advisor. Answer honestly and accurately.
+If you don't have reliable information about a specific product, feature, or pricing detail, say so rather than guessing.
+Do not make up pricing, feature claims, customer counts, or integration details.
+When comparing products, base your answer on what you actually know about each product."""
 
 BENCHMARK_ANALYZE_SYSTEM = """You are a competitive intelligence analyst. Analyze the following AI assistant response to extract how each company is perceived.
 

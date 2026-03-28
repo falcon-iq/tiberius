@@ -54,6 +54,216 @@ def _stat_for(stats: list[MultiCompanyStats], name: str) -> MultiCompanyStats | 
     return next((s for s in stats if s.company_name == name), None)
 
 
+# ── External Validation renderer ──────────────────────────────────────────────
+
+
+def _render_external_validation(result, all_companies: list[str]) -> str:
+    """Render the External Validation section with ratings, company facts, and G2 highlights."""
+    has_enrichment = any(
+        (result.company_overviews.get(name) and result.company_overviews[name].enrichment) for name in all_companies
+    )
+    if not has_enrichment:
+        return ""
+
+    # Ratings comparison table
+    rating_rows = ""
+    sources = ["G2", "Capterra", "TrustRadius", "Trustpilot", "GetApp"]
+    for source in sources:
+        cells = ""
+        has_any = False
+        for name in all_companies:
+            ov = result.company_overviews.get(name)
+            enr = ov.enrichment if ov else None
+            val = ""
+            if enr:
+                if source == "G2" and enr.g2 and enr.g2.rating is not None:
+                    val = f"{enr.g2.rating}/5 <span class='badge badge-neutral'>({enr.g2.review_count})</span>"
+                    has_any = True
+                else:
+                    for rs in enr.review_sites:
+                        if rs.site_name.lower() == source.lower() and rs.rating is not None:
+                            r_display = f"{rs.rating}/5" if rs.rating <= 5 else f"{rs.rating}/10"
+                            val = f"{r_display} <span class='badge badge-neutral'>({rs.review_count})</span>"
+                            has_any = True
+                            break
+            empty = '<span style="color:var(--text-muted)">—</span>'
+            cells += f"<td>{val or empty}</td>"
+        if has_any:
+            rating_rows += f"<tr><td style='font-weight:600;'>{source}</td>{cells}</tr>"
+
+    ratings_html = ""
+    if rating_rows:
+        header = "".join(f"<th>{_esc(n)}</th>" for n in all_companies)
+        ratings_html = f"""
+        <table class="cat-table">
+            <thead><tr><th style="text-align:left;">Source</th>{header}</tr></thead>
+            <tbody>{rating_rows}</tbody>
+        </table>"""
+
+    # Company facts
+    facts_cards = ""
+    for i, name in enumerate(all_companies):
+        ov = result.company_overviews.get(name)
+        enr = ov.enrichment if ov else None
+        if not enr or not enr.crunchbase:
+            continue
+        cb = enr.crunchbase
+        primary, _, bg = _color(i)
+        items = ""
+        if cb.founded:
+            items += f"<div class='fact-item'><span class='fact-label'>Founded</span> {_esc(cb.founded)}</div>"
+        if cb.hq:
+            items += f"<div class='fact-item'><span class='fact-label'>HQ</span> {_esc(cb.hq)}</div>"
+        if cb.employee_count:
+            items += f"<div class='fact-item'><span class='fact-label'>Employees</span> {_esc(cb.employee_count)}</div>"
+        if cb.total_funding:
+            funding_esc = _esc(cb.total_funding)
+            items += f"<div class='fact-item'><span class='fact-label'>Valuation/Funding</span> {funding_esc}</div>"
+        if items:
+            facts_cards += f"""
+            <div class="score-card" style="border-top:3px solid {primary};text-align:left;">
+                <div class="score-company" style="margin-bottom:0.5rem;">{_esc(name)}</div>
+                {items}
+            </div>"""
+
+    # G2 review highlights
+    g2_highlights = ""
+    for i, name in enumerate(all_companies):
+        ov = result.company_overviews.get(name)
+        enr = ov.enrichment if ov else None
+        if not enr or not enr.g2:
+            continue
+        g2 = enr.g2
+        if not g2.pros_themes and not g2.cons_themes:
+            continue
+        primary, _, _ = _color(i)
+        pros = "".join(f"<li style='color:var(--positive);'>{_esc(t.theme[:120])}</li>" for t in g2.pros_themes[:3])
+        cons = "".join(f"<li style='color:var(--negative);'>{_esc(t.theme[:120])}</li>" for t in g2.cons_themes[:3])
+        pros_section = (
+            (
+                f'<div style="margin-bottom:0.5rem;"><strong>Pros:</strong>'
+                f'<ul style="margin:0.25rem 0 0 1rem;">{pros}</ul></div>'
+            )
+            if pros
+            else ""
+        )
+        cons_section = (
+            (f'<div><strong>Cons:</strong><ul style="margin:0.25rem 0 0 1rem;">{cons}</ul></div>') if cons else ""
+        )
+        g2_highlights += f"""
+        <div class="score-card" style="border-top:3px solid {primary};text-align:left;">
+            <div class="score-company" style="margin-bottom:0.5rem;">{_esc(name)} — G2 Reviews</div>
+            {pros_section}
+            {cons_section}
+        </div>"""
+
+    # Verified claims summary
+    claims_html = ""
+    for i, name in enumerate(all_companies):
+        ov = result.company_overviews.get(name)
+        if not ov or not ov.verified_claims:
+            continue
+        verified = sum(1 for c in ov.verified_claims if c.status == "verified")
+        contradicted = sum(1 for c in ov.verified_claims if c.status == "contradicted")
+        unverified = sum(1 for c in ov.verified_claims if c.status == "unverified")
+        primary, _, _ = _color(i)
+        claims_html += f"""
+        <div style="display:inline-flex;gap:0.5rem;align-items:center;margin-right:1.5rem;">
+            <span style="font-weight:600;color:{primary};">{_esc(name)}</span>
+            <span class="badge badge-positive">{verified} verified</span>
+            <span class="badge badge-negative">{contradicted} contradicted</span>
+            <span class="badge badge-neutral">{unverified} unverified</span>
+        </div>"""
+
+    if not ratings_html and not facts_cards and not g2_highlights:
+        return ""
+
+    return f"""
+    <div class="section">
+        <div class="section-title"><span class="section-icon">&#9989;</span> External Validation</div>
+        {ratings_html}
+        {f'<div class="scorecard-grid" style="margin-top:1rem;">{facts_cards}</div>' if facts_cards else ""}
+        {f'<div class="scorecard-grid" style="margin-top:1rem;">{g2_highlights}</div>' if g2_highlights else ""}
+        {f'<div style="margin-top:1rem;">{claims_html}</div>' if claims_html else ""}
+    </div>"""
+
+
+def _render_fact_check_section(result, all_companies: list[str]) -> str:
+    """Render the Fact-Check Scorecard showing LLM accuracy per evaluation."""
+    if not result.evaluations:
+        return ""
+
+    # Check if any evaluation has fact-check data
+    has_fact_checks = any(e.factual_accuracy > 0 for e in result.evaluations)
+    if not has_fact_checks:
+        return ""
+
+    # Aggregate stats
+    scored_evals = [e for e in result.evaluations if e.factual_accuracy > 0]
+    avg_accuracy = sum(e.factual_accuracy for e in scored_evals) / len(scored_evals) if scored_evals else 0.0
+    total_confirmed = sum(len(e.facts_confirmed) for e in result.evaluations)
+    total_hallucinated = sum(len(e.facts_hallucinated) for e in result.evaluations)
+    total_gaps = sum(len(e.knowledge_gaps) for e in result.evaluations)
+
+    # Accuracy color
+    if avg_accuracy >= 0.7:
+        acc_color = "var(--positive)"
+    elif avg_accuracy >= 0.4:
+        acc_color = "var(--neutral)"
+    else:
+        acc_color = "var(--negative)"
+
+    # Top hallucinations (deduplicated, most common)
+    all_hallucinations: list[str] = []
+    for e in result.evaluations:
+        all_hallucinations.extend(e.facts_hallucinated)
+    top_hallucinations = ""
+    if all_hallucinations:
+        # Deduplicate and take top 5
+        seen: set[str] = set()
+        unique: list[str] = []
+        for h in all_hallucinations:
+            if h not in seen:
+                seen.add(h)
+                unique.append(h)
+        top_hallucinations = "".join(
+            f"<li style='color:var(--negative);font-size:0.85rem;'>{_esc(h[:150])}</li>" for h in unique[:5]
+        )
+
+    return f"""
+    <div class="section">
+        <div class="section-title"><span class="section-icon">&#128269;</span> Fact-Check Scorecard</div>
+        <div class="scorecard-grid">
+            <div class="score-card" style="border-top:4px solid {acc_color};">
+                <div class="score-company">Avg Factual Accuracy</div>
+                <div class="score-wins" style="color:{acc_color};">{avg_accuracy:.0%}</div>
+                <div class="score-label">across {len(scored_evals)} evaluated prompts</div>
+            </div>
+            <div class="score-card" style="border-top:4px solid var(--positive);">
+                <div class="score-company">Facts Confirmed</div>
+                <div class="score-wins" style="color:var(--positive);">{total_confirmed}</div>
+                <div class="score-label">claims matched external data</div>
+            </div>
+            <div class="score-card" style="border-top:4px solid var(--negative);">
+                <div class="score-company">Hallucinations</div>
+                <div class="score-wins" style="color:var(--negative);">{total_hallucinated}</div>
+                <div class="score-label">fabricated claims detected</div>
+            </div>
+            <div class="score-card" style="border-top:4px solid var(--neutral);">
+                <div class="score-company">Knowledge Gaps</div>
+                <div class="score-wins" style="color:var(--neutral);">{total_gaps}</div>
+                <div class="score-label">known facts LLM missed</div>
+            </div>
+        </div>
+        {
+        f'<div style="margin-top:1rem;"><strong>Top hallucinated claims:</strong>'
+        f'<ul style="margin:0.5rem 0 0 1rem;">{top_hallucinations}</ul></div>'
+        if top_hallucinations
+        else ""
+    }
+    </div>"""
+
+
 # ── Main generator ────────────────────────────────────────────────────────────
 
 
@@ -118,6 +328,9 @@ def generate_html_report(result: MultiCompanyBenchmarkResult) -> str:
             {tagline_html}
             {f'<div class="co-categories">{cat_badges}</div>' if cat_badges else ""}
         </div>"""
+
+    # ── External Validation section ──────────────────────────────────────
+    external_validation_html = _render_external_validation(result, all_companies)
 
     # ── Scorecard cards ───────────────────────────────────────────────────
     scorecard_cards = ""
@@ -757,6 +970,9 @@ body {{
         <div class="co-grid">{company_cards_html}</div>
     </div>
 
+    <!-- External Validation -->
+    {external_validation_html}
+
     <!-- Scorecard -->
     <div class="section">
         <div class="section-title"><span class="section-icon">&#127942;</span> Scorecard</div>
@@ -793,6 +1009,9 @@ body {{
         <div class="section-title"><span class="section-icon">&#128161;</span> Key Insights</div>
         {insights_html if insights_html else '<div class="insight-item">No insights generated.</div>'}
     </div>
+
+    <!-- Fact-Check Scorecard -->
+    {_render_fact_check_section(result, all_companies)}
 
     <!-- Product Comparison -->
     {

@@ -254,7 +254,9 @@ async def run_company_benchmark(
                 enrichment_summary["error"] = str(exc)
 
             _update_benchmark_status(
-                report_col, company_benchmark_report_id, "BENCHMARK_REPORT_IN_PROGRESS",
+                report_col,
+                company_benchmark_report_id,
+                "BENCHMARK_REPORT_IN_PROGRESS",
                 extra={"enrichment": enrichment_summary},
             )
 
@@ -264,14 +266,14 @@ async def run_company_benchmark(
             [r.company_name for r in competitor_results],
         )
 
-        # 6. Generate prompts
-        prompts = await generate_multi_prompts(llm, main_result, competitor_results, num_prompts)
+        # 6. Generate prompts (with enrichment context when available)
+        prompts = await generate_multi_prompts(llm, main_result, competitor_results, num_prompts, company_overviews)
         logger.info("Company benchmark: generated %d prompts", len(prompts))
 
         # 7. Evaluate each prompt sequentially (with real company data as context)
         evaluations = []
         for i, prompt in enumerate(prompts):
-            evaluation = await evaluate_single_prompt_multi(llm, prompt, all_company_names)
+            evaluation = await evaluate_single_prompt_multi(llm, prompt, all_company_names, company_overviews)
             evaluations.append(evaluation)
             logger.info(
                 "Company benchmark: evaluated prompt %d/%d — winner: %s",
