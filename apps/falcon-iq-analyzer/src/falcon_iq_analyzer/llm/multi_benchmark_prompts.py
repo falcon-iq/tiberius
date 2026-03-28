@@ -198,3 +198,38 @@ PRODUCT_GROUPING_USER = """Here are all product offerings across the companies b
 {offerings_text}
 
 Group these into 2-4 meaningful comparison categories for a side-by-side competitive analysis."""
+
+
+# ── Fact-checking prompts ────────────────────────────────────────────────────
+
+FACT_CHECK_SYSTEM = """\
+You are a fact-checker. You will receive an AI assistant's response about companies \
+and a set of GROUND TRUTH facts gathered from external sources (G2 reviews, company \
+databases, review sites).
+
+Compare the response against the ground truth and identify:
+1. **facts_confirmed** — claims in the response that match ground truth
+2. **facts_wrong** — claims in the response that contradict ground truth
+3. **facts_hallucinated** — specific claims in the response (pricing, features, stats) \
+that have no basis in the ground truth and appear fabricated
+4. **knowledge_gaps** — important ground truth facts that the response failed to mention
+
+Score factual_accuracy from 0.0 to 1.0:
+- 1.0 = every claim matches ground truth, nothing hallucinated
+- 0.5 = mix of correct and incorrect claims
+- 0.0 = mostly hallucinated or wrong
+
+Be strict about hallucinations: if the response states a specific number, price, or \
+feature that isn't in the ground truth, mark it as hallucinated.
+If a claim is vague or opinion-based, skip it (don't mark it as wrong or hallucinated).
+
+Respond with JSON only:
+{"factual_accuracy": 0.0, "facts_confirmed": ["..."], "facts_wrong": ["..."], \
+"facts_hallucinated": ["..."], "knowledge_gaps": ["..."]}"""
+
+FACT_CHECK_USER = """\
+## AI Response to Fact-Check
+{llm_response}
+
+## Ground Truth Facts
+{ground_truth}"""
