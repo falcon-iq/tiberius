@@ -65,3 +65,21 @@ resource "aws_secretsmanager_secret_version" "r2_secret_access_key" {
   secret_id     = aws_secretsmanager_secret.r2_secret_access_key.id
   secret_string = var.r2_secret_access_key
 }
+
+# -----------------------------------------------------------------------------
+# Secrets Manager - SerpAPI Key (external enrichment)
+# -----------------------------------------------------------------------------
+
+resource "aws_secretsmanager_secret" "serp_api_key" {
+  name        = "${local.name_prefix}/serp-api-key"
+  description = "SerpAPI key for external enrichment (G2, reviews, company data)"
+
+  tags = {
+    Name = "${local.name_prefix}-serp-api-key"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "serp_api_key" {
+  secret_id     = aws_secretsmanager_secret.serp_api_key.id
+  secret_string = var.serp_api_key
+}

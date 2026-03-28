@@ -205,29 +205,58 @@ async def run_company_benchmark(
         # 5c. External enrichment (G2, Crunchbase, Google Search via crawler)
         enriched_profiles: dict[str, EnrichedCompanyProfile] = {}
         if settings.enrichment_enabled:
-            _update_benchmark_status(report_col, company_benchmark_report_id, "ENRICHMENT_IN_PROGRESS")
-            logger.info("Company benchmark: starting external enrichment for %d companies", len(company_overviews))
+            enrichment_summary: dict = {"status": "FAILED", "companiesAttempted": len(company_overviews)}
+            try:
+                _update_benchmark_status(report_col, company_benchmark_report_id, "ENRICHMENT_IN_PROGRESS")
+                logger.info("Company benchmark: starting external enrichment for %d companies", len(company_overviews))
 
-            enrichment_results = await fetch_all_enrichments(company_overviews, settings.crawler_api_url)
+                enrichment_results = await fetch_all_enrichments(company_overviews, settings.crawler_api_url)
 
-            for name, enrichment in enrichment_results.items():
-                company_overviews[name].enrichment = enrichment
-                # Extract claims from top offerings for LLM verification
-                claims = [o.description for o in company_overviews[name].top_offerings if o.description]
-                verified = await verify_claims(llm, name, claims, enrichment)
-                company_overviews[name].verified_claims = verified
-                enriched_profiles[name] = EnrichedCompanyProfile(
-                    company_name=name,
-                    enrichment=enrichment,
-                    verified_claims=verified,
+                per_company: dict = {}
+                for name, enrichment in enrichment_results.items():
+                    company_overviews[name].enrichment = enrichment
+                    claims = [o.description for o in company_overviews[name].top_offerings if o.description]
+                    try:
+                        verified = await verify_claims(llm, name, claims, enrichment)
+                    except Exception:
+                        logger.warning("Claim verification failed for %s — skipping", name, exc_info=True)
+                        verified = []
+                    company_overviews[name].verified_claims = verified
+                    enriched_profiles[name] = EnrichedCompanyProfile(
+                        company_name=name,
+                        enrichment=enrichment,
+                        verified_claims=verified,
+                    )
+                    per_company[name] = {
+                        "g2": enrichment.g2 is not None,
+                        "g2Rating": enrichment.g2.rating if enrichment.g2 else None,
+                        "companyData": enrichment.crunchbase is not None,
+                        "reviewSites": len(enrichment.review_sites),
+                        "googleInsights": len(enrichment.google_insights),
+                        "verifiedClaims": len(verified),
+                    }
+
+                enrichment_summary = {
+                    "status": "COMPLETED",
+                    "companiesAttempted": len(company_overviews),
+                    "companiesEnriched": len(enriched_profiles),
+                    "totalVerifiedClaims": sum(len(p.verified_claims) for p in enriched_profiles.values()),
+                    "perCompany": per_company,
+                }
+                logger.info(
+                    "Company benchmark: enrichment complete — %d/%d companies enriched, %d total verified claims",
+                    len(enriched_profiles),
+                    len(company_overviews),
+                    enrichment_summary["totalVerifiedClaims"],
                 )
+            except Exception as exc:
+                logger.exception("Company benchmark: enrichment failed — continuing without enrichment data")
+                enrichment_summary["error"] = str(exc)
 
-            logger.info(
-                "Company benchmark: enrichment complete — %d companies enriched, %d total verified claims",
-                len(enriched_profiles),
-                sum(len(p.verified_claims) for p in enriched_profiles.values()),
+            _update_benchmark_status(
+                report_col, company_benchmark_report_id, "BENCHMARK_REPORT_IN_PROGRESS",
+                extra={"enrichment": enrichment_summary},
             )
-            _update_benchmark_status(report_col, company_benchmark_report_id, "BENCHMARK_REPORT_IN_PROGRESS")
 
         logger.info(
             "Company benchmark: main=%s, competitors=%s",

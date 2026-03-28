@@ -38,6 +38,7 @@ data "aws_iam_policy_document" "execution_secrets" {
       aws_secretsmanager_secret.mongo_uri.arn,
       aws_secretsmanager_secret.r2_access_key_id.arn,
       aws_secretsmanager_secret.r2_secret_access_key.arn,
+      aws_secretsmanager_secret.serp_api_key.arn,
     ]
   }
 }

@@ -37,6 +37,10 @@ resource "aws_ecs_task_definition" "crawler" {
         {
           name      = "MONGO_URI"
           valueFrom = aws_secretsmanager_secret.mongo_uri.arn
+        },
+        {
+          name      = "SERP_API_KEY"
+          valueFrom = aws_secretsmanager_secret.serp_api_key.arn
         }
       ]
 
