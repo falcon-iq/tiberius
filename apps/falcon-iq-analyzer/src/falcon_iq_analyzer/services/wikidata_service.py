@@ -202,6 +202,30 @@ async def fetch_company_tagline(company_name: str) -> str:
 
             title = results[0]["title"]
 
+            # Validate: the Wikipedia title should be related to the company name
+            # Strip common suffixes like ".com", "Inc", "Ltd" for comparison
+            clean_name = (
+                company_name.lower()
+                .replace(".com", "")
+                .replace(".io", "")
+                .replace(" inc", "")
+                .replace(" ltd", "")
+                .replace(" corp", "")
+                .strip()
+            )
+            clean_title = title.lower().replace(" (company)", "").replace(" (software)", "").strip()
+
+            # Check if there's meaningful overlap between company name and article title
+            name_words = set(clean_name.split())
+            title_words = set(clean_title.split())
+            if not name_words & title_words and clean_name not in clean_title and clean_title not in clean_name:
+                logger.debug(
+                    "Wikipedia result '%s' doesn't match company '%s' — skipping",
+                    title,
+                    company_name,
+                )
+                return ""
+
             # Fetch the summary extract
             summary_resp = await client.get(f"{WIKIPEDIA_API}/{title}")
             summary_resp.raise_for_status()
