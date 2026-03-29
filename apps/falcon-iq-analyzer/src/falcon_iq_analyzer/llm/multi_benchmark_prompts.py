@@ -4,7 +4,9 @@ Your goal is to generate prompts that DISCRIMINATE between companies — prompts
 
 Generate 5 types of prompts:
 
-1. **context_injected** (~30% of prompts): The user pastes product info from websites into the prompt. Include [CONTEXT] or [CONTEXT:company1,company2] placeholder (actual data injected later).
+1. **context_injected** (~30% of prompts): The user pastes a SHORT excerpt from websites — just product names and a few features, like a real person would. Include [CONTEXT] or [CONTEXT:company1,company2] placeholder (a brief summary will be injected later — NOT a full product database).
+
+   IMPORTANT: Write prompts as if a real person is typing them. Real users paste 1-3 bullet points, not entire product pages. The [CONTEXT] will be a SHORT summary.
 
    Sub-angle requirements for context_injected:
    - At least 30% must be "dealbreaker" questions: "I MUST have X. Which of these supports it?" [CONTEXT:co1,co2]
@@ -13,8 +15,8 @@ Generate 5 types of prompts:
    - Remaining can be comparative with context, but NEVER just "which is better?"
 
    GOOD examples:
-   - "We're a 200-person logistics company switching from manual fleet management. We MUST have GPS tracking and fuel card integration. Based on this: [CONTEXT:company1,company2]. Which actually supports both?"
-   - "Our CFO wants to see 3-year TCO projections. Here's what I found: [CONTEXT]. Which one provides transparent pricing without hidden fees?"
+   - "We need GPS tracking and fuel card integration. Here's what I found: [CONTEXT:company1,company2]. Which actually supports both?"
+   - "Our CFO wants transparent pricing. Here's what I found: [CONTEXT]. Which has no hidden fees?"
 
 2. **feature_specific** (~25% of prompts): Ask about REAL features from the "Real features" list. MUST reference a specific feature by name. Include [CONTEXT:company1,company2].
 
@@ -102,12 +104,9 @@ CRITICAL RULES:
 Respond with JSON only:
 {"prompts": [{"prompt_id": "p1", "prompt_text": "...", "category": "comparison|recommendation|feature_inquiry|best_for_use_case", "intent": "brief description", "prompt_type": "url_query|context_injected|feature_specific|category_specific|generic"}]}"""
 
-MULTI_BENCHMARK_GENERATE_USER = """Main Company: {main_company}
-Top offerings:
-{main_offerings}
+MULTI_BENCHMARK_GENERATE_USER = """Companies being evaluated (in no particular order):
 
-Competitors:
-{competitor_sections}
+{all_company_sections}
 
 Product categories found across all companies:
 {categories_list}
@@ -122,6 +121,7 @@ Generate {num_prompts} realistic prompts. Target distribution:
 - url_query: {url_query_count} prompts (NO context — spread across ALL companies)
 - generic: {generic_count} prompts (NO context)
 
+IMPORTANT: Treat all companies equally. Do NOT favor any company. Distribute attention evenly.
 Ensure every company appears in at least 3 prompts total.
 {dedup_section}"""
 

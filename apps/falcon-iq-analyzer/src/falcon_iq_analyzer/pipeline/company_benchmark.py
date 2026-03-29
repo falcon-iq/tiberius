@@ -243,6 +243,11 @@ async def run_company_benchmark(
                     "totalVerifiedClaims": sum(len(p.verified_claims) for p in enriched_profiles.values()),
                     "perCompany": per_company,
                 }
+                # Override Wikidata tagline with G2 description if available (more accurate)
+                for name, enrichment in enrichment_results.items():
+                    if enrichment.g2 and enrichment.g2.description:
+                        company_overviews[name].tagline = enrichment.g2.description
+
                 logger.info(
                     "Company benchmark: enrichment complete — %d/%d companies enriched, %d total verified claims",
                     len(enriched_profiles),

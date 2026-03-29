@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 import re
 from collections import Counter
 
@@ -85,48 +86,70 @@ def _format_features_by_company(
 # ── Context block builders ───────────────────────────────────────────────
 
 
-def _build_context_block_for_companies(
+def _build_slim_context(
     results: list[AnalysisResult],
     company_overviews: dict[str, CompanyOverview] | None = None,
 ) -> str:
-    """Format company data as context for LLM prompts.
+    """Build a realistic, short context block — what a real user would paste.
 
-    Includes website offerings + external enrichment data (G2, company facts,
-    review site ratings, verified claims) when available.
+    ~200-300 chars per company: product name, one-line description, top features.
+    No enrichment data (that's for fact-checking only, not fake user prompts).
+    Company order is randomized to avoid position bias.
     """
+    shuffled = list(results)
+    random.shuffle(shuffled)
     sections: list[str] = []
-    for result in results:
+    for result in shuffled:
+        overview = (company_overviews or {}).get(result.company_name)
+        url = overview.url if overview else ""
+
+        lines: list[str] = [f"--- {result.company_name} ({url}) ---" if url else f"--- {result.company_name} ---"]
+        for offering in result.top_offerings[:2]:
+            desc = offering.description[:120]
+            if len(offering.description) > 120:
+                desc += "..."
+            lines.append(f"{offering.product_name}: {desc}")
+            if offering.key_features:
+                lines.append(f"  Key features: {', '.join(offering.key_features[:3])}")
+        sections.append("\n".join(lines))
+    return "\n\n".join(sections)
+
+
+def _build_full_context(
+    results: list[AnalysisResult],
+    company_overviews: dict[str, CompanyOverview] | None = None,
+) -> str:
+    """Build full context with enrichment data — used for fact-checking ground truth.
+
+    NOT injected into user prompts. Used internally by the fact-checker.
+    """
+    shuffled = list(results)
+    random.shuffle(shuffled)
+    sections: list[str] = []
+    for result in shuffled:
         lines: list[str] = [f"--- {result.company_name} ---"]
 
-        # Website offerings
         for offering in result.top_offerings[:3]:
             desc = offering.description[:200]
             if len(offering.description) > 200:
                 desc += "..."
-            lines.append(f"[Website] Product: {offering.product_name}")
-            lines.append(f"  Category: {offering.category}")
-            lines.append(f"  Description: {desc}")
+            lines.append(f"Product: {offering.product_name} ({offering.category})")
+            lines.append(f"  {desc}")
             if offering.key_features:
-                features = ", ".join(offering.key_features[:5])
-                lines.append(f"  Features: {features}")
-            if offering.target_audience:
-                lines.append(f"  For: {offering.target_audience}")
+                lines.append(f"  Features: {', '.join(offering.key_features[:5])}")
             lines.append("")
 
-        # Enrichment data (if available)
         overview = (company_overviews or {}).get(result.company_name)
         if overview and overview.enrichment:
-            enr = overview.enrichment
-            _append_enrichment_lines(lines, enr)
+            _append_enrichment_lines(lines, overview.enrichment)
 
-        # Verified claims
         if overview and overview.verified_claims:
             verified = [c for c in overview.verified_claims if c.status == "verified"]
             contradicted = [c for c in overview.verified_claims if c.status == "contradicted"]
             if verified:
                 lines.append("Verified claims:")
                 for c in verified[:5]:
-                    lines.append(f"  ✓ {c.claim} [source: {c.external_source or 'external'}]")
+                    lines.append(f"  ✓ {c.claim}")
             if contradicted:
                 lines.append("Contradicted claims:")
                 for c in contradicted[:3]:
@@ -139,23 +162,15 @@ def _build_context_block_for_companies(
 
 def _append_enrichment_lines(lines: list[str], enr) -> None:
     """Append enrichment data lines with source tags."""
-    # G2 reviews
     if enr.g2:
         g2 = enr.g2
         if g2.rating is not None:
             lines.append(f"[G2] Rating: {g2.rating}/5 ({g2.review_count} reviews)")
         if g2.pros_themes:
-            lines.append("[G2] What users like:")
-            for t in g2.pros_themes[:3]:
-                theme_text = t.theme[:150] + "..." if len(t.theme) > 150 else t.theme
-                lines.append(f"  + {theme_text}")
+            lines.append("[G2] Pros: " + "; ".join(t.theme[:80] for t in g2.pros_themes[:3]))
         if g2.cons_themes:
-            lines.append("[G2] What users dislike:")
-            for t in g2.cons_themes[:3]:
-                theme_text = t.theme[:150] + "..." if len(t.theme) > 150 else t.theme
-                lines.append(f"  - {theme_text}")
+            lines.append("[G2] Cons: " + "; ".join(t.theme[:80] for t in g2.cons_themes[:3]))
 
-    # Company data (Knowledge Graph / Crunchbase)
     if enr.crunchbase:
         cb = enr.crunchbase
         facts = []
@@ -166,20 +181,20 @@ def _append_enrichment_lines(lines: list[str], enr) -> None:
         if cb.employee_count:
             facts.append(f"Employees: {cb.employee_count}")
         if cb.total_funding:
-            facts.append(f"Funding/Valuation: {cb.total_funding}")
+            facts.append(f"Funding: {cb.total_funding}")
         if facts:
-            lines.append(f"[Company Data] {' | '.join(facts)}")
+            lines.append(" | ".join(facts))
 
-    # Review site ratings
     if enr.review_sites:
-        ratings = []
-        for rs in enr.review_sites[:4]:
-            r = f"{rs.rating}/5" if rs.rating else "N/A"
-            ratings.append(f"{rs.site_name}: {r}")
+        ratings = [f"{rs.site_name}: {rs.rating}" for rs in enr.review_sites[:4] if rs.rating]
         if ratings:
-            lines.append(f"[Review Sites] {' | '.join(ratings)}")
+            lines.append(f"Review sites: {', '.join(ratings)}")
 
     lines.append("")
+
+
+# Backward-compatible alias used by tests
+_build_context_block_for_companies = _build_slim_context
 
 
 def _resolve_context_placeholder(
@@ -188,7 +203,7 @@ def _resolve_context_placeholder(
     all_results: list[AnalysisResult],
     company_overviews: dict[str, CompanyOverview] | None = None,
 ) -> tuple[str, str]:
-    """Replace [CONTEXT] or [CONTEXT:co1,co2] with actual data.
+    """Replace [CONTEXT] or [CONTEXT:co1,co2] with slim, realistic context.
 
     Returns (resolved_prompt_text, context_block_used).
     """
@@ -199,17 +214,17 @@ def _resolve_context_placeholder(
         subset = [results_by_name[n] for n in names if n in results_by_name]
         if not subset:
             subset = all_results
-        block = _build_context_block_for_companies(subset, company_overviews)
+        block = _build_slim_context(subset, company_overviews)
         resolved = prompt_text.replace(targeted.group(0), block)
         return resolved, block
 
     # Generic [CONTEXT] — use all companies
     if "[CONTEXT]" in prompt_text:
-        block = _build_context_block_for_companies(all_results, company_overviews)
+        block = _build_slim_context(all_results, company_overviews)
         return prompt_text.replace("[CONTEXT]", block), block
 
-    # No placeholder — append full context
-    block = _build_context_block_for_companies(all_results, company_overviews)
+    # No placeholder — append slim context
+    block = _build_slim_context(all_results, company_overviews)
     resolved = f"{prompt_text}\n\nHere's what I found on their websites:\n{block}"
     return resolved, block
 
@@ -255,9 +270,7 @@ _BATCH_SIZE = 25  # max prompts per LLM call to avoid output truncation
 async def _generate_prompt_batch(
     llm: LLMClient,
     system_prompt: str,
-    main_company: str,
-    main_offerings: str,
-    competitor_sections: str,
+    all_company_sections: str,
     categories_list: str,
     features_by_company_text: str,
     batch_distribution: dict[str, int],
@@ -278,9 +291,7 @@ async def _generate_prompt_batch(
         dedup_section = ""
 
     user_prompt = MULTI_BENCHMARK_GENERATE_USER.format(
-        main_company=main_company,
-        main_offerings=main_offerings,
-        competitor_sections=competitor_sections,
+        all_company_sections=all_company_sections,
         categories_list=categories_list,
         features_by_company=features_by_company_text,
         num_prompts=batch_size,
@@ -319,12 +330,13 @@ async def generate_multi_prompts(
     all_results = [main_result] + competitor_results
     results_by_name = {r.company_name: r for r in all_results}
 
-    main_offerings = _offerings_to_text(main_result)
-
-    competitor_sections_parts: list[str] = []
-    for comp in competitor_results:
-        competitor_sections_parts.append(f"{comp.company_name}:\n{_offerings_to_text(comp)}")
-    competitor_sections = "\n\n".join(competitor_sections_parts)
+    # Build unified company sections in shuffled order (no main/competitor distinction)
+    shuffled_results = list(all_results)
+    random.shuffle(shuffled_results)
+    company_sections_parts: list[str] = []
+    for result in shuffled_results:
+        company_sections_parts.append(f"{result.company_name}:\n{_offerings_to_text(result)}")
+    all_company_sections = "\n\n".join(company_sections_parts)
 
     # Extract structured data for grounded prompts
     categories = _extract_categories(all_results)
@@ -357,9 +369,7 @@ async def generate_multi_prompts(
         batch_prompts = await _generate_prompt_batch(
             llm=llm,
             system_prompt=MULTI_BENCHMARK_GENERATE_SYSTEM,
-            main_company=main_result.company_name,
-            main_offerings=main_offerings,
-            competitor_sections=competitor_sections,
+            all_company_sections=all_company_sections,
             categories_list=categories_list,
             features_by_company_text=features_text,
             batch_distribution=batch_dist,
