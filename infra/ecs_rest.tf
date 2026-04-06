@@ -27,6 +27,10 @@ resource "aws_ecs_task_definition" "rest" {
       environment = [
         { name = "PORT", value = "8080" },
         { name = "CRAWLER_API_URL", value = "http://crawler.falcon-iq.local:8080" },
+        { name = "ECS_CLUSTER_NAME", value = aws_ecs_cluster.main.name },
+        { name = "ECS_CRAWLER_SERVICE", value = aws_ecs_service.crawler.name },
+        { name = "ECS_ANALYZER_SERVICE", value = aws_ecs_service.analyzer.name },
+        { name = "AWS_REGION", value = var.aws_region },
       ]
 
       secrets = [
@@ -77,9 +81,9 @@ resource "aws_ecs_service" "rest" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.rest.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {

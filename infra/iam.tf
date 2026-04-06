@@ -148,7 +148,7 @@ resource "aws_iam_role_policy" "analyzer_ses" {
 
 # -----------------------------------------------------------------------------
 # REST API Task Role
-# Minimal role (no S3 needed) - just allows ECS tasks to assume the role
+# ECS UpdateService: scale crawler + analyzer on demand during benchmarks
 # -----------------------------------------------------------------------------
 
 resource "aws_iam_role" "rest_task" {
@@ -158,4 +158,24 @@ resource "aws_iam_role" "rest_task" {
   tags = {
     Name = "${local.name_prefix}-rest-task-role"
   }
+}
+
+data "aws_iam_policy_document" "rest_ecs_scaling" {
+  statement {
+    sid = "ScaleCrawlerAndAnalyzer"
+    actions = [
+      "ecs:UpdateService",
+      "ecs:DescribeServices",
+    ]
+    resources = [
+      aws_ecs_service.crawler.id,
+      aws_ecs_service.analyzer.id,
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "rest_ecs_scaling" {
+  name   = "${local.name_prefix}-rest-ecs-scaling"
+  role   = aws_iam_role.rest_task.id
+  policy = data.aws_iam_policy_document.rest_ecs_scaling.json
 }

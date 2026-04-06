@@ -113,6 +113,13 @@ public class G2Fetcher {
                 String link = result.has("link") ? result.get("link").asText() : "";
                 if (!link.contains("g2.com/products/")) continue;
 
+                // Validate: the G2 product slug must match the company name
+                String slug = extractSlug(link);
+                if (slug != null && !isSlugMatch(slug, companyName)) {
+                    logger.info("G2 slug '" + slug + "' doesn't match company '" + companyName + "' — skipping");
+                    continue;
+                }
+
                 SerpResult sr = new SerpResult();
                 sr.url = link;
                 sr.snippet = result.has("snippet") ? result.get("snippet").asText() : null;
@@ -230,6 +237,36 @@ public class G2Fetcher {
         }
 
         return answer.isBlank() ? null : answer;
+    }
+
+    /**
+     * Check if a G2 product slug matches the company name.
+     * Strips common suffixes (.com, .io, Inc, etc.) and compares.
+     * e.g. "slack" matches "Slack", "automint" does NOT match "automate"
+     */
+    static boolean isSlugMatch(String slug, String companyName) {
+        String cleanSlug = slug.toLowerCase().replace("-", "");
+        String cleanName = companyName.toLowerCase()
+                .replaceAll("\\.(com|io|in|co|ai|org|net)$", "")
+                .replaceAll("\\s+(inc|ltd|corp|llc|gmbh|pvt|private|limited)\\b", "")
+                .replaceAll("[^a-z0-9]", "")
+                .trim();
+
+        // Exact match after normalization
+        if (cleanSlug.equals(cleanName)) return true;
+
+        // One contains the other (e.g. slug "sprinklr" matches name "sprinklr inc")
+        if (cleanSlug.contains(cleanName) || cleanName.contains(cleanSlug)) return true;
+
+        // Check prefix match (at least 70% of the shorter string)
+        int minLen = Math.min(cleanSlug.length(), cleanName.length());
+        if (minLen < 3) return false;
+        int prefixMatch = 0;
+        for (int i = 0; i < minLen; i++) {
+            if (cleanSlug.charAt(i) == cleanName.charAt(i)) prefixMatch++;
+            else break;
+        }
+        return prefixMatch >= minLen * 0.7;
     }
 
     static String extractSlug(String g2Url) {
