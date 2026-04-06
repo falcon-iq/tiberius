@@ -133,24 +133,48 @@ public class CompanyBenchmarkReportResource {
         CompanyBenchmarkReport savedReport = benchmarkReportService.create(report);
         containerRequest.setProperty("tracking.benchmarkReportId", savedReport.getId());
 
-        // Trigger the crawler service to process all crawls
+        // Trigger scaling + crawler call in background (returns 202 immediately)
         if (CRAWLER_API_URL == null || CRAWLER_API_URL.isBlank()) {
             return Response.status(503)
                     .entity(Map.of("error", "CRAWLER_API_URL not configured"))
                     .build();
         }
+
+        String reportId = savedReport.getId();
+        BACKGROUND_EXECUTOR.submit(() -> triggerBenchmarkAsync(reportId));
+
+        return Response.status(202)
+                .entity(Map.of(
+                        "id", reportId,
+                        "status", "NOT_STARTED",
+                        "message", "Benchmark report queued. Services scaling up."))
+                .build();
+    }
+
+    private static final java.util.concurrent.ExecutorService BACKGROUND_EXECUTOR =
+            java.util.concurrent.Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r, "benchmark-trigger");
+                t.setDaemon(true);
+                return t;
+            });
+
+    private void triggerBenchmarkAsync(String reportId) {
         try {
+            // Scale up crawler + analyzer (waits for them to be ready)
+            com.example.util.EcsScaler.ensureServicesRunning();
+
+            // Now call the crawler
             HttpClient httpClient = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(10))
                     .build();
 
             String crawlerBody = String.format(
-                    "{\"companyBenchmarkReportId\":\"%s\"}", savedReport.getId());
+                    "{\"companyBenchmarkReportId\":\"%s\"}", reportId);
 
             HttpRequest crawlerRequest = HttpRequest.newBuilder()
                     .uri(URI.create(CRAWLER_API_URL + "/api/company-benchmark-report/process"))
                     .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(15))
+                    .timeout(Duration.ofSeconds(30))
                     .POST(HttpRequest.BodyPublishers.ofString(crawlerBody))
                     .build();
 
@@ -158,29 +182,11 @@ public class CompanyBenchmarkReportResource {
                     crawlerRequest, HttpResponse.BodyHandlers.ofString());
 
             if (crawlerResponse.statusCode() == 202) {
-                logger.info("Crawler accepted benchmark report " + savedReport.getId());
-            } else {
-                logger.warning("Crawler returned status " + crawlerResponse.statusCode()
-                        + " for benchmark report " + savedReport.getId()
-                        + ": " + crawlerResponse.body());
-                return Response.status(502)
-                        .entity(Map.of(
-                                "error", "Crawler service error",
-                                "crawlerStatus", crawlerResponse.statusCode(),
-                                "crawlerResponse", crawlerResponse.body(),
-                                "companyBenchmarkReportId", savedReport.getId()))
-                        .build();
+                logger.info("Crawler accepted benchmark report " + reportId);
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to reach crawler service for benchmark report " + savedReport.getId(), e);
-            return Response.status(502)
-                    .entity(Map.of(
-                            "error", "Failed to reach crawler service: " + e.getMessage(),
-                            "companyBenchmarkReportId", savedReport.getId()))
-                    .build();
+            logger.log(Level.SEVERE, "Failed to trigger benchmark " + reportId, e);
         }
-
-        return Response.status(Response.Status.CREATED).entity(savedReport).build();
     }
 
     @POST
@@ -243,6 +249,12 @@ public class CompanyBenchmarkReportResource {
             }
 
             CompanyBenchmarkReport report = reportOpt.get();
+
+            // Scale down crawler + analyzer when benchmark is done (idempotent)
+            if (report.getStatus() == CompanyBenchmarkReport.Status.COMPLETED
+                    || report.getStatus() == CompanyBenchmarkReport.Status.FAILED) {
+                com.example.util.EcsScaler.scaleDownIfRunning();
+            }
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("id", id);

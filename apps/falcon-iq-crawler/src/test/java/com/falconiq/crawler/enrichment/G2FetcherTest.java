@@ -119,6 +119,51 @@ class G2FetcherTest {
         assertNull(G2Fetcher.extractAnswerFromSnippet(snippet, "like best"));
     }
 
+    // ── isSlugMatch ──────────────────────────────────────────────────
+
+    @Test
+    void slugMatchExact() {
+        assertTrue(G2Fetcher.isSlugMatch("slack", "Slack"));
+        assertTrue(G2Fetcher.isSlugMatch("sprinklr", "Sprinklr"));
+    }
+
+    @Test
+    void slugMatchWithDomain() {
+        assertTrue(G2Fetcher.isSlugMatch("automint", "automint.in"));
+        assertTrue(G2Fetcher.isSlugMatch("hootsuite", "hootsuite.com"));
+        assertTrue(G2Fetcher.isSlugMatch("sprinklr", "sprinklr.com"));
+    }
+
+    @Test
+    void slugMatchWithSuffix() {
+        assertTrue(G2Fetcher.isSlugMatch("sprinklr", "Sprinklr Inc"));
+        assertTrue(G2Fetcher.isSlugMatch("cyberhaven", "Cyberhaven Ltd"));
+    }
+
+    @Test
+    void slugMatchWithHyphen() {
+        assertTrue(G2Fetcher.isSlugMatch("hub-spot", "HubSpot"));
+    }
+
+    @Test
+    void slugMatchContains() {
+        assertTrue(G2Fetcher.isSlugMatch("sprinklr-social", "Sprinklr"));
+        assertTrue(G2Fetcher.isSlugMatch("slack", "Slack Technologies"));
+    }
+
+    @Test
+    void slugMismatchRejectsWrongProduct() {
+        assertFalse(G2Fetcher.isSlugMatch("automate", "automint.in"));
+        assertFalse(G2Fetcher.isSlugMatch("openvpn", "cyberhaven.com"));
+        assertFalse(G2Fetcher.isSlugMatch("salesforce", "hubspot.com"));
+        assertFalse(G2Fetcher.isSlugMatch("zoom", "slack.com"));
+    }
+
+    @Test
+    void slugMismatchShortNames() {
+        assertFalse(G2Fetcher.isSlugMatch("ab", "cd"));
+    }
+
     // ── extractSlug ─────────────────────────────────────────────────
 
     @Test
